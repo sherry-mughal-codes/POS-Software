@@ -17,12 +17,12 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onGoHome }) => {
       textAlign: 'center',
     }}>
       <AlertCircle size={48} style={{ color: 'var(--warning)', marginBottom: '1rem' }} />
-      <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Module in Future Roadmap</h2>
+      <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Page Not Found</h2>
       <p style={{ color: 'var(--text-muted)', maxWidth: '400px', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-        This module is scheduled for development in subsequent phases. Phase 0 provides the architectural foundation.
+        The requested operational module or page could not be located.
       </p>
       <Button variant="primary" onClick={onGoHome}>
-        Return to Overview
+        Return to Dashboard
       </Button>
     </div>
   );

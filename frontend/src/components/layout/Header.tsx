@@ -1,8 +1,9 @@
-import React from 'react';
-import { Server, Database, RefreshCw, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Store, Clock, RefreshCw, LogOut } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { HealthCheckResponse } from '../../types/api';
 import { useAuth } from '../../hooks/useAuth';
+import { useSettings } from '../../context/SettingsContext';
 
 interface HeaderProps {
   healthData: HealthCheckResponse | null;
@@ -12,102 +13,166 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ healthData, loading, onRefresh }) => {
   const { user, logout } = useAuth();
+  const { companyName, companyLogo, companyAddress } = useSettings();
+  const [timeStr, setTimeStr] = useState<string>('');
   const isHealthy = healthData?.status === 'healthy';
-  const isDbConnected = healthData?.services.database.status === 'connected';
 
-  const primaryRole = user?.roles?.[0] || (user?.is_superuser ? 'Superuser' : 'User');
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setTimeStr(
+        now.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        }) +
+          ' ' +
+          now.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          })
+      );
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const primaryRole = user?.roles?.[0] || (user?.is_superuser ? 'Administrator' : 'User');
 
   return (
-    <header style={{
-      height: 'var(--header-height)',
-      backgroundColor: 'rgba(13, 18, 31, 0.75)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      borderBottom: '1px solid var(--border-subtle)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 2rem',
-      position: 'sticky',
-      top: 0,
-      zIndex: 10,
-    }}>
-      {/* Left: Breadcrumbs / Title */}
+    <header
+      style={{
+        height: 'var(--header-height)',
+        backgroundColor: 'rgba(13, 18, 31, 0.85)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--border-subtle)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 2rem',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+      }}
+    >
+      {/* Left: Store Brand & Branch info */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-          <span>Security & Access</span>
-          <span>/</span>
-          <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>Phase 1 RBAC Foundation</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', fontSize: '0.875rem' }}>
+          {companyLogo ? (
+            <img
+              src={companyLogo}
+              alt="Store Logo"
+              style={{
+                height: '1.75rem',
+                maxWidth: '3rem',
+                objectFit: 'contain',
+                borderRadius: '0.25rem',
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '1.75rem',
+                height: '1.75rem',
+                borderRadius: '0.375rem',
+                backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--primary-400)',
+              }}
+            >
+              <Store size={16} />
+            </div>
+          )}
+          <span style={{ color: 'var(--text-main)', fontWeight: 700, letterSpacing: '-0.01em' }}>
+            {companyName}
+          </span>
+          <span style={{ color: 'var(--text-subtle)' }}>•</span>
+          <span
+            style={{
+              color: 'var(--text-muted)',
+              fontSize: '0.8125rem',
+              maxWidth: '280px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            title={companyAddress}
+          >
+            {companyAddress || 'Main Retail Branch'}
+          </span>
         </div>
       </div>
 
-      {/* Right: Health Indicators + User Profile & Logout */}
+      {/* Right: Live Clock + Status Indicator + Refresh + User Profile & Logout */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-        {/* PostgreSQL Indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
-          <Database size={15} style={{ color: isDbConnected ? 'var(--success)' : 'var(--danger)' }} />
-          <span style={{ color: 'var(--text-muted)' }}>DB:</span>
-          <Badge variant={isDbConnected ? 'success' : 'danger'} pulse={isDbConnected}>
-            {isDbConnected ? 'Connected' : 'Offline'}
-          </Badge>
+        {/* Real-time Clock */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+          <Clock size={14} style={{ color: 'var(--primary-400)' }} />
+          <span style={{ fontFamily: 'var(--font-mono)' }}>{timeStr}</span>
         </div>
 
-        {/* Django Backend Indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
-          <Server size={15} style={{ color: isHealthy ? 'var(--info)' : 'var(--warning)' }} />
-          <span style={{ color: 'var(--text-muted)' }}>API:</span>
-          <Badge variant={isHealthy ? 'info' : 'warning'}>
-            {isHealthy ? 'REST v1' : 'Degraded'}
-          </Badge>
+        {/* Live Status Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: isHealthy ? 'var(--success)' : 'var(--warning)' }}>
+          <span
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: isHealthy ? 'var(--success)' : 'var(--warning)',
+              display: 'inline-block',
+              boxShadow: isHealthy ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none',
+            }}
+          />
+          <span>{isHealthy ? 'Connected' : 'Connecting'}</span>
         </div>
 
-        {/* Refresh Ping Button */}
+        {/* Refresh Sync Button */}
         <button
           onClick={onRefresh}
           disabled={loading}
-          title="Re-run health check"
+          title="Sync status"
           style={{
-            background: 'var(--bg-elevated)',
+            background: 'transparent',
             border: '1px solid var(--border-subtle)',
-            borderRadius: '0.5rem',
-            padding: '0.5rem',
+            borderRadius: '0.375rem',
+            padding: '0.35rem',
             color: 'var(--text-muted)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--text-main)';
-            e.currentTarget.style.borderColor = 'var(--border-medium)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-muted)';
-            e.currentTarget.style.borderColor = 'var(--border-subtle)';
           }}
         >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
         </button>
 
         {/* User Pill & Logout */}
         {user && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            paddingLeft: '1rem',
-            borderLeft: '1px solid var(--border-subtle)',
-          }}>
-            <div style={{
+          <div
+            style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.625rem',
-              background: 'var(--bg-elevated)',
-              padding: '0.375rem 0.75rem',
-              borderRadius: '0.625rem',
-              border: '1px solid var(--border-subtle)',
-            }}>
+              gap: '0.75rem',
+              paddingLeft: '1rem',
+              borderLeft: '1px solid var(--border-subtle)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.625rem',
+                background: 'var(--bg-elevated)',
+                padding: '0.375rem 0.75rem',
+                borderRadius: '0.625rem',
+                border: '1px solid var(--border-subtle)',
+              }}
+            >
               <div style={{
                 width: '1.75rem',
                 height: '1.75rem',

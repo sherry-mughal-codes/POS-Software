@@ -136,7 +136,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
             <span style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
               Executive Business Dashboard
             </span>
-            <Badge variant="phase">Phase 13 Live</Badge>
             {data?.active_pos_session ? (
               <Badge variant="success" pulse>
                 Day Session: {data.active_pos_session.session_number} (Open)

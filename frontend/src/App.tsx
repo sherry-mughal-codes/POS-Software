@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
@@ -19,6 +20,7 @@ import { SalesReportPage } from './pages/Sales/SalesReportPage';
 import { ExpensesDashboardPage } from './pages/Expenses/ExpensesDashboardPage';
 import { EmployeesDashboardPage } from './pages/Employees/EmployeesDashboardPage';
 import { DaySessionsPage } from './pages/POS/DaySessionsPage';
+import { SettingsPage } from './pages/Settings/SettingsPage';
 import { NotFoundPage } from './pages/NotFound/NotFoundPage';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { Can } from './components/auth/Can';
@@ -173,7 +175,11 @@ const AppContent: React.FC = () => {
         </Can>
       )}
 
-      {!['dashboard', 'reports', 'products', 'purchases', 'inventory', 'register', 'sales', 'sales-reports', 'expenses', 'employees', 'day-sessions', 'customers', 'suppliers', 'accounting', 'users', 'roles', 'audit-logs'].includes(currentTab) && (
+      {currentTab === 'settings' && (
+        <SettingsPage />
+      )}
+
+      {!['dashboard', 'reports', 'products', 'purchases', 'inventory', 'register', 'sales', 'sales-reports', 'expenses', 'employees', 'day-sessions', 'customers', 'suppliers', 'accounting', 'users', 'roles', 'audit-logs', 'settings'].includes(currentTab) && (
         <NotFoundPage onGoHome={() => setCurrentTab('dashboard')} />
       )}
     </MainLayout>
@@ -183,7 +189,9 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <SettingsProvider>
+        <AppContent />
+      </SettingsProvider>
     </AuthProvider>
   );
 };

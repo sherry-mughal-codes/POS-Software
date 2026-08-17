@@ -135,9 +135,9 @@ export const LoginPage: React.FC = () => {
           <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Test Accounts (Pre-Seeded)
+                Quick Access Profiles
               </span>
-              <Badge variant="phase">Phase 1 Demo</Badge>
+              <Badge variant="info">Fast Login</Badge>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

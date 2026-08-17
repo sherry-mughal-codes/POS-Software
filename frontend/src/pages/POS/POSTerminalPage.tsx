@@ -212,7 +212,6 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', flexShrink: 0 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.125rem' }}>
-            <Badge variant="phase">Phase 7</Badge>
             <Badge variant="success" pulse>POS Counter Terminal</Badge>
           </div>
           <h2 style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.02em' }}>

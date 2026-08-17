@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Printer,
 } from 'lucide-react';
 import { Modal } from '../../../components/common/Modal';
 import { Button } from '../../../components/common/Button';
 import { Sale } from '../../../types/sales';
+import { useSettings } from '../../../context/SettingsContext';
 
 interface POSReceiptModalProps {
   isOpen: boolean;
@@ -22,6 +23,27 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
   onClose,
   sale,
 }) => {
+  const {
+    companyName,
+    companyLogo,
+    companyAddress,
+    companyPhone,
+    taxId,
+    receiptHeader,
+    receiptFooter,
+    currencySymbol,
+    autoPrintReceipt,
+  } = useSettings();
+
+  useEffect(() => {
+    if (isOpen && sale && autoPrintReceipt) {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, sale, autoPrintReceipt]);
+
   if (!sale) return null;
 
   const handlePrint = () => {
@@ -50,13 +72,29 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
           }}
         >
-          {/* Header */}
+          {/* Header & Logo */}
           <div style={{ textAlign: 'center', marginBottom: '1rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.75rem' }}>
+            {companyLogo && (
+              <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                <img
+                  src={companyLogo}
+                  alt="Store Logo"
+                  style={{ maxHeight: '45px', maxWidth: '140px', objectFit: 'contain' }}
+                />
+              </div>
+            )}
             <h3 style={{ fontSize: '1.125rem', fontWeight: 900, margin: '0 0 0.25rem 0', letterSpacing: '0.05em' }}>
-              APEX<span style={{ color: '#0284c7' }}>POS</span> STORE
+              {companyName}
             </h3>
-            <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>Main Commercial Plaza, Sector F-7</div>
-            <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>Tel: +92 51 8899220 | NTN: 8920192-3</div>
+            {companyAddress && <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>{companyAddress}</div>}
+            <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>
+              {companyPhone && `Tel: ${companyPhone}`} {taxId && ` | NTN: ${taxId}`}
+            </div>
+            {receiptHeader && (
+              <div style={{ fontSize: '0.6875rem', color: '#0369a1', marginTop: '0.25rem', fontWeight: 600 }}>
+                {receiptHeader}
+              </div>
+            )}
           </div>
 
           {/* Meta details */}
@@ -108,37 +146,37 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
           <div style={{ borderTop: '1px dashed #9ca3af', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Subtotal:</span>
-              <span>Rs. {formatMoney(sale.subtotal)}</span>
+              <span>{currencySymbol} {formatMoney(sale.subtotal)}</span>
             </div>
 
             {sale.discount_amount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626' }}>
                 <span>Discount:</span>
-                <span>- Rs. {formatMoney(sale.discount_amount)}</span>
+                <span>- {currencySymbol} {formatMoney(sale.discount_amount)}</span>
               </div>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: '0.9375rem', marginTop: '0.25rem', borderTop: '1px solid #111827', paddingTop: '0.35rem' }}>
               <span>TOTAL:</span>
-              <span>Rs. {formatMoney(sale.grand_total)}</span>
+              <span>{currencySymbol} {formatMoney(sale.grand_total)}</span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
               <span>Payment ({sale.payment_method_display}):</span>
-              <span>Rs. {formatMoney(sale.paid_amount)}</span>
+              <span>{currencySymbol} {formatMoney(sale.paid_amount)}</span>
             </div>
 
             {sale.change_amount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span>Change Returned:</span>
-                <span>Rs. {formatMoney(sale.change_amount)}</span>
+                <span>{currencySymbol} {formatMoney(sale.change_amount)}</span>
               </div>
             )}
 
             {sale.due_amount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#d97706', fontWeight: 700 }}>
                 <span>Receivable Due:</span>
-                <span>Rs. {formatMoney(sale.due_amount)}</span>
+                <span>{currencySymbol} {formatMoney(sale.due_amount)}</span>
               </div>
             )}
           </div>
@@ -146,7 +184,9 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
           {/* Footer Barcode / Slogan */}
           <div style={{ textAlign: 'center', marginTop: '1.25rem', borderTop: '1px dashed #9ca3af', paddingTop: '0.75rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>*** THANK YOU FOR SHOPPING! ***</div>
-            <div style={{ fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.125rem' }}>Items returnable within 7 days with receipt.</div>
+            <div style={{ fontSize: '0.6875rem', color: '#4b5563', marginTop: '0.25rem' }}>
+              {receiptFooter || 'Items returnable within 7 days with original receipt.'}
+            </div>
             <div style={{ letterSpacing: '0.2em', fontSize: '0.875rem', marginTop: '0.5rem', fontWeight: 900 }}>
               *||| | |||| | |||*
             </div>

@@ -121,3 +121,60 @@ class DashboardView(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
+
+class SystemSettingsView(APIView):
+    """
+    Enterprise System & Store Configuration API.
+    GET: Returns all system settings as key-value pairs and grouped categories.
+    POST / PUT: Updates configuration values.
+    """
+    def get(self, request, *args, **kwargs):
+        from apps.core.models import SystemSetting
+        settings_qs = SystemSetting.objects.all()
+
+        settings_dict = {}
+        grouped = {}
+        for s in settings_qs:
+            settings_dict[s.key] = s.value
+            if s.group not in grouped:
+                grouped[s.group] = []
+            grouped[s.group].append({
+                "key": s.key,
+                "value": s.value,
+                "description": s.description,
+                "group": s.group,
+                "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+            })
+
+        return Response({
+            "settings": settings_dict,
+            "grouped": grouped,
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        from apps.core.models import SystemSetting, AuditLog
+        payload = request.data.get("settings", request.data)
+
+        if not isinstance(payload, dict):
+            return Response({"detail": "Settings payload must be a JSON object."}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_keys = []
+        for key, val in payload.items():
+            if val is not None:
+                SystemSetting.objects.filter(key=key).update(value=str(val), updated_at=timezone.now())
+                updated_keys.append(key)
+
+        # Audit logging
+        username = request.user.username if request.user and request.user.is_authenticated else "admin"
+        AuditLog.objects.create(
+            user=request.user if request.user and request.user.is_authenticated else None,
+            username=username,
+            action="SETTINGS_UPDATED",
+            resource="SystemSettings",
+            details={"updated_keys": updated_keys},
+        )
+
+        # Return updated settings
+        return self.get(request, *args, **kwargs)
+
+

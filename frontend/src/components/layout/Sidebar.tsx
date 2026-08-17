@@ -20,14 +20,12 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { Badge } from '../common/Badge';
 import { useAuth } from '../../hooks/useAuth';
 
 export interface NavItem {
   id: string;
   name: string;
   icon: React.ReactNode;
-  phase: string;
   requiredPermission?: string;
   requiredRole?: string;
   disabled?: boolean;
@@ -49,23 +47,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { hasPermission, hasRole } = useAuth();
 
   const navItems: NavItem[] = [
-    { id: 'dashboard', name: 'Business Dashboard', icon: <LayoutDashboard size={18} />, phase: 'Phase 13' },
-    { id: 'reports', name: 'Reports Center', icon: <BarChart3 size={18} />, phase: 'Phase 13' },
-    { id: 'register', name: 'POS Register Terminal', icon: <ShoppingCart size={18} />, phase: 'Phase 7' },
-    { id: 'sales', name: 'Sales & Receipts', icon: <Receipt size={18} />, phase: 'Phase 7' },
-    { id: 'products', name: 'Product Catalog', icon: <Package size={18} />, phase: 'Phase 3' },
-    { id: 'inventory', name: 'Inventory & Stock Control', icon: <Boxes size={18} />, phase: 'Phase 6' },
-    { id: 'purchases', name: 'Purchasing & Payables', icon: <ShoppingBag size={18} />, phase: 'Phase 5' },
-    { id: 'customers', name: 'Customers & Receivables', icon: <UserCheck size={18} />, phase: 'Phase 4' },
-    { id: 'suppliers', name: 'Suppliers & Vendors', icon: <Truck size={18} />, phase: 'Phase 4' },
-    { id: 'accounting', name: 'Double Entry Ledger', icon: <BookOpen size={18} />, phase: 'Phase 2' },
-    { id: 'expenses', name: 'Expenses & Transfers', icon: <DollarSign size={18} />, phase: 'Phase 8' },
-    { id: 'employees', name: 'Employees & Payroll', icon: <UserCheck size={18} />, phase: 'Phase 10' },
-    { id: 'day-sessions', name: 'Day Closing & X/Z Reports', icon: <Lock size={18} />, phase: 'Phase 11' },
-    { id: 'users', name: 'User Management', icon: <Users size={18} />, phase: 'Phase 1', requiredPermission: 'manage_users' },
-    { id: 'roles', name: 'Roles & Permissions', icon: <ShieldCheck size={18} />, phase: 'Phase 1', requiredPermission: 'manage_roles' },
-    { id: 'audit-logs', name: 'Security Audit Logs', icon: <History size={18} />, phase: 'Phase 1', requiredPermission: 'view_audit_logs' },
-    { id: 'settings', name: 'System Settings', icon: <Settings size={18} />, phase: 'Phase 1', disabled: true },
+    { id: 'dashboard', name: 'Business Dashboard', icon: <LayoutDashboard size={18} /> },
+    { id: 'reports', name: 'Reports Center', icon: <BarChart3 size={18} /> },
+    { id: 'register', name: 'POS Register Terminal', icon: <ShoppingCart size={18} /> },
+    { id: 'sales', name: 'Sales & Receipts', icon: <Receipt size={18} /> },
+    { id: 'products', name: 'Product Catalog', icon: <Package size={18} /> },
+    { id: 'inventory', name: 'Inventory & Stock Control', icon: <Boxes size={18} /> },
+    { id: 'purchases', name: 'Purchasing & Payables', icon: <ShoppingBag size={18} /> },
+    { id: 'customers', name: 'Customers & Receivables', icon: <UserCheck size={18} /> },
+    { id: 'suppliers', name: 'Suppliers & Vendors', icon: <Truck size={18} /> },
+    { id: 'accounting', name: 'Double Entry Ledger', icon: <BookOpen size={18} /> },
+    { id: 'expenses', name: 'Expenses & Transfers', icon: <DollarSign size={18} /> },
+    { id: 'employees', name: 'Employees & Payroll', icon: <UserCheck size={18} /> },
+    { id: 'day-sessions', name: 'Day Closing & X/Z Reports', icon: <Lock size={18} /> },
+    { id: 'users', name: 'User Management', icon: <Users size={18} />, requiredPermission: 'manage_users' },
+    { id: 'roles', name: 'Roles & Permissions', icon: <ShieldCheck size={18} />, requiredPermission: 'manage_roles' },
+    { id: 'audit-logs', name: 'Security Audit Logs', icon: <History size={18} />, requiredPermission: 'view_audit_logs' },
+    { id: 'settings', name: 'System Settings', icon: <Settings size={18} /> },
   ];
 
   return (
@@ -165,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         {!isCollapsed && (
           <div style={{ padding: '0.25rem 0.75rem', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Modules & Sales
+            Modules & Operations
           </div>
         )}
 
@@ -188,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={item.id}
               onClick={() => !isDisabled && onSelectTab(item.id)}
               disabled={isDisabled}
-              title={isCollapsed ? `${item.name} (${item.phase})` : undefined}
+              title={isCollapsed ? item.name : undefined}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -223,16 +221,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {!isCollapsed && <span style={{ fontSize: '0.875rem', fontWeight: isSelected ? 600 : 500, whiteSpace: 'nowrap' }}>{item.name}</span>}
               </div>
 
-              {!isCollapsed && (
-                isLocked ? (
-                  <span title="Access Restricted by Role" style={{ color: 'var(--text-subtle)', display: 'flex', alignItems: 'center' }}>
-                    <Lock size={13} />
-                  </span>
-                ) : (
-                  <Badge variant={isSelected ? 'success' : 'phase'}>
-                    {item.phase}
-                  </Badge>
-                )
+              {!isCollapsed && isLocked && (
+                <span title="Access Restricted by Role" style={{ color: 'var(--text-subtle)', display: 'flex', alignItems: 'center' }}>
+                  <Lock size={13} />
+                </span>
               )}
             </button>
           );
@@ -250,9 +242,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              <strong>Ledger:</strong> Double-Entry
+              <strong>ApexPOS</strong> Enterprise
             </div>
-            <Badge variant="success" pulse>Active</Badge>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--success)' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
+              Online
+            </div>
           </div>
         </div>
       )}

@@ -13,7 +13,6 @@ import {
   Layers,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
-import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { dashboardService } from '../../services/dashboardService';
 import { ExecutiveDashboardData, DashboardPeriod } from '../../types/dashboard';
@@ -161,7 +160,6 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
             <span style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
               Central Business Reports Hub
             </span>
-            <Badge variant="phase">Phase 13</Badge>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', margin: 0 }}>
             Official management reports with real-time SQL aggregations for{' '}
