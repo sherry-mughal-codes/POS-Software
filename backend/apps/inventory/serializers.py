@@ -15,7 +15,7 @@ class StockMovementSerializer(serializers.ModelSerializer):
     movement_type_display = serializers.CharField(source="get_movement_type_display", read_only=True)
     quantity = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
     unit_cost = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
-    balance_after = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
+    balance_after = serializers.SerializerMethodField()
     total_cost = serializers.SerializerMethodField()
 
     class Meta:
@@ -45,6 +45,16 @@ class StockMovementSerializer(serializers.ModelSerializer):
         if not obj.created_by:
             return "System"
         return obj.created_by.get_full_name() or obj.created_by.username
+
+    def get_balance_after(self, obj):
+        if obj.balance_after and obj.balance_after > 0:
+            return float(obj.balance_after)
+        from django.db.models import Sum
+        running = StockMovement.objects.filter(
+            product_id=obj.product_id,
+            id__lte=obj.id
+        ).aggregate(t=Sum("quantity"))["t"]
+        return float(running or obj.quantity or 0.0)
 
     def get_total_cost(self, obj):
         return float(abs(obj.quantity * obj.unit_cost))

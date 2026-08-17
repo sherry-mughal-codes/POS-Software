@@ -211,6 +211,7 @@ export const SuppliersPage: React.FC = () => {
                   <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Contact Info</th>
                   <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Address / Warehouse</th>
                   <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Tax / NTN</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Payable Balance</th>
                   <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
                   <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -286,6 +287,16 @@ export const SuppliersPage: React.FC = () => {
                         <Badge variant="phase">{supp.tax_id}</Badge>
                       ) : (
                         <span style={{ color: 'var(--text-subtle)', fontSize: '0.75rem' }}>Unregistered</span>
+                      )}
+                    </td>
+
+                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                      {(supp.outstanding_payable || 0) > 0 ? (
+                        <span style={{ color: 'var(--warning)' }}>
+                          Rs. {((supp.outstanding_payable || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--success)' }}>Rs. 0.00</span>
                       )}
                     </td>
 

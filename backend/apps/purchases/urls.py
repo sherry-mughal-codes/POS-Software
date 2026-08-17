@@ -9,6 +9,7 @@ from apps.purchases.views import (
     PurchaseReturnViewSet,
     SupplierPaymentViewSet,
     SupplierStatementView,
+    SupplierPayablesReportView,
     PurchaseReportView,
 )
 
@@ -21,7 +22,8 @@ urlpatterns = [
     # Supplier running statement
     path("supplier-statement/<int:supplier_id>/", SupplierStatementView.as_view(), name="supplier_statement"),
 
-    # Master Purchase Report
+    # Master Reports
+    path("reports/payables/", SupplierPayablesReportView.as_view(), name="supplier_payables_report"),
     path("reports/summary/", PurchaseReportView.as_view(), name="purchase_report"),
 
     # Viewsets

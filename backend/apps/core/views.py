@@ -83,10 +83,41 @@ class ApiRootView(APIView):
         return Response({
             "name": "ApexPOS API",
             "version": "v1",
-            "phase": "Phase 0 - Foundation",
+            "phase": "Phase 13 - Reports & Business Dashboard",
             "endpoints": {
                 "health": request.build_absolute_uri("health/"),
-                # Future endpoints mapped in subsequent phases
+                "dashboard": request.build_absolute_uri("dashboard/"),
             },
             "timestamp": timezone.now().isoformat(),
         })
+
+
+class DashboardView(APIView):
+    """
+    Executive Business Management Dashboard API.
+    Provides single-pass aggregated KPIs, profit analytics, sales trends,
+    cash position, customer receivables, supplier payables, inventory health,
+    and cashier performance.
+    """
+    def get(self, request, *args, **kwargs):
+        from apps.core.services import DashboardService
+
+        period = request.query_params.get("period", "this_month")
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+        cashier_id_param = request.query_params.get("cashier_id")
+
+        cashier_id = None
+        if cashier_id_param and cashier_id_param.isdigit():
+            cashier_id = int(cashier_id_param)
+
+        data = DashboardService.get_executive_dashboard(
+            period=period,
+            start_date=start_date,
+            end_date=end_date,
+            cashier_id=cashier_id,
+            user=request.user,
+        )
+
+        return Response(data, status=status.HTTP_200_OK)
+

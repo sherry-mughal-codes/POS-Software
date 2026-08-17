@@ -18,11 +18,13 @@ from apps.purchases.models import (
     PurchaseReturnItem,
     RefundMethod,
     SupplierPayment,
+    SupplierPaymentStatus,
+    SupplierPaymentMethodType,
 )
 from apps.contacts.models import Supplier
 from apps.products.models import Product
 from apps.inventory.models import StockMovement, MovementType
-from apps.accounting.models import Account, PaymentMethod
+from apps.accounting.models import Account, ReferenceType, PaymentMethod
 from apps.accounting.services import AccountingService
 
 
@@ -374,30 +376,66 @@ class PurchaseService:
 
         return p_return
 
+    @staticmethod
+    def get_supplier_outstanding(supplier_id: int) -> Decimal:
+        """
+        Dynamically calculates outstanding payable balance for a supplier from single sources of truth.
+        Outstanding = Total Purchases (SUBMITTED) - Total Upfront Paid - Total Returns (PAYABLE_DEDUCTION) - Total Submitted Payments
+        """
+        supplier = Supplier.objects.get(pk=supplier_id)
+
+        purchases = Purchase.objects.filter(
+            supplier=supplier,
+            status=PurchaseStatus.SUBMITTED,
+        )
+        total_purchased = sum(p.grand_total for p in purchases) or Decimal("0.00")
+        total_upfront_paid = sum(p.initial_paid_amount for p in purchases) or Decimal("0.00")
+
+        returns = PurchaseReturn.objects.filter(
+            supplier=supplier,
+            refund_method=RefundMethod.PAYABLE_DEDUCTION,
+        )
+        total_returns_deducted = sum(r.total_amount for r in returns) or Decimal("0.00")
+
+        payments = SupplierPayment.objects.filter(
+            supplier=supplier,
+            status=SupplierPaymentStatus.SUBMITTED,
+        )
+        total_payments = sum(pay.amount for pay in payments) or Decimal("0.00")
+
+        return max(Decimal("0.00"), total_purchased - total_upfront_paid - total_returns_deducted - total_payments)
+
     @classmethod
     @transaction.atomic
     def record_supplier_payment(
         cls,
         supplier: Supplier,
         amount: Decimal,
-        payment_method: PaymentMethod,
+        payment_method: str,
         payment_account: Account,
         payment_date: Optional[date] = None,
         reference: str = "",
         notes: str = "",
+        submit_now: bool = True,
         created_by=None,
     ) -> SupplierPayment:
         """
-        Records a payment to a supplier, reducing Accounts Payable.
+        Records a payment voucher for a supplier with overpayment validation.
         """
         amt = Decimal(str(amount))
         if amt <= Decimal("0.00"):
             raise ValidationError("Payment amount must be greater than zero.")
 
+        outstanding = cls.get_supplier_outstanding(supplier.id)
+        if amt > outstanding:
+            raise ValidationError(
+                f"Maximum payable amount for {supplier.name} is Rs. {outstanding:,.2f}. Payment of Rs. {amt:,.2f} exceeds outstanding balance."
+            )
+
         if payment_date is None:
             payment_date = timezone.now().date()
 
-        payment_number = cls.generate_payment_number()
+        payment_number = SupplierPayment.generate_payment_number(payment_date)
 
         payment = SupplierPayment.objects.create(
             payment_number=payment_number,
@@ -408,96 +446,360 @@ class PurchaseService:
             payment_account=payment_account,
             reference=reference,
             notes=notes,
+            status=SupplierPaymentStatus.DRAFT,
             created_by=created_by,
         )
+
+        if submit_now:
+            payment = cls.submit_supplier_payment(payment, user=created_by)
+
+        return payment
+
+    @classmethod
+    @transaction.atomic
+    def submit_supplier_payment(cls, payment: SupplierPayment, user=None) -> SupplierPayment:
+        """
+        Submits a supplier payment voucher and creates general ledger double-entry posting:
+        - Debit: 2010 Accounts Payable
+        - Credit: Payment Account (1010 Cash in Hand / 1020 Main Bank)
+        """
+        if payment.status == SupplierPaymentStatus.SUBMITTED:
+            raise ValidationError(f"Supplier payment [{payment.payment_number}] is already submitted.")
+        if payment.status == SupplierPaymentStatus.CANCELLED:
+            raise ValidationError(f"Cannot submit cancelled supplier payment [{payment.payment_number}].")
+
+        # Double check overpayment at moment of submission
+        outstanding = cls.get_supplier_outstanding(payment.supplier.id)
+        if payment.amount > outstanding:
+            raise ValidationError(
+                f"Maximum payable amount is Rs. {outstanding:,.2f}. Cannot submit payment of Rs. {payment.amount:,.2f}."
+            )
 
         payable_acc = Account.objects.filter(code="2010").first() or Account.objects.get(code="2010")
 
-        # Accounting Entry: Debit Accounts Payable, Credit Cash/Bank
-        AccountingService.record_supplier_payment(
+        # Accounting Entry: Debit Accounts Payable (2010), Credit Cash/Bank
+        journal_entry = AccountingService.record_supplier_payment(
             payment_ref=payment.payment_number,
-            supplier_name=supplier.company_name or supplier.name,
-            amount=amt,
-            payment_account=payment_account,
+            supplier_name=payment.supplier.company_name or payment.supplier.name,
+            amount=payment.amount,
+            payment_account=payment.payment_account,
             payable_account=payable_acc,
-            created_by=created_by,
-            entry_date=payment_date,
+            created_by=user or payment.created_by,
+            entry_date=payment.date,
         )
 
-        # Allocate payment against outstanding submitted purchases for this supplier (FIFO)
-        cls.reallocate_supplier_payments(supplier)
+        payment.journal_entry = journal_entry
+        payment.status = SupplierPaymentStatus.SUBMITTED
+        payment.submitted_by = user or payment.created_by
+        payment.submitted_at = timezone.now()
+        payment.save()
+
+        # Reallocate payments across supplier purchases in FIFO order
+        cls.reallocate_supplier_payments(payment.supplier)
+
+        return payment
+
+    @classmethod
+    @transaction.atomic
+    def cancel_supplier_payment(cls, payment: SupplierPayment, user=None, reason: str = "") -> SupplierPayment:
+        """
+        Cancels a submitted supplier payment and creates counter-reversal journal entry:
+        - Debit: Payment Account (1010 Cash / 1020 Bank)
+        - Credit: 2010 Accounts Payable
+        """
+        if payment.status != SupplierPaymentStatus.SUBMITTED:
+            raise ValidationError(f"Only submitted supplier payments can be cancelled (Status: {payment.status}).")
+
+        if not reason.strip():
+            raise ValidationError("A cancellation reason is required.")
+
+        payable_acc = Account.objects.filter(code="2010").first() or Account.objects.get(code="2010")
+
+        # Counter-reversal GL posting
+        rev_lines = [
+            {
+                "account": payment.payment_account,
+                "debit": payment.amount,
+                "credit": Decimal("0.00"),
+                "description": f"Reversal of supplier payment {payment.payment_number} to {payment.supplier.name}",
+            },
+            {
+                "account": payable_acc,
+                "debit": Decimal("0.00"),
+                "credit": payment.amount,
+                "description": f"Payable restoration upon cancellation of {payment.payment_number}",
+            },
+        ]
+
+        rev_entry = AccountingService.create_journal_entry(
+            entry_date=timezone.now().date(),
+            reference_type=ReferenceType.REVERSAL,
+            reference_id=payment.payment_number,
+            lines=rev_lines,
+            narration=f"Cancellation reversal of Supplier Payment {payment.payment_number}: {reason}",
+            created_by=user,
+        )
+
+        payment.reversal_journal_entry = rev_entry
+        payment.status = SupplierPaymentStatus.CANCELLED
+        payment.cancelled_by = user
+        payment.cancelled_at = timezone.now()
+        payment.cancellation_reason = reason.strip()
+        payment.save()
+
+        # Reallocate payments across supplier purchases (restoring unpaid balance)
+        cls.reallocate_supplier_payments(payment.supplier)
 
         return payment
 
     @classmethod
     def reallocate_supplier_payments(cls, supplier: Supplier):
         """
-        Allocates all standalone payments for a supplier across their submitted purchases in FIFO order.
+        Allocates all submitted payments for a supplier across their submitted purchases in FIFO order.
         """
         purchases = list(Purchase.objects.filter(supplier=supplier, status=PurchaseStatus.SUBMITTED).order_by("date", "id"))
-        payments = list(SupplierPayment.objects.filter(supplier=supplier).order_by("date", "id"))
-        returns = list(PurchaseReturn.objects.filter(supplier=supplier, refund_method=RefundMethod.PAYABLE_DEDUCTION).order_by("date", "id"))
+        payments = list(SupplierPayment.objects.filter(supplier=supplier, status=SupplierPaymentStatus.SUBMITTED).order_by("date", "id"))
 
         total_payment_pool = sum(p.amount for p in payments)
-        total_return_pool = sum(r.total_amount for r in returns)
 
         # 1. Reset each purchase to its initial upfront paid amount
         for p in purchases:
             p.paid_amount = p.initial_paid_amount
 
-        # 2. Apply return pool first, then payment pool
+        # 2. Allocate payment pool across purchases up to their remaining payable (taking returns into account)
         for p in purchases:
-            unpaid = p.grand_total - p.paid_amount
-            if unpaid > Decimal("0.00") and total_return_pool > Decimal("0.00"):
-                ret_alloc = min(total_return_pool, unpaid)
-                p.paid_amount += ret_alloc
-                total_return_pool -= ret_alloc
-                unpaid -= ret_alloc
-
+            p_returns = sum(r.total_amount for r in p.returns.filter(refund_method=RefundMethod.PAYABLE_DEDUCTION))
+            effective_total = max(Decimal("0.00"), p.grand_total - p_returns)
+            unpaid = max(Decimal("0.00"), effective_total - p.paid_amount)
             if unpaid > Decimal("0.00") and total_payment_pool > Decimal("0.00"):
                 pay_alloc = min(total_payment_pool, unpaid)
                 p.paid_amount += pay_alloc
                 total_payment_pool -= pay_alloc
-                unpaid -= pay_alloc
 
             p.save(update_fields=["paid_amount", "updated_at"])
 
     @staticmethod
-    def get_supplier_statement(supplier_id: int) -> Dict[str, Any]:
+    def get_supplier_statement(
+        supplier_id: int,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ) -> Dict[str, Any]:
         """
-        Computes total purchases, payments, returns, and net outstanding payable for a supplier.
+        Generates official supplier statement detailing opening balance, purchases, returns, payments,
+        running balance, and final outstanding payable.
         """
         supplier = Supplier.objects.get(pk=supplier_id)
 
-        purchases = Purchase.objects.filter(
-            supplier=supplier,
-            status=PurchaseStatus.SUBMITTED,
-        ).order_by("date", "id")
+        # 1. Calculate Opening Balance prior to start_date
+        opening_purchases = Decimal("0.00")
+        opening_upfront_paid = Decimal("0.00")
+        opening_returns = Decimal("0.00")
+        opening_payments = Decimal("0.00")
 
-        payments = SupplierPayment.objects.filter(
-            supplier=supplier,
-        ).order_by("date", "id")
+        if start_date:
+            prior_purchases = Purchase.objects.filter(supplier=supplier, status=PurchaseStatus.SUBMITTED, date__lt=start_date)
+            opening_purchases = sum(p.grand_total for p in prior_purchases) or Decimal("0.00")
+            opening_upfront_paid = sum(p.initial_paid_amount for p in prior_purchases) or Decimal("0.00")
 
-        returns = PurchaseReturn.objects.filter(
-            supplier=supplier,
-        ).order_by("date", "id")
+            prior_returns = PurchaseReturn.objects.filter(supplier=supplier, refund_method=RefundMethod.PAYABLE_DEDUCTION, date__lt=start_date)
+            opening_returns = sum(r.total_amount for r in prior_returns) or Decimal("0.00")
 
-        total_purchased = sum(p.grand_total for p in purchases) or Decimal("0.00")
-        total_paid_at_purchase = sum(p.initial_paid_amount for p in purchases) or Decimal("0.00")
-        total_standalone_payments = sum(pay.amount for pay in payments) or Decimal("0.00")
-        total_returns_deducted = sum(r.total_amount for r in returns if r.refund_method == RefundMethod.PAYABLE_DEDUCTION) or Decimal("0.00")
+            prior_payments = SupplierPayment.objects.filter(supplier=supplier, status=SupplierPaymentStatus.SUBMITTED, date__lt=start_date)
+            opening_payments = sum(pay.amount for pay in prior_payments) or Decimal("0.00")
 
-        total_paid = total_paid_at_purchase + total_standalone_payments
-        net_payable = max(Decimal("0.00"), total_purchased - total_paid - total_returns_deducted)
+        opening_balance = max(Decimal("0.00"), opening_purchases - opening_upfront_paid - opening_returns - opening_payments)
+
+        # 2. Fetch transactions within range
+        p_qs = Purchase.objects.filter(supplier=supplier, status=PurchaseStatus.SUBMITTED)
+        r_qs = PurchaseReturn.objects.filter(supplier=supplier)
+        pay_qs = SupplierPayment.objects.filter(supplier=supplier, status=SupplierPaymentStatus.SUBMITTED)
+
+        if start_date:
+            p_qs = p_qs.filter(date__gte=start_date)
+            r_qs = r_qs.filter(date__gte=start_date)
+            pay_qs = pay_qs.filter(date__gte=start_date)
+
+        if end_date:
+            p_qs = p_qs.filter(date__lte=end_date)
+            r_qs = r_qs.filter(date__lte=end_date)
+            pay_qs = pay_qs.filter(date__lte=end_date)
+
+        # 3. Interleave into chronological transaction rows
+        events = []
+        period_purchases = Decimal("0.00")
+        period_upfront_paid = Decimal("0.00")
+        period_returns = Decimal("0.00")
+        period_voucher_payments = Decimal("0.00")
+
+        for p in p_qs:
+            credit_amount = p.grand_total - p.initial_paid_amount
+            period_purchases += p.grand_total
+            period_upfront_paid += p.initial_paid_amount
+            if credit_amount > Decimal("0.00"):
+                events.append({
+                    "date": p.date,
+                    "created_at": p.created_at,
+                    "reference": p.purchase_number,
+                    "transaction_type": "PURCHASE",
+                    "description": f"Purchase Invoice ({p.items.count()} items)",
+                    "debit": 0.0,
+                    "credit": float(credit_amount),
+                })
+
+        for r in r_qs:
+            period_returns += r.total_amount
+            events.append({
+                "date": r.date,
+                "created_at": r.created_at,
+                "reference": r.return_number,
+                "transaction_type": "PURCHASE_RETURN",
+                "description": f"Purchase Return ({r.notes or 'Vendor Debit Note'})",
+                "debit": float(r.total_amount),
+                "credit": 0.0,
+            })
+
+        for pay in pay_qs:
+            period_voucher_payments += pay.amount
+            events.append({
+                "date": pay.date,
+                "created_at": pay.created_at,
+                "reference": pay.payment_number,
+                "transaction_type": "SUPPLIER_PAYMENT",
+                "description": f"Payment Voucher ({pay.get_payment_method_display()} - {pay.payment_account.name})",
+                "debit": float(pay.amount),
+                "credit": 0.0,
+            })
+
+        events.sort(key=lambda x: (x["date"], x["created_at"]))
+
+        running_balance = opening_balance
+        rows = []
+        for e in events:
+            debit_val = Decimal(str(e["debit"]))
+            credit_val = Decimal(str(e["credit"]))
+            running_balance += (credit_val - debit_val)
+
+            rows.append({
+                "date": str(e["date"]),
+                "reference": e["reference"],
+                "transaction_type": e["transaction_type"],
+                "description": e["description"],
+                "debit": float(debit_val),
+                "credit": float(credit_val),
+                "running_balance": float(max(Decimal("0.00"), running_balance)),
+            })
+
+        closing_payable = max(Decimal("0.00"), running_balance)
+        total_settled_paid = period_upfront_paid + period_voucher_payments
 
         return {
             "supplier_id": supplier.id,
             "supplier_name": supplier.name,
             "company_name": supplier.company_name,
-            "total_purchased": float(total_purchased),
-            "total_paid": float(total_paid),
-            "total_returns": float(total_returns_deducted),
-            "net_payable": float(net_payable),
+            "representative": supplier.name,
+            "phone": supplier.phone,
+            "email": supplier.email,
+            "start_date": str(start_date) if start_date else None,
+            "end_date": str(end_date) if end_date else None,
+            "summary": {
+                "opening_balance": float(opening_balance),
+                "total_purchases": float(period_purchases),
+                "upfront_paid": float(period_upfront_paid),
+                "voucher_payments": float(period_voucher_payments),
+                "total_payments": float(total_settled_paid),
+                "total_returns": float(period_returns),
+                "closing_payable": float(closing_payable),
+            },
+            "rows": rows,
+        }
+
+    @staticmethod
+    def get_supplier_payables_report(
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        supplier_id: Optional[int] = None,
+        payment_account_id: Optional[int] = None,
+        status_filter: Optional[str] = None,
+        transaction_type: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Consolidated master supplier payables and payments report.
+        """
+        suppliers_qs = Supplier.objects.filter(is_active=True)
+        if supplier_id:
+            suppliers_qs = suppliers_qs.filter(pk=supplier_id)
+
+        supplier_summaries = []
+        total_purchases_all = Decimal("0.00")
+        total_returns_all = Decimal("0.00")
+        total_paid_all = Decimal("0.00")
+        total_outstanding_all = Decimal("0.00")
+
+        for s in suppliers_qs:
+            stmt = PurchaseService.get_supplier_statement(s.id, start_date=start_date, end_date=end_date)
+            sum_data = stmt["summary"]
+
+            total_purchases_all += Decimal(str(sum_data["total_purchases"]))
+            total_returns_all += Decimal(str(sum_data["total_returns"]))
+            total_paid_all += Decimal(str(sum_data["total_payments"]))
+            total_outstanding_all += Decimal(str(sum_data["closing_payable"]))
+
+            supplier_summaries.append({
+                "supplier_id": s.id,
+                "supplier_name": s.name,
+                "company_name": s.company_name,
+                "phone": s.phone,
+                "opening_balance": sum_data["opening_balance"],
+                "total_purchases": sum_data["total_purchases"],
+                "total_returns": sum_data["total_returns"],
+                "total_payments": sum_data["total_payments"],
+                "outstanding_payable": sum_data["closing_payable"],
+            })
+
+        # Payment vouchers listing
+        pay_qs = SupplierPayment.objects.all().select_related("supplier", "payment_account", "created_by")
+        if start_date:
+            pay_qs = pay_qs.filter(date__gte=start_date)
+        if end_date:
+            pay_qs = pay_qs.filter(date__lte=end_date)
+        if supplier_id:
+            pay_qs = pay_qs.filter(supplier_id=supplier_id)
+        if payment_account_id:
+            pay_qs = pay_qs.filter(payment_account_id=payment_account_id)
+        if status_filter:
+            pay_qs = pay_qs.filter(status=status_filter)
+
+        payment_rows = []
+        for p in pay_qs:
+            payment_rows.append({
+                "id": p.id,
+                "payment_number": p.payment_number,
+                "date": str(p.date),
+                "supplier_id": p.supplier.id,
+                "supplier_name": p.supplier.name,
+                "company_name": p.supplier.company_name,
+                "amount": float(p.amount),
+                "payment_method": p.payment_method,
+                "payment_method_display": p.get_payment_method_display(),
+                "payment_account_name": p.payment_account.name,
+                "payment_account_code": p.payment_account.code,
+                "status": p.status,
+                "status_display": p.get_status_display(),
+                "reference": p.reference,
+                "journal_entry_number": p.journal_entry.entry_number if p.journal_entry else None,
+                "created_by_name": p.created_by.get_full_name() or p.created_by.username if p.created_by else "System",
+            })
+
+        return {
+            "summary": {
+                "total_suppliers": len(supplier_summaries),
+                "total_purchases": float(total_purchases_all),
+                "total_returns": float(total_returns_all),
+                "total_payments": float(total_paid_all),
+                "total_outstanding_payables": float(total_outstanding_all),
+            },
+            "supplier_summaries": supplier_summaries,
+            "payments": payment_rows,
         }
 
     @staticmethod

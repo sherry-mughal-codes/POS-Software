@@ -85,6 +85,9 @@ export interface PurchaseReturn {
   created_at: string;
 }
 
+export type SupplierPaymentStatus = 'DRAFT' | 'SUBMITTED' | 'CANCELLED';
+export type SupplierPaymentMethodType = 'CASH' | 'BANK' | 'CHEQUE';
+
 export interface SupplierPayment {
   id: number;
   payment_number: string;
@@ -93,23 +96,97 @@ export interface SupplierPayment {
   supplier_company?: string;
   date: string;
   amount: number;
-  payment_method: number;
-  payment_method_name: string;
+  payment_method: SupplierPaymentMethodType | string;
+  payment_method_display?: string;
   payment_account: number;
+  payment_account_name?: string;
+  payment_account_code?: string;
   reference?: string | null;
   notes?: string | null;
+  status: SupplierPaymentStatus;
+  status_display?: string;
+  journal_entry?: number | null;
+  journal_entry_number?: string | null;
+  reversal_journal_entry?: number | null;
+  created_by?: number | null;
   created_by_username?: string | null;
+  submitted_by?: number | null;
+  submitted_by_name?: string | null;
+  submitted_at?: string | null;
+  cancelled_by?: number | null;
+  cancelled_by_name?: string | null;
+  cancelled_at?: string | null;
+  cancellation_reason?: string | null;
   created_at: string;
+  updated_at?: string;
+}
+
+export interface SupplierPaymentCreatePayload {
+  supplier: number;
+  amount: number;
+  payment_method: SupplierPaymentMethodType;
+  payment_account: number;
+  date?: string;
+  reference?: string;
+  notes?: string;
+  submit_now?: boolean;
+}
+
+export interface SupplierStatementRow {
+  date: string;
+  reference: string;
+  transaction_type: 'PURCHASE' | 'PURCHASE_RETURN' | 'SUPPLIER_PAYMENT' | string;
+  description: string;
+  debit: number;
+  credit: number;
+  running_balance: number;
 }
 
 export interface SupplierStatement {
   supplier_id: number;
   supplier_name: string;
   company_name?: string;
-  total_purchased: number;
-  total_paid: number;
+  contact_person?: string;
+  phone?: string;
+  email?: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  summary: {
+    opening_balance: number;
+    total_purchases: number;
+    upfront_paid?: number;
+    voucher_payments?: number;
+    total_payments: number;
+    total_returns: number;
+    closing_payable: number;
+  };
+  rows: SupplierStatementRow[];
+}
+
+export interface SupplierPayableSummaryItem {
+  supplier_id: number;
+  supplier_name: string;
+  company_name?: string;
+  phone?: string;
+  opening_balance: number;
+  total_purchases: number;
+  upfront_paid?: number;
+  voucher_payments?: number;
+  total_payments: number;
   total_returns: number;
-  net_payable: number;
+  outstanding_payable: number;
+}
+
+export interface SupplierPayablesReport {
+  summary: {
+    total_suppliers: number;
+    total_purchases: number;
+    total_returns: number;
+    total_payments: number;
+    total_outstanding_payables: number;
+  };
+  supplier_summaries: SupplierPayableSummaryItem[];
+  payments: SupplierPayment[];
 }
 
 export interface PurchaseReportSummary {

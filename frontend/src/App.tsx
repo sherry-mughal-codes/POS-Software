@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
+import { ReportsCenterPage } from './pages/Reports/ReportsCenterPage';
 import { UsersPage } from './pages/Users/UsersPage';
 import { RolesPage } from './pages/Roles/RolesPage';
 import { AuditLogsPage } from './pages/Audit/AuditLogsPage';
@@ -12,6 +13,12 @@ import { CustomersPage } from './pages/Customers/CustomersPage';
 import { SuppliersPage } from './pages/Suppliers/SuppliersPage';
 import { PurchasesDashboardPage } from './pages/Purchases/PurchasesDashboardPage';
 import { InventoryDashboardPage } from './pages/Inventory/InventoryDashboardPage';
+import { POSTerminalPage } from './pages/POS/POSTerminalPage';
+import { SalesHistoryPage } from './pages/Sales/SalesHistoryPage';
+import { SalesReportPage } from './pages/Sales/SalesReportPage';
+import { ExpensesDashboardPage } from './pages/Expenses/ExpensesDashboardPage';
+import { EmployeesDashboardPage } from './pages/Employees/EmployeesDashboardPage';
+import { DaySessionsPage } from './pages/POS/DaySessionsPage';
 import { NotFoundPage } from './pages/NotFound/NotFoundPage';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { Can } from './components/auth/Can';
@@ -23,16 +30,14 @@ const AppContent: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [healthData, setHealthData] = useState<HealthCheckResponse | null>(null);
   const [healthLoading, setHealthLoading] = useState<boolean>(true);
-  const [healthError, setHealthError] = useState<string | null>(null);
 
   const fetchHealth = useCallback(async () => {
     setHealthLoading(true);
-    setHealthError(null);
     try {
       const data = await healthService.getHealth();
       setHealthData(data);
     } catch (err: any) {
-      setHealthError(err?.message || 'Failed to connect to Django API backend.');
+      console.error('Failed to connect to Django API backend:', err);
     } finally {
       setHealthLoading(false);
     }
@@ -65,13 +70,11 @@ const AppContent: React.FC = () => {
       onRefreshHealth={fetchHealth}
     >
       {currentTab === 'dashboard' && (
-        <DashboardPage
-          healthData={healthData}
-          loading={healthLoading}
-          error={healthError}
-          onRefresh={fetchHealth}
-          onNavigate={setCurrentTab}
-        />
+        <DashboardPage onNavigate={setCurrentTab} />
+      )}
+
+      {currentTab === 'reports' && (
+        <ReportsCenterPage onNavigate={setCurrentTab} />
       )}
 
       {currentTab === 'products' && (
@@ -92,6 +95,30 @@ const AppContent: React.FC = () => {
 
       {currentTab === 'suppliers' && (
         <SuppliersPage />
+      )}
+
+      {currentTab === 'register' && (
+        <POSTerminalPage />
+      )}
+
+      {currentTab === 'sales' && (
+        <SalesHistoryPage />
+      )}
+
+      {currentTab === 'sales-reports' && (
+        <SalesReportPage />
+      )}
+
+      {currentTab === 'expenses' && (
+        <ExpensesDashboardPage />
+      )}
+
+      {currentTab === 'employees' && (
+        <EmployeesDashboardPage />
+      )}
+
+      {currentTab === 'day-sessions' && (
+        <DaySessionsPage />
       )}
 
       {currentTab === 'accounting' && (
@@ -146,7 +173,7 @@ const AppContent: React.FC = () => {
         </Can>
       )}
 
-      {!['dashboard', 'products', 'purchases', 'inventory', 'customers', 'suppliers', 'accounting', 'users', 'roles', 'audit-logs'].includes(currentTab) && (
+      {!['dashboard', 'reports', 'products', 'purchases', 'inventory', 'register', 'sales', 'sales-reports', 'expenses', 'employees', 'day-sessions', 'customers', 'suppliers', 'accounting', 'users', 'roles', 'audit-logs'].includes(currentTab) && (
         <NotFoundPage onGoHome={() => setCurrentTab('dashboard')} />
       )}
     </MainLayout>

@@ -4,7 +4,9 @@ import {
   PurchaseCreatePayload,
   PurchaseReturn,
   SupplierPayment,
+  SupplierPaymentCreatePayload,
   SupplierStatement,
+  SupplierPayablesReport,
   PurchaseReportSummary,
 } from '../types/purchase';
 
@@ -52,25 +54,33 @@ export const purchaseService = {
   },
 
   // Supplier Payments
-  async getSupplierPayments(): Promise<SupplierPayment[]> {
-    const response = await apiClient.get<SupplierPayment[]>('/purchases/payments/');
+  async getSupplierPayments(params?: any): Promise<SupplierPayment[]> {
+    const response = await apiClient.get<SupplierPayment[]>('/purchases/payments/', { params });
     return response.data;
   },
 
-  async createSupplierPayment(data: {
-    supplier: number;
-    amount: number;
-    payment_method: number;
-    payment_account?: number;
-    reference?: string;
-    notes?: string;
-  }): Promise<SupplierPayment> {
+  async createSupplierPayment(data: SupplierPaymentCreatePayload): Promise<SupplierPayment> {
     const response = await apiClient.post<SupplierPayment>('/purchases/payments/', data);
     return response.data;
   },
 
-  async getSupplierStatement(supplierId: number): Promise<SupplierStatement> {
-    const response = await apiClient.get<SupplierStatement>(`/purchases/supplier-statement/${supplierId}/`);
+  async submitSupplierPayment(id: number): Promise<SupplierPayment> {
+    const response = await apiClient.post<SupplierPayment>(`/purchases/payments/${id}/submit/`);
+    return response.data;
+  },
+
+  async cancelSupplierPayment(id: number, reason: string): Promise<SupplierPayment> {
+    const response = await apiClient.post<SupplierPayment>(`/purchases/payments/${id}/cancel/`, { reason });
+    return response.data;
+  },
+
+  async getSupplierStatement(supplierId: number, params?: { start_date?: string; end_date?: string }): Promise<SupplierStatement> {
+    const response = await apiClient.get<SupplierStatement>(`/purchases/supplier-statement/${supplierId}/`, { params });
+    return response.data;
+  },
+
+  async getSupplierPayablesReport(params?: any): Promise<SupplierPayablesReport> {
+    const response = await apiClient.get<SupplierPayablesReport>('/purchases/reports/payables/', { params });
     return response.data;
   },
 
@@ -79,3 +89,4 @@ export const purchaseService = {
     return response.data;
   },
 };
+

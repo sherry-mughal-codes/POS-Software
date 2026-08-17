@@ -1,10 +1,14 @@
 """
-Customers & Suppliers Master Data Models.
+Customers & Suppliers Master Data Models and Customer Payment Vouchers.
 Single source of truth for all sales, purchases, receivables, and payables.
 """
 
+from decimal import Decimal
 from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
 from django.core.exceptions import ValidationError
+from apps.accounting.models import Account, JournalEntry
 
 
 class Customer(models.Model):
@@ -86,3 +90,130 @@ class Supplier(models.Model):
     def __str__(self):
         company = f" ({self.company_name})" if self.company_name else ""
         return f"[{self.supplier_id}] {self.name}{company}"
+
+
+class CustomerPaymentStatus(models.TextChoices):
+    DRAFT = "DRAFT", "Draft"
+    SUBMITTED = "SUBMITTED", "Submitted"
+    CANCELLED = "CANCELLED", "Cancelled"
+
+
+class CustomerPayment(models.Model):
+    """
+    Dedicated customer payment voucher reducing outstanding Accounts Receivable.
+    """
+    payment_number = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text="Unique payment receipt number (e.g. PAY-2026-00001)",
+    )
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.PROTECT,
+        related_name="payments",
+        db_index=True,
+        help_text="Customer making the payment",
+    )
+    date = models.DateField(default=timezone.now, db_index=True)
+    amount = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        help_text="Payment amount reducing receivable",
+    )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=[("CASH", "Cash"), ("BANK", "Bank Transfer"), ("CARD", "Credit / Debit Card")],
+        default="CASH",
+        db_index=True,
+    )
+    payment_account = models.ForeignKey(
+        Account,
+        on_delete=models.PROTECT,
+        related_name="customer_payments",
+        help_text="Debit Asset Account (e.g. Cash in Hand 1010, Bank 1020)",
+    )
+    reference = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Cheque # / Online Deposit Slip / POS Transaction ID",
+    )
+    notes = models.TextField(blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=CustomerPaymentStatus.choices,
+        default=CustomerPaymentStatus.SUBMITTED,
+        db_index=True,
+    )
+
+    # General Ledger links
+    journal_entry = models.ForeignKey(
+        JournalEntry,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="customer_payments",
+        help_text="Double-entry journal posting for this payment",
+    )
+    reversal_journal_entry = models.ForeignKey(
+        JournalEntry,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cancelled_customer_payments",
+        help_text="Reversal journal entry upon cancellation",
+    )
+
+    # Audit Trail
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_customer_payments",
+    )
+    submitted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="submitted_customer_payments",
+    )
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    cancelled_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cancelled_customer_payments_by",
+    )
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancellation_reason = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        verbose_name = "Customer Payment"
+        verbose_name_plural = "Customer Payments"
+
+    def __str__(self):
+        return f"{self.payment_number} -> {self.customer.name}: Rs. {self.amount} [{self.status}]"
+
+    @classmethod
+    def generate_payment_number(cls, target_date=None):
+        """Generates sequential format: PAY-YYYY-XXXXX"""
+        year = target_date.year if target_date else timezone.now().year
+        prefix = f"PAY-{year}-"
+        last_pay = cls.objects.filter(payment_number__startswith=prefix).order_by("-payment_number").first()
+        if last_pay:
+            try:
+                last_seq = int(last_pay.payment_number.split("-")[-1])
+                new_seq = last_seq + 1
+            except (ValueError, IndexError):
+                new_seq = 1
+        else:
+            new_seq = 1
+        return f"{prefix}{new_seq:05d}"

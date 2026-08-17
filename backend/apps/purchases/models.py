@@ -83,12 +83,13 @@ class Purchase(models.Model):
 
     @property
     def payable_amount(self) -> Decimal:
-        """Unpaid balance on this purchase."""
-        return max(Decimal("0.00"), self.grand_total - self.paid_amount)
+        """Unpaid balance on this purchase taking returns into account."""
+        returns_deducted = sum(r.total_amount for r in self.returns.filter(refund_method="PAYABLE_DEDUCTION")) or Decimal("0.00")
+        return max(Decimal("0.00"), self.grand_total - returns_deducted - self.paid_amount)
 
     @property
     def is_fully_paid(self) -> bool:
-        return self.paid_amount >= self.grand_total
+        return self.payable_amount <= Decimal("0.00")
 
 
 class PurchaseItem(models.Model):
@@ -183,6 +184,18 @@ class PurchaseReturnItem(models.Model):
         verbose_name_plural = "Purchase Return Items"
 
 
+class SupplierPaymentStatus(models.TextChoices):
+    DRAFT = "DRAFT", "Draft"
+    SUBMITTED = "SUBMITTED", "Submitted"
+    CANCELLED = "CANCELLED", "Cancelled"
+
+
+class SupplierPaymentMethodType(models.TextChoices):
+    CASH = "CASH", "Cash"
+    BANK = "BANK", "Bank Transfer"
+    CHEQUE = "CHEQUE", "Cheque"
+
+
 class SupplierPayment(models.Model):
     """
     Standalone payment voucher reducing outstanding supplier payables.
@@ -191,7 +204,7 @@ class SupplierPayment(models.Model):
         max_length=50,
         unique=True,
         db_index=True,
-        help_text="Unique supplier payment voucher (e.g. SPAY-2026-00001)",
+        help_text="Unique supplier payment voucher (e.g. SUP-PAY-2026-00001)",
     )
     supplier = models.ForeignKey(
         Supplier,
@@ -201,10 +214,11 @@ class SupplierPayment(models.Model):
     )
     date = models.DateField(default=timezone.now, db_index=True)
     amount = models.DecimalField(max_digits=14, decimal_places=2)
-    payment_method = models.ForeignKey(
-        PaymentMethod,
-        on_delete=models.PROTECT,
-        related_name="supplier_payments",
+    payment_method = models.CharField(
+        max_length=20,
+        choices=SupplierPaymentMethodType.choices,
+        default=SupplierPaymentMethodType.CASH,
+        db_index=True,
     )
     payment_account = models.ForeignKey(
         Account,
@@ -213,6 +227,32 @@ class SupplierPayment(models.Model):
     )
     reference = models.CharField(max_length=100, blank=True, null=True, help_text="Cheque # / Online Bank Reference")
     notes = models.TextField(blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=SupplierPaymentStatus.choices,
+        default=SupplierPaymentStatus.SUBMITTED,
+        db_index=True,
+    )
+
+    # General Ledger links
+    journal_entry = models.ForeignKey(
+        "accounting.JournalEntry",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="supplier_payments",
+        help_text="Double-entry journal posting for this payment",
+    )
+    reversal_journal_entry = models.ForeignKey(
+        "accounting.JournalEntry",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reversed_supplier_payments",
+        help_text="Reversal journal entry upon cancellation",
+    )
+
+    # Audit Trail
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -220,7 +260,26 @@ class SupplierPayment(models.Model):
         blank=True,
         related_name="created_supplier_payments",
     )
+    submitted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="submitted_supplier_payments",
+    )
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    cancelled_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cancelled_supplier_payments",
+    )
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancellation_reason = models.TextField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-date", "-id"]
@@ -228,4 +287,21 @@ class SupplierPayment(models.Model):
         verbose_name_plural = "Supplier Payments"
 
     def __str__(self):
-        return f"{self.payment_number} -> {self.supplier.company_name or self.supplier.name}: Rs. {self.amount}"
+        return f"{self.payment_number} -> {self.supplier.company_name or self.supplier.name}: Rs. {self.amount} [{self.status}]"
+
+    @classmethod
+    def generate_payment_number(cls, target_date=None) -> str:
+        """Generates sequential format: SUP-PAY-YYYY-XXXXX"""
+        year = target_date.year if target_date else timezone.now().year
+        prefix = f"SUP-PAY-{year}-"
+        last_pay = cls.objects.filter(payment_number__startswith=prefix).order_by("-payment_number").first()
+        if last_pay:
+            try:
+                last_seq = int(last_pay.payment_number.split("-")[-1])
+                new_seq = last_seq + 1
+            except (ValueError, IndexError):
+                new_seq = cls.objects.count() + 1
+        else:
+            new_seq = 1
+        return f"{prefix}{new_seq:05d}"
+

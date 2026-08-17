@@ -16,6 +16,7 @@ from apps.purchases.serializers import (
     PurchaseReturnSerializer,
     PurchaseReturnCreateSerializer,
     SupplierPaymentSerializer,
+    SupplierPaymentCreateSerializer,
 )
 from apps.purchases.services import PurchaseService
 from apps.contacts.models import Supplier
@@ -146,50 +147,100 @@ class SupplierPaymentViewSet(viewsets.ModelViewSet):
     """
     Supplier Standalone Payments API.
     """
-    queryset = SupplierPayment.objects.all().select_related("supplier", "payment_method", "created_by")
+    queryset = SupplierPayment.objects.all().select_related("supplier", "payment_account", "journal_entry", "reversal_journal_entry", "created_by", "submitted_by", "cancelled_by")
     serializer_class = SupplierPaymentSerializer
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ["create", "update", "partial_update", "destroy"]:
+        if self.action in ["create", "update", "partial_update", "destroy", "submit", "cancel"]:
             return [IsAdminOrManager()]
         return [IsAuthenticated()]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        supplier_id = self.request.query_params.get("supplier")
+        status_filter = self.request.query_params.get("status")
+        payment_method = self.request.query_params.get("payment_method")
+        payment_account_id = self.request.query_params.get("payment_account")
+        start_date = self.request.query_params.get("start_date")
+        end_date = self.request.query_params.get("end_date")
+
+        if supplier_id:
+            qs = qs.filter(supplier_id=supplier_id)
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if payment_method:
+            qs = qs.filter(payment_method=payment_method)
+        if payment_account_id:
+            qs = qs.filter(payment_account_id=payment_account_id)
+        if start_date:
+            qs = qs.filter(date__gte=start_date)
+        if end_date:
+            qs = qs.filter(date__lte=end_date)
+        return qs
+
     def create(self, request, *args, **kwargs):
-        supplier_id = request.data.get("supplier")
-        amount = request.data.get("amount")
-        method_id = request.data.get("payment_method")
-        account_id = request.data.get("payment_account")
-        reference = request.data.get("reference", "")
-        notes = request.data.get("notes", "")
-
-        if not supplier_id or not amount or not method_id:
-            return Response({"detail": "Supplier, Amount, and Payment Method are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        supplier = Supplier.objects.get(pk=supplier_id)
-        pm = PaymentMethod.objects.get(pk=method_id)
-        
-        acc = None
-        if account_id:
-            candidate = Account.objects.filter(pk=account_id).first()
-            if candidate and candidate.code != "1000":
-                acc = candidate
-        if not acc:
-            acc = pm.linked_account or Account.objects.filter(code="1010").first()
+        serializer = SupplierPaymentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
         try:
+            supplier = Supplier.objects.get(pk=data["supplier"])
+            acc = Account.objects.get(pk=data["payment_account"])
+
             payment = PurchaseService.record_supplier_payment(
                 supplier=supplier,
-                amount=amount,
-                payment_method=pm,
+                amount=data["amount"],
+                payment_method=data.get("payment_method", "CASH"),
                 payment_account=acc,
-                reference=reference,
-                notes=notes,
+                payment_date=data.get("date"),
+                reference=data.get("reference", ""),
+                notes=data.get("notes", ""),
+                submit_now=data.get("submit_now", True),
                 created_by=request.user,
             )
             return Response(SupplierPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
         except Exception as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], url_path="submit")
+    def submit(self, request, pk=None):
+        payment = self.get_object()
+        try:
+            updated = PurchaseService.submit_supplier_payment(payment, user=request.user)
+            return Response(SupplierPaymentSerializer(updated).data)
+        except Exception as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], url_path="cancel")
+    def cancel(self, request, pk=None):
+        payment = self.get_object()
+        reason = request.data.get("reason", "").strip()
+        if not reason:
+            return Response({"detail": "Cancellation reason is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            updated = PurchaseService.cancel_supplier_payment(payment, user=request.user, reason=reason)
+            return Response(SupplierPaymentSerializer(updated).data)
+        except Exception as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=["get"], url_path="report")
+    def report(self, request):
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+        supplier_id = request.query_params.get("supplier")
+        payment_account_id = request.query_params.get("payment_account")
+        status_val = request.query_params.get("status")
+
+        report_data = PurchaseService.get_supplier_payables_report(
+            start_date=start_date,
+            end_date=end_date,
+            supplier_id=supplier_id,
+            payment_account_id=payment_account_id,
+            status_filter=status_val,
+        )
+        return Response(report_data)
 
 
 class SupplierStatementView(APIView):
@@ -199,11 +250,43 @@ class SupplierStatementView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, supplier_id):
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+
         try:
-            statement = PurchaseService.get_supplier_statement(supplier_id)
+            statement = PurchaseService.get_supplier_statement(
+                supplier_id=supplier_id,
+                start_date=start_date,
+                end_date=end_date,
+            )
             return Response(statement)
         except Supplier.DoesNotExist:
             return Response({"detail": "Supplier not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SupplierPayablesReportView(APIView):
+    """
+    Consolidated Master Supplier Payables & Payments Report.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+        supplier_id = request.query_params.get("supplier")
+        payment_account_id = request.query_params.get("payment_account")
+        status_val = request.query_params.get("status")
+
+        report = PurchaseService.get_supplier_payables_report(
+            start_date=start_date,
+            end_date=end_date,
+            supplier_id=supplier_id,
+            payment_account_id=payment_account_id,
+            status_filter=status_val,
+        )
+        return Response(report)
 
 
 class PurchaseReportView(APIView):
@@ -225,3 +308,4 @@ class PurchaseReportView(APIView):
             status_filter=status_val,
         )
         return Response(report)
+

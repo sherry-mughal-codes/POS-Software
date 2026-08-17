@@ -85,6 +85,12 @@ class StockMovement(models.Model):
     def __str__(self):
         return f"{self.product.sku} | {self.movement_type} | {self.quantity} @ Rs. {self.unit_cost}"
 
+    def save(self, *args, **kwargs):
+        if self.pk is None and (self.balance_after is None or self.balance_after == Decimal("0.00")):
+            current_total = StockMovement.objects.filter(product=self.product).aggregate(t=models.Sum("quantity"))["t"] or Decimal("0.00")
+            self.balance_after = current_total + self.quantity
+        super().save(*args, **kwargs)
+
     @classmethod
     def get_current_stock(cls, product_id: int) -> float:
         """Returns total on-hand stock for a product."""

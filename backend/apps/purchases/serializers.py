@@ -167,8 +167,14 @@ class PurchaseReturnCreateSerializer(serializers.Serializer):
 class SupplierPaymentSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source="supplier.name", read_only=True)
     supplier_company = serializers.CharField(source="supplier.company_name", read_only=True)
-    payment_method_name = serializers.CharField(source="payment_method.name", read_only=True)
+    payment_method_display = serializers.CharField(source="get_payment_method_display", read_only=True)
+    payment_account_name = serializers.CharField(source="payment_account.name", read_only=True)
+    payment_account_code = serializers.CharField(source="payment_account.code", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
+    submitted_by_name = serializers.SerializerMethodField()
+    cancelled_by_name = serializers.SerializerMethodField()
+    journal_entry_number = serializers.CharField(source="journal_entry.entry_number", read_only=True)
     amount = serializers.DecimalField(max_digits=14, decimal_places=2, coerce_to_string=False)
 
     class Meta:
@@ -182,10 +188,67 @@ class SupplierPaymentSerializer(serializers.ModelSerializer):
             "date",
             "amount",
             "payment_method",
-            "payment_method_name",
+            "payment_method_display",
             "payment_account",
+            "payment_account_name",
+            "payment_account_code",
             "reference",
             "notes",
+            "status",
+            "status_display",
+            "journal_entry",
+            "journal_entry_number",
+            "reversal_journal_entry",
+            "created_by",
             "created_by_username",
+            "submitted_by",
+            "submitted_by_name",
+            "submitted_at",
+            "cancelled_by",
+            "cancelled_by_name",
+            "cancelled_at",
+            "cancellation_reason",
             "created_at",
+            "updated_at",
         ]
+        read_only_fields = [
+            "id",
+            "payment_number",
+            "status",
+            "journal_entry",
+            "reversal_journal_entry",
+            "created_by",
+            "submitted_by",
+            "submitted_at",
+            "cancelled_by",
+            "cancelled_at",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_submitted_by_name(self, obj):
+        if obj.submitted_by:
+            return obj.submitted_by.get_full_name() or obj.submitted_by.username
+        return None
+
+    def get_cancelled_by_name(self, obj):
+        if obj.cancelled_by:
+            return obj.cancelled_by.get_full_name() or obj.cancelled_by.username
+        return None
+
+
+class SupplierPaymentCreateSerializer(serializers.Serializer):
+    supplier = serializers.IntegerField(required=True)
+    amount = serializers.DecimalField(max_digits=14, decimal_places=2, required=True)
+    payment_method = serializers.ChoiceField(choices=["CASH", "BANK", "CHEQUE"], default="CASH")
+    payment_account = serializers.IntegerField(required=True)
+    date = serializers.DateField(required=False)
+    reference = serializers.CharField(required=False, allow_blank=True, default="")
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
+    submit_now = serializers.BooleanField(required=False, default=True)
+
+    def validate_amount(self, value):
+        if value <= Decimal("0.00"):
+            raise serializers.ValidationError("Payment amount must be greater than zero.")
+        return value
+

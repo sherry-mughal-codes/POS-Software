@@ -1,15 +1,24 @@
 """
-API views for Customers and Suppliers Master Data.
+API views for Customers, Suppliers, and Customer Payments.
 """
 
 from rest_framework import viewsets, status
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import models
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
-from apps.contacts.models import Customer, Supplier
-from apps.contacts.serializers import CustomerSerializer, SupplierSerializer
+from apps.contacts.models import Customer, Supplier, CustomerPayment, CustomerPaymentStatus
+from apps.contacts.serializers import (
+    CustomerSerializer,
+    SupplierSerializer,
+    CustomerPaymentSerializer,
+    CustomerPaymentCreateSerializer,
+)
+from apps.contacts.services import CustomerReceivableService
 from apps.core.permissions import IsAdminOrManager
 
 
@@ -22,7 +31,6 @@ class CustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        # Allow Cashiers to view and register new customers at checkout
         if self.action in ["destroy", "toggle_status"]:
             return [IsAdminOrManager()]
         return [IsAuthenticated()]
@@ -104,6 +112,26 @@ class CustomerViewSet(viewsets.ModelViewSet):
             "detail": f"Customer '{customer.name}' is now {'active' if customer.is_active else 'inactive'}.",
         })
 
+    @action(detail=True, methods=["get"], url_path="statement")
+    def statement(self, request, pk=None):
+        """Generates comprehensive chronological statement of account for customer."""
+        customer = self.get_object()
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+        statement_data = CustomerReceivableService.get_customer_statement(
+            customer_id=customer.id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        return Response(statement_data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"], url_path="outstanding")
+    def outstanding(self, request, pk=None):
+        """Returns authoritative current outstanding receivable balance calculation."""
+        customer = self.get_object()
+        data = CustomerReceivableService.get_customer_outstanding(customer.id)
+        return Response(data, status=status.HTTP_200_OK)
+
 
 class SupplierViewSet(viewsets.ModelViewSet):
     """
@@ -162,3 +190,102 @@ class SupplierViewSet(viewsets.ModelViewSet):
             "is_active": supplier.is_active,
             "detail": f"Supplier '{supplier.name}' is now {'active' if supplier.is_active else 'inactive'}.",
         })
+
+
+class CustomerPaymentViewSet(viewsets.ModelViewSet):
+    """
+    CRUD and workflow operations for Customer Payments against Accounts Receivable.
+    """
+    queryset = CustomerPayment.objects.all().select_related("customer", "payment_account", "created_by", "submitted_by", "cancelled_by")
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CustomerPaymentCreateSerializer
+        return CustomerPaymentSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        customer_id = self.request.query_params.get("customer")
+        status_filter = self.request.query_params.get("status")
+        payment_method = self.request.query_params.get("payment_method")
+        date_from = self.request.query_params.get("date_from")
+        date_to = self.request.query_params.get("date_to")
+        search = self.request.query_params.get("search")
+
+        if customer_id:
+            qs = qs.filter(customer_id=customer_id)
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if payment_method:
+            qs = qs.filter(payment_method=payment_method)
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+        if search:
+            qs = qs.filter(
+                models.Q(payment_number__icontains=search)
+                | models.Q(customer__name__icontains=search)
+                | models.Q(reference__icontains=search)
+            )
+
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        serializer = CustomerPaymentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        submit_now = serializer.validated_data.pop("submit_now", True)
+
+        try:
+            payment = CustomerReceivableService.create_payment(
+                data=serializer.validated_data,
+                user=request.user,
+                submit_now=submit_now,
+            )
+            output_serializer = CustomerPaymentSerializer(payment)
+            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+        except (DjangoValidationError, DRFValidationError) as e:
+            return Response({"detail": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], url_path="submit")
+    def submit(self, request, pk=None):
+        """Submits a draft payment voucher and creates Accounts Receivable journal entry."""
+        payment = self.get_object()
+        try:
+            submitted_payment = CustomerReceivableService.submit_payment(payment=payment, user=request.user)
+            return Response(CustomerPaymentSerializer(submitted_payment).data, status=status.HTTP_200_OK)
+        except (DjangoValidationError, DRFValidationError) as e:
+            return Response({"detail": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], url_path="cancel")
+    def cancel(self, request, pk=None):
+        """Cancels a payment voucher and posts Accounts Receivable counter-reversal."""
+        payment = self.get_object()
+        reason = request.data.get("reason", "").strip()
+        try:
+            cancelled_payment = CustomerReceivableService.cancel_payment(payment=payment, user=request.user, reason=reason)
+            return Response(CustomerPaymentSerializer(cancelled_payment).data, status=status.HTTP_200_OK)
+        except (DjangoValidationError, DRFValidationError) as e:
+            return Response({"detail": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomerReceivablesReportView(APIView):
+    """
+    Master analytical report for Customer Accounts Receivable and Outstanding balances.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+        customer_id = request.query_params.get("customer")
+        status_param = request.query_params.get("status")
+
+        report_data = CustomerReceivableService.get_receivables_report(
+            start_date=start_date,
+            end_date=end_date,
+            customer_id=int(customer_id) if customer_id else None,
+            status=status_param,
+        )
+        return Response(report_data, status=status.HTTP_200_OK)
