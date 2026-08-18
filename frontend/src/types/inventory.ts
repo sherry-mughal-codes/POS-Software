@@ -1,4 +1,4 @@
-export type StockStatus = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+export type StockStatus = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'STOCK_FREE';
 
 export type AdjustmentType = 'IN' | 'OUT';
 
@@ -20,6 +20,7 @@ export interface InventorySummaryItem {
   category_name: string;
   unit_name: string;
   unit_abbr: string;
+  maintain_stock?: boolean;
   current_stock: number;
   min_stock_level: number;
   stock_status: StockStatus;

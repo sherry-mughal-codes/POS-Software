@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Printer,
+  Sliders,
 } from 'lucide-react';
 import { Modal } from '../../../components/common/Modal';
 import { Button } from '../../../components/common/Button';
 import { Sale } from '../../../types/sales';
 import { useSettings } from '../../../context/SettingsContext';
+import { printThermalElement } from '../../../utils/printReceipt';
 
 interface POSReceiptModalProps {
   isOpen: boolean;
@@ -35,19 +37,27 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
     autoPrintReceipt,
   } = useSettings();
 
+  const [paperWidth, setPaperWidth] = useState<'80mm' | '58mm'>('80mm');
+
   useEffect(() => {
     if (isOpen && sale && autoPrintReceipt) {
       const timer = setTimeout(() => {
-        window.print();
-      }, 500);
+        printThermalElement('pos-thermal-receipt', {
+          paperWidth,
+          title: `Receipt_${sale.invoice_number}`,
+        });
+      }, 400);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, sale, autoPrintReceipt]);
+  }, [isOpen, sale, autoPrintReceipt, paperWidth]);
 
   if (!sale) return null;
 
   const handlePrint = () => {
-    window.print();
+    printThermalElement('pos-thermal-receipt', {
+      paperWidth,
+      title: `Receipt_${sale.invoice_number}`,
+    });
   };
 
   return (
@@ -55,25 +65,78 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Receipt: ${sale.invoice_number}`}
-      maxWidth="440px"
+      maxWidth="460px"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        {/* Paper Size Preset Switcher */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          backgroundColor: 'var(--bg-app)',
+          padding: '0.5rem 0.75rem',
+          borderRadius: '0.5rem',
+          border: '1px solid var(--border-subtle)',
+        }}>
+          <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <Sliders size={14} /> Slip Width:
+          </span>
+          <div style={{ display: 'flex', gap: '0.375rem' }}>
+            <button
+              onClick={() => setPaperWidth('80mm')}
+              style={{
+                padding: '0.25rem 0.625rem',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                borderRadius: '0.375rem',
+                border: '1px solid',
+                borderColor: paperWidth === '80mm' ? 'var(--primary-400)' : 'var(--border-subtle)',
+                backgroundColor: paperWidth === '80mm' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                color: paperWidth === '80mm' ? 'var(--primary-400)' : 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              80mm (Standard POS)
+            </button>
+            <button
+              onClick={() => setPaperWidth('58mm')}
+              style={{
+                padding: '0.25rem 0.625rem',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                borderRadius: '0.375rem',
+                border: '1px solid',
+                borderColor: paperWidth === '58mm' ? 'var(--primary-400)' : 'var(--border-subtle)',
+                backgroundColor: paperWidth === '58mm' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                color: paperWidth === '58mm' ? 'var(--primary-400)' : 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              58mm (Small)
+            </button>
+          </div>
+        </div>
+
         {/* Printable Receipt Paper Container */}
         <div
           id="pos-thermal-receipt"
+          className="pos-thermal-receipt"
           style={{
             backgroundColor: '#ffffff',
             color: '#111827',
-            padding: '1.5rem',
+            padding: '1.25rem 1rem',
             borderRadius: '0.5rem',
             fontFamily: "'Courier New', Courier, monospace",
-            fontSize: '0.8125rem',
-            lineHeight: 1.4,
+            fontSize: paperWidth === '58mm' ? '0.75rem' : '0.8125rem',
+            lineHeight: 1.35,
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+            width: '100%',
+            maxWidth: paperWidth === '58mm' ? '320px' : '380px',
+            margin: '0 auto',
           }}
         >
           {/* Header & Logo */}
-          <div style={{ textAlign: 'center', marginBottom: '1rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.75rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '0.875rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.75rem' }}>
             {companyLogo && (
               <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
                 <img
@@ -215,7 +278,7 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
               fontWeight: 700,
             }}
           >
-            Print Receipt (Ctrl+P)
+            Print Slip ({paperWidth})
           </Button>
         </div>
       </div>

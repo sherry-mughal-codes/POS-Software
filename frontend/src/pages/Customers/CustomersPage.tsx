@@ -18,6 +18,7 @@ import {
   RotateCcw,
   BarChart3,
   Printer,
+  TrendingDown,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -855,7 +856,7 @@ export const CustomersPage: React.FC = () => {
           ) : receivablesReport ? (
             <>
               {/* KPI Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 <div className="glass-card" style={{ padding: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Outstanding Receivables</span>
@@ -871,6 +872,32 @@ export const CustomersPage: React.FC = () => {
 
                 <div className="glass-card" style={{ padding: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Credit Invoiced</span>
+                    <CreditCard size={18} style={{ color: 'var(--primary-400)' }} />
+                  </div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+                    Rs. {formatMoney(receivablesReport.summary.total_credit_sales)}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Net Invoiced: Rs. {formatMoney(receivablesReport.summary.net_credit_invoiced ?? (receivablesReport.summary.total_credit_sales - (receivablesReport.summary.total_sales_returns || 0)))}
+                  </div>
+                </div>
+
+                <div className="glass-card" style={{ padding: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Returns Deductions</span>
+                    <TrendingDown size={18} style={{ color: 'var(--info)' }} />
+                  </div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--info)', fontFamily: 'var(--font-mono)' }}>
+                    Rs. {formatMoney(receivablesReport.summary.total_sales_returns || 0)}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Sales return credits & allowances
+                  </div>
+                </div>
+
+                <div className="glass-card" style={{ padding: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Payments Collected</span>
                     <CheckCircle size={18} style={{ color: 'var(--success)' }} />
                   </div>
@@ -879,19 +906,6 @@ export const CustomersPage: React.FC = () => {
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                     Cleared via cash/bank receipts
-                  </div>
-                </div>
-
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Credit Invoiced</span>
-                    <CreditCard size={18} style={{ color: 'var(--primary-400)' }} />
-                  </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
-                    Rs. {formatMoney(receivablesReport.summary.total_credit_sales)}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Across {receivablesReport.summary.total_registered_customers} Registered Customers
                   </div>
                 </div>
               </div>

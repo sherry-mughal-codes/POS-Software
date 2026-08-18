@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Store, Clock, RefreshCw, LogOut } from 'lucide-react';
 import { Badge } from '../common/Badge';
+import { Modal } from '../common/Modal';
+import { Button } from '../common/Button';
 import { HealthCheckResponse } from '../../types/api';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../context/SettingsContext';
@@ -15,6 +17,8 @@ export const Header: React.FC<HeaderProps> = ({ healthData, loading, onRefresh }
   const { user, logout } = useAuth();
   const { companyName, companyLogo, companyAddress } = useSettings();
   const [timeStr, setTimeStr] = useState<string>('');
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isHealthy = healthData?.status === 'healthy';
 
   useEffect(() => {
@@ -201,7 +205,7 @@ export const Header: React.FC<HeaderProps> = ({ healthData, loading, onRefresh }
             </div>
 
             <button
-              onClick={() => logout()}
+              onClick={() => setIsLogoutModalOpen(true)}
               title="Sign Out"
               style={{
                 background: 'transparent',
@@ -229,6 +233,75 @@ export const Header: React.FC<HeaderProps> = ({ healthData, loading, onRefresh }
           </div>
         )}
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        isOpen={isLogoutModalOpen}
+        onClose={() => !isLoggingOut && setIsLogoutModalOpen(false)}
+        title="Confirm Sign Out"
+        subtitle="Are you sure you want to end your current session?"
+        maxWidth="420px"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            padding: '0.875rem 1rem',
+            backgroundColor: 'var(--danger-bg)',
+            border: '1px solid var(--danger-border)',
+            borderRadius: '0.5rem',
+            color: 'var(--text-main)',
+            fontSize: '0.875rem',
+          }}>
+            <div style={{
+              width: '2.5rem',
+              height: '2.5rem',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--danger)',
+              flexShrink: 0,
+            }}>
+              <LogOut size={20} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: '0.125rem' }}>Logging out of ApexPOS</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                You will need to enter your username and password to log in again. Any active open day sessions will remain safely recorded.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <Button
+              variant="outline"
+              onClick={() => setIsLogoutModalOpen(false)}
+              disabled={isLoggingOut}
+            >
+              Cancel (Stay Logged In)
+            </Button>
+            <Button
+              variant="danger"
+              icon={<LogOut size={15} />}
+              loading={isLoggingOut}
+              onClick={async () => {
+                setIsLoggingOut(true);
+                try {
+                  await logout();
+                } finally {
+                  setIsLoggingOut(false);
+                  setIsLogoutModalOpen(false);
+                }
+              }}
+            >
+              Yes, Sign Out
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </header>
   );
 };

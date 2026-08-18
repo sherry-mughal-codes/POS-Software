@@ -413,16 +413,19 @@ class CustomerReceivableService:
 
         rows = []
         grand_total_sales = Decimal("0.00")
+        grand_total_returns = Decimal("0.00")
         grand_total_payments = Decimal("0.00")
         grand_total_outstanding = Decimal("0.00")
 
         for cust in customers_qs:
             info = cls.get_customer_outstanding(cust.id)
             sales = info["total_credit_sales"]
+            returns = info.get("total_returns", Decimal("0.00"))
             payments = info["total_payments"]
             outstanding = info["outstanding_balance"]
 
             grand_total_sales += sales
+            grand_total_returns += returns
             grand_total_payments += payments
             grand_total_outstanding += outstanding
 
@@ -433,6 +436,7 @@ class CustomerReceivableService:
                 "phone": cust.phone or "-",
                 "credit_enabled": cust.credit_enabled,
                 "total_credit_sales": float(sales),
+                "total_returns": float(returns),
                 "total_payments": float(payments),
                 "outstanding_balance": float(outstanding),
                 "status": "Paid" if outstanding == 0 else "Outstanding",
@@ -442,6 +446,8 @@ class CustomerReceivableService:
             "summary": {
                 "total_registered_customers": customers_qs.count(),
                 "total_credit_sales": float(grand_total_sales),
+                "total_sales_returns": float(grand_total_returns),
+                "net_credit_invoiced": float(grand_total_sales - grand_total_returns),
                 "total_payments_collected": float(grand_total_payments),
                 "total_outstanding_receivables": float(grand_total_outstanding),
             },

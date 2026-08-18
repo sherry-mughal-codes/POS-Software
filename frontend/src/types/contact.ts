@@ -148,6 +148,8 @@ export interface ReceivablesReportRow {
 export interface ReceivablesReportSummary {
   total_registered_customers: number;
   total_credit_sales: number;
+  total_sales_returns?: number;
+  net_credit_invoiced?: number;
   total_payments_collected: number;
   total_outstanding_receivables: number;
 }

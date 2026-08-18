@@ -133,16 +133,22 @@ class InventoryService:
         summary_list = []
 
         for p in products:
-            stock = cls.get_product_stock(p.id)
-            wac = StockMovement.get_weighted_average_cost(p.id)
-            min_stock = Decimal(str(p.min_stock_level or 0))
-
-            if stock <= Decimal("0.00"):
-                status = "OUT_OF_STOCK"
-            elif stock <= min_stock:
-                status = "LOW_STOCK"
+            if not p.maintain_stock:
+                stock = Decimal("0.00")
+                wac = Decimal(str(p.purchase_price or "0.00"))
+                min_stock = Decimal("0.00")
+                status = "STOCK_FREE"
             else:
-                status = "IN_STOCK"
+                stock = cls.get_product_stock(p.id)
+                wac = Decimal(str(StockMovement.get_weighted_average_cost(p.id)))
+                min_stock = Decimal(str(p.min_stock_level or 0))
+
+                if stock <= Decimal("0.00"):
+                    status = "OUT_OF_STOCK"
+                elif stock <= min_stock:
+                    status = "LOW_STOCK"
+                else:
+                    status = "IN_STOCK"
 
             summary_list.append({
                 "product_id": p.id,
@@ -153,6 +159,7 @@ class InventoryService:
                 "category_name": p.category.name if p.category else "Uncategorized",
                 "unit_name": p.unit.name if p.unit else "",
                 "unit_abbr": p.unit.short_code if p.unit else "",
+                "maintain_stock": p.maintain_stock,
                 "current_stock": float(stock),
                 "min_stock_level": float(min_stock),
                 "stock_status": status,

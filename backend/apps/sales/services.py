@@ -134,15 +134,20 @@ class SalesService:
                 raise ValidationError(f"Quantity for '{prod.name}' must be greater than zero.")
 
             # Stock check
-            current_stock = InventoryService.get_product_stock(prod.id)
-            if current_stock < qty:
-                raise ValidationError(
-                    f"Insufficient stock for '{prod.name}'. Available on-hand: {current_stock} {prod.unit.short_code if prod.unit else ''}, Requested: {qty}"
-                )
+            if prod.maintain_stock:
+                current_stock = InventoryService.get_product_stock(prod.id)
+                if current_stock < qty:
+                    raise ValidationError(
+                        f"Insufficient stock for '{prod.name}'. Available on-hand: {current_stock} {prod.unit.short_code if prod.unit else ''}, Requested: {qty}"
+                    )
+                unit_cost = Decimal(str(StockMovement.get_weighted_average_cost(prod.id)))
+                total_cogs += (qty * unit_cost)
+            else:
+                current_stock = Decimal("0.00")
+                unit_cost = Decimal(str(prod.purchase_price or "0.00"))
 
             # Price and cost snapshot
             unit_price = Decimal(str(row.get("unit_price", prod.selling_price)))
-            unit_cost = Decimal(str(StockMovement.get_weighted_average_cost(prod.id)))
             line_disc = Decimal(str(row.get("discount", 0)))
 
             line_subtotal = (qty * unit_price) - line_disc
@@ -150,7 +155,6 @@ class SalesService:
                 line_subtotal = Decimal("0.00")
 
             subtotal += line_subtotal
-            total_cogs += (qty * unit_cost)
 
             validated_items.append({
                 "product": prod,
@@ -221,19 +225,20 @@ class SalesService:
                 subtotal=v["subtotal"],
             )
 
-            # Record stock decrement movement
-            balance_after = v["current_stock"] - v["quantity"]
-            StockMovement.objects.create(
-                product=v["product"],
-                movement_type=MovementType.SALE,
-                quantity=-v["quantity"],
-                unit_cost=v["unit_cost"],
-                balance_after=balance_after,
-                reference_type="SALE",
-                reference_id=sale.invoice_number,
-                notes=f"POS Sale to {customer.name} ({sale.invoice_number})",
-                created_by=created_by,
-            )
+            # Record stock decrement movement if maintain_stock is True
+            if v["product"].maintain_stock:
+                balance_after = v["current_stock"] - v["quantity"]
+                StockMovement.objects.create(
+                    product=v["product"],
+                    movement_type=MovementType.SALE,
+                    quantity=-v["quantity"],
+                    unit_cost=v["unit_cost"],
+                    balance_after=balance_after,
+                    reference_type="SALE",
+                    reference_id=sale.invoice_number,
+                    notes=f"POS Sale to {customer.name} ({sale.invoice_number})",
+                    created_by=created_by,
+                )
 
         # 6. Record Payment Breakdown
         if payments_breakdown:
@@ -464,19 +469,20 @@ class SalesService:
                 subtotal=v["subtotal"],
             )
 
-            # Stock return movement (+Qty)
-            current_stock = InventoryService.get_product_stock(v["product"].id)
-            StockMovement.objects.create(
-                product=v["product"],
-                movement_type=MovementType.SALE_RETURN,
-                quantity=v["quantity"],
-                unit_cost=v["unit_cost"],
-                balance_after=current_stock + v["quantity"],
-                reference_type="SALE_RETURN",
-                reference_id=sales_return.return_number,
-                notes=f"Sales Return: {sales_return.return_number} (Orig: {sale.invoice_number})",
-                created_by=created_by,
-            )
+            # Stock return movement (+Qty) if maintain_stock is True
+            if v["product"].maintain_stock:
+                current_stock = InventoryService.get_product_stock(v["product"].id)
+                StockMovement.objects.create(
+                    product=v["product"],
+                    movement_type=MovementType.SALE_RETURN,
+                    quantity=v["quantity"],
+                    unit_cost=v["unit_cost"],
+                    balance_after=current_stock + v["quantity"],
+                    reference_type="SALE_RETURN",
+                    reference_id=sales_return.return_number,
+                    notes=f"Sales Return: {sales_return.return_number} (Orig: {sale.invoice_number})",
+                    created_by=created_by,
+                )
 
         # General Ledger Accounting Reversal
         cls._post_sales_return_accounting(sales_return, total_refund, total_returned_cogs, created_by)

@@ -415,6 +415,9 @@ export const ProductCatalogPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                   <Badge variant="phase">{p.category_name || 'Unassigned'}</Badge>
                   <Badge variant="info">{p.unit_name || 'Unit'} ({p.unit_code || 'pcs'})</Badge>
+                  {p.maintain_stock === false && (
+                    <Badge variant="warning">Stock-Free / Service</Badge>
+                  )}
                 </div>
 
                 {/* Barcode */}
@@ -508,7 +511,12 @@ export const ProductCatalogPage: React.FC = () => {
                       </code>
                     </td>
                     <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                      {p.name}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span>{p.name}</span>
+                        {p.maintain_stock === false && (
+                          <Badge variant="warning">Stock-Free</Badge>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '0.875rem 1rem' }}>
                       <Badge variant="phase">{p.category_name || 'Unassigned'}</Badge>

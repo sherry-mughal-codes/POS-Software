@@ -116,6 +116,11 @@ class Product(models.Model):
         default=Decimal("10.00"),
         help_text="Minimum threshold level for low-stock alerts",
     )
+    maintain_stock = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="When unchecked (Do not maintain stock), this product is stock-free/service and stock levels are not restricted.",
+    )
     image = models.ImageField(upload_to="products/", null=True, blank=True)
     image_url = models.URLField(max_length=500, null=True, blank=True, help_text="External / fallback image URL")
     description = models.TextField(blank=True, null=True)

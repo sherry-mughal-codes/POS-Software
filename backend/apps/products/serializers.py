@@ -55,6 +55,7 @@ class ProductSerializer(serializers.ModelSerializer):
     profit_margin_percentage = serializers.FloatField(read_only=True)
     opening_stock = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, write_only=True, default=Decimal("0.00"))
     current_stock = serializers.SerializerMethodField()
+    maintain_stock = serializers.BooleanField(required=False, default=True)
 
     class Meta:
         model = Product
@@ -73,6 +74,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "purchase_price",
             "selling_price",
             "min_stock_level",
+            "maintain_stock",
             "opening_stock",
             "current_stock",
             "profit_margin_amount",
@@ -86,13 +88,15 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
     def get_current_stock(self, obj) -> float:
+        if not obj.maintain_stock:
+            return 0.0
         from apps.inventory.services import InventoryService
         return float(InventoryService.get_product_stock(obj.id))
 
     def create(self, validated_data):
         opening_stock = validated_data.pop("opening_stock", Decimal("0.00"))
         product = super().create(validated_data)
-        if opening_stock and Decimal(str(opening_stock)) > Decimal("0.00"):
+        if product.maintain_stock and opening_stock and Decimal(str(opening_stock)) > Decimal("0.00"):
             request = self.context.get("request")
             user = request.user if request and request.user.is_authenticated else None
             from apps.inventory.models import StockMovement, MovementType

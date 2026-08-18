@@ -38,6 +38,7 @@ export interface Product {
   profit_margin_amount?: number;
   profit_margin_percentage?: number;
   min_stock_level?: number;
+  maintain_stock?: boolean;
   opening_stock?: number;
   current_stock?: number;
   image?: string | null;

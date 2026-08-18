@@ -34,6 +34,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [sellingPrice, setSellingPrice] = useState('0');
   const [openingStock, setOpeningStock] = useState('0');
   const [minStockLevel, setMinStockLevel] = useState('10');
+  const [doNotMaintainStock, setDoNotMaintainStock] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
@@ -54,6 +55,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setSellingPrice(productToEdit.selling_price.toString());
         setOpeningStock(productToEdit.current_stock ? productToEdit.current_stock.toString() : '0');
         setMinStockLevel(productToEdit.min_stock_level ? productToEdit.min_stock_level.toString() : '10');
+        setDoNotMaintainStock(productToEdit.maintain_stock === false);
         setImageUrl(productToEdit.image_url || '');
         setDescription(productToEdit.description || '');
         setIsActive(productToEdit.is_active);
@@ -66,6 +68,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setSellingPrice('0');
         setOpeningStock('0');
         setMinStockLevel('10');
+        setDoNotMaintainStock(false);
         setImageUrl('');
         setDescription('');
         setIsActive(true);
@@ -104,13 +107,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       unit: parseInt(unitId, 10),
       purchase_price: pPrice,
       selling_price: sPrice,
-      min_stock_level: parseFloat(minStockLevel) || 10,
+      min_stock_level: doNotMaintainStock ? 0 : (parseFloat(minStockLevel) || 10),
+      maintain_stock: !doNotMaintainStock,
       image_url: imageUrl.trim() || null,
       description: description.trim() || null,
       is_active: isActive,
     };
 
-    if (!productToEdit) {
+    if (!productToEdit && !doNotMaintainStock) {
       payload.opening_stock = parseFloat(openingStock) || 0;
     }
 
@@ -297,31 +301,65 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <Package size={15} color="var(--primary-400)" />
             <span>Inventory Balance & Stock Controls</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input
-              label="Opening Quantity / Initial Stock"
-              type="number"
-              step="any"
-              min="0"
-              value={openingStock}
-              onChange={(e) => setOpeningStock(e.target.value)}
-              disabled={!!productToEdit}
-              helperText={
-                productToEdit
-                  ? `Current on-hand: ${openingStock} units (adjust via Stock Adjustments).`
-                  : 'Auto-initializes inventory balance & valuation report.'
-              }
+
+          {/* Do not maintain stock checkbox */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginBottom: doNotMaintainStock ? '0' : '0.875rem',
+            padding: '0.625rem 0.875rem',
+            backgroundColor: doNotMaintainStock ? 'rgba(56, 189, 248, 0.12)' : 'var(--bg-elevated)',
+            border: '1px solid',
+            borderColor: doNotMaintainStock ? 'var(--info-border)' : 'var(--border-subtle)',
+            borderRadius: '0.5rem',
+          }}>
+            <input
+              type="checkbox"
+              id="do_not_maintain_stock"
+              checked={doNotMaintainStock}
+              onChange={(e) => setDoNotMaintainStock(e.target.checked)}
+              style={{ width: '1.125rem', height: '1.125rem', accentColor: 'var(--primary-500)', cursor: 'pointer' }}
             />
-            <Input
-              label="Low Stock Alert Threshold"
-              type="number"
-              step="any"
-              min="0"
-              value={minStockLevel}
-              onChange={(e) => setMinStockLevel(e.target.value)}
-              helperText="Alerts manager when stock drops below this level."
-            />
+            <div>
+              <label htmlFor="do_not_maintain_stock" style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)', cursor: 'pointer' }}>
+                Do not maintain stock (Stock-free / Service Product)
+              </label>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {doNotMaintainStock
+                  ? '✓ Stock tracking is disabled. Unlimited sales allowed at POS. Revenue, receivables, and accounting ledgers update 100% on every sale.'
+                  : 'Check this if this product is a service, repair, digital, or untracked product where on-hand quantity is not restricted.'}
+              </div>
+            </div>
           </div>
+
+          {!doNotMaintainStock && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.75rem' }}>
+              <Input
+                label="Opening Quantity / Initial Stock"
+                type="number"
+                step="any"
+                min="0"
+                value={openingStock}
+                onChange={(e) => setOpeningStock(e.target.value)}
+                disabled={!!productToEdit}
+                helperText={
+                  productToEdit
+                    ? `Current on-hand: ${openingStock} units (adjust via Stock Adjustments).`
+                    : 'Auto-initializes inventory balance & valuation report.'
+                }
+              />
+              <Input
+                label="Low Stock Alert Threshold"
+                type="number"
+                step="any"
+                min="0"
+                value={minStockLevel}
+                onChange={(e) => setMinStockLevel(e.target.value)}
+                helperText="Alerts manager when stock drops below this level."
+              />
+            </div>
+          )}
         </div>
 
         {/* Row 5: Image URL & Preview */}

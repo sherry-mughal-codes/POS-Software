@@ -217,8 +217,9 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
           </div>
         ) : (
           filteredProducts.map((p) => {
-            const isOutOfStock = p.current_stock <= 0;
-            const isLowStock = !isOutOfStock && p.current_stock <= p.min_stock_level;
+            const isStockFree = p.maintain_stock === false || p.stock_status === 'STOCK_FREE';
+            const isOutOfStock = !isStockFree && p.current_stock <= 0;
+            const isLowStock = !isStockFree && !isOutOfStock && p.current_stock <= p.min_stock_level;
 
             return (
               <div
@@ -233,7 +234,7 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                   opacity: isOutOfStock ? 0.55 : 1,
                   transition: 'all 0.15s ease',
                   backgroundColor: 'var(--bg-card)',
-                  border: isOutOfStock ? '1px dashed var(--danger)' : '1px solid var(--border-subtle)',
+                  border: isOutOfStock ? '1px dashed var(--danger)' : isStockFree ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid var(--border-subtle)',
                   position: 'relative',
                   padding: '0.5rem',
                   gap: '0.375rem',
@@ -249,7 +250,7 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                 onMouseLeave={(e) => {
                   if (!isOutOfStock) {
                     e.currentTarget.style.transform = 'none';
-                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                    e.currentTarget.style.borderColor = isStockFree ? 'rgba(56, 189, 248, 0.35)' : 'var(--border-subtle)';
                     e.currentTarget.style.boxShadow = 'none';
                     e.currentTarget.style.backgroundColor = 'var(--bg-card)';
                   }
@@ -267,11 +268,25 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                     position: 'relative',
                   }}
                 >
-                  <Package size={24} style={{ color: 'var(--text-subtle)' }} />
+                  <Package size={24} style={{ color: isStockFree ? 'var(--primary-400)' : 'var(--text-subtle)' }} />
 
                   {/* Stock Pill Badge */}
                   <div style={{ position: 'absolute', top: '0.25rem', right: '0.25rem' }}>
-                    {isOutOfStock ? (
+                    {isStockFree ? (
+                      <span
+                        style={{
+                          fontSize: '0.625rem',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                          color: 'var(--primary-400)',
+                          border: '1px solid var(--info-border)',
+                          padding: '0.1rem 0.3rem',
+                          borderRadius: '0.25rem',
+                        }}
+                      >
+                        Service
+                      </span>
+                    ) : isOutOfStock ? (
                       <span
                         style={{
                           fontSize: '0.625rem',
@@ -297,16 +312,16 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                           borderRadius: '0.25rem',
                         }}
                       >
-                        {p.current_stock}
+                        Low ({p.current_stock})
                       </span>
                     ) : (
                       <span
                         style={{
                           fontSize: '0.625rem',
-                          fontWeight: 700,
-                          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                          fontWeight: 600,
+                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
                           color: 'var(--success)',
-                          border: '1px solid var(--success)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
                           padding: '0.1rem 0.3rem',
                           borderRadius: '0.25rem',
                         }}

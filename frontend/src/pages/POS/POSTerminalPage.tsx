@@ -109,16 +109,43 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
     }
   };
 
-  // Global F9 keyboard shortcut to trigger checkout
+  // Global F9 & Ctrl+Enter keyboard shortcut to trigger checkout
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F9' && cart.length > 0 && !isCheckoutOpen && !isReceiptOpen && activeSession) {
+      const isF9 = e.key === 'F9' || e.code === 'F9' || e.keyCode === 120;
+      const isCtrlEnter = (e.ctrlKey || e.metaKey) && (e.key === 'Enter' || e.code === 'Enter');
+
+      if (isF9 || isCtrlEnter) {
         e.preventDefault();
-        setIsCheckoutOpen(true);
+        e.stopPropagation();
+
+        if (isReceiptOpen) return;
+
+        if (!activeSession) {
+          setOpenDayError('Please open the business day session before processing sales.');
+          setIsOpenDayModalOpen(true);
+          return;
+        }
+
+        if (cart.length === 0) {
+          const searchInput = document.querySelector('input[placeholder*="Search by product name"]') as HTMLInputElement;
+          if (searchInput) {
+            searchInput.focus();
+          }
+          return;
+        }
+
+        if (!isCheckoutOpen) {
+          setIsCheckoutOpen(true);
+        }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
   }, [cart.length, isCheckoutOpen, isReceiptOpen, activeSession]);
 
   // Cart handlers
@@ -129,13 +156,14 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
       return;
     }
 
-    if (prod.current_stock <= 0) return;
+    const isStockFree = prod.maintain_stock === false || prod.stock_status === 'STOCK_FREE';
+    if (!isStockFree && prod.current_stock <= 0) return;
 
     setCart((prevCart) => {
       const existingIndex = prevCart.findIndex((item) => item.product_id === prod.product_id);
       if (existingIndex > -1) {
         const existing = prevCart[existingIndex];
-        const newQty = Math.min(existing.quantity + 1, prod.current_stock);
+        const newQty = isStockFree ? existing.quantity + 1 : Math.min(existing.quantity + 1, prod.current_stock);
         const updated = [...prevCart];
         updated[existingIndex] = {
           ...existing,
@@ -152,7 +180,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
           unit_name: prod.unit_name,
           unit_abbr: prod.unit_abbr,
           unit_price: prod.selling_price,
-          available_stock: prod.current_stock,
+          available_stock: isStockFree ? 999999 : prod.current_stock,
           quantity: 1,
           discount: 0,
           subtotal: prod.selling_price,

@@ -32,6 +32,79 @@ const formatMoney = (val: number | string | undefined | null): string => {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+/**
+ * Calculates the 5 closest smart cash payment bill amounts (rounded up)
+ * based on standard currency notes (e.g. 50, 100, 500, 1000, 5000)
+ */
+const getSmartCashSuggestions = (total: number): number[] => {
+  if (total <= 0) return [100, 500, 1000, 2000, 5000];
+
+  const suggestions: Set<number> = new Set();
+
+  if (total < 100) {
+    const ceil20 = Math.ceil(total / 20) * 20;
+    if (ceil20 > total) suggestions.add(ceil20);
+    const ceil50 = Math.ceil(total / 50) * 50;
+    if (ceil50 > total) suggestions.add(ceil50);
+    const ceil100 = Math.ceil(total / 100) * 100;
+    if (ceil100 > total) suggestions.add(ceil100);
+    suggestions.add(200);
+    suggestions.add(500);
+    suggestions.add(1000);
+  } else if (total < 500) {
+    const ceil50 = Math.ceil(total / 50) * 50;
+    if (ceil50 > total) suggestions.add(ceil50);
+    const ceil100 = Math.ceil(total / 100) * 100;
+    if (ceil100 > total) suggestions.add(ceil100);
+    const ceil200 = Math.ceil(total / 200) * 200;
+    if (ceil200 > total) suggestions.add(ceil200);
+    suggestions.add(500);
+    suggestions.add(1000);
+    suggestions.add(2000);
+  } else if (total < 1000) {
+    const ceil100 = Math.ceil(total / 100) * 100;
+    if (ceil100 > total) suggestions.add(ceil100);
+    const ceil500 = Math.ceil(total / 500) * 500;
+    if (ceil500 > total) suggestions.add(ceil500);
+    suggestions.add(1000);
+    suggestions.add(1500);
+    suggestions.add(2000);
+    suggestions.add(5000);
+  } else if (total < 5000) {
+    const ceil500 = Math.ceil(total / 500) * 500;
+    if (ceil500 > total) suggestions.add(ceil500);
+    const ceil1000 = Math.ceil(total / 1000) * 1000;
+    if (ceil1000 > total) suggestions.add(ceil1000);
+    const next1000 = Math.ceil((total + 1000) / 1000) * 1000;
+    if (next1000 > total) suggestions.add(next1000);
+    const ceil5000 = Math.ceil(total / 5000) * 5000;
+    if (ceil5000 > total) suggestions.add(ceil5000);
+    suggestions.add(5000);
+    suggestions.add(10000);
+  } else {
+    // total >= 5000 (e.g. 6167 -> 6500, 7000, 8000, 10000, 15000)
+    const ceil500 = Math.ceil(total / 500) * 500;
+    if (ceil500 > total) suggestions.add(ceil500);
+    const ceil1000 = Math.ceil(total / 1000) * 1000;
+    if (ceil1000 > total) suggestions.add(ceil1000);
+    const next1000 = Math.ceil((total + 1000) / 1000) * 1000;
+    if (next1000 > total) suggestions.add(next1000);
+    const ceil5000 = Math.ceil(total / 5000) * 5000;
+    if (ceil5000 > total) suggestions.add(ceil5000);
+    const next5000 = Math.ceil((total + 5000) / 5000) * 5000;
+    if (next5000 > total) suggestions.add(next5000);
+    const ceil10k = Math.ceil(total / 10000) * 10000;
+    if (ceil10k > total) suggestions.add(ceil10k);
+    suggestions.add(Math.ceil((total + 10000) / 10000) * 10000);
+  }
+
+  const sorted = Array.from(suggestions)
+    .filter((amt) => amt > total)
+    .sort((a, b) => a - b);
+
+  return sorted.slice(0, 5);
+};
+
 export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
   isOpen,
   onClose,
@@ -71,6 +144,23 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
   const handleQuickCash = (amount: number) => {
     setCashTendered(amount.toString());
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleModalKeyDown = (e: KeyboardEvent) => {
+      const isF9 = e.key === 'F9' || e.code === 'F9' || e.keyCode === 120;
+      if (isF9 && !loading) {
+        e.preventDefault();
+        e.stopPropagation();
+        const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+        handleSubmit(fakeEvent);
+      }
+    };
+
+    window.addEventListener('keydown', handleModalKeyDown, true);
+    return () => window.removeEventListener('keydown', handleModalKeyDown, true);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,36 +411,49 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
               />
             </div>
 
-            {/* Quick cash pills */}
+            {/* Smart Dynamic Cash Denomination Pills */}
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={() => handleQuickCash(grandTotal)}
-                style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                style={{
+                  padding: '0.375rem 0.625rem',
+                  borderRadius: '0.375rem',
+                  border: '1px solid',
+                  borderColor: tenderedNumber === grandTotal ? 'var(--primary-400)' : 'var(--border-subtle)',
+                  backgroundColor: tenderedNumber === grandTotal ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-card)',
+                  color: tenderedNumber === grandTotal ? 'var(--primary-400)' : 'var(--text-main)',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
               >
                 Exact (Rs. {formatMoney(grandTotal)})
               </button>
-              <button
-                type="button"
-                onClick={() => handleQuickCash(500)}
-                style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Rs. 500
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickCash(1000)}
-                style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Rs. 1,000
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickCash(5000)}
-                style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Rs. 5,000
-              </button>
+
+              {getSmartCashSuggestions(grandTotal).map((suggestionAmount) => {
+                const isSelected = tenderedNumber === suggestionAmount;
+                return (
+                  <button
+                    key={suggestionAmount}
+                    type="button"
+                    onClick={() => handleQuickCash(suggestionAmount)}
+                    style={{
+                      padding: '0.375rem 0.625rem',
+                      borderRadius: '0.375rem',
+                      border: '1px solid',
+                      borderColor: isSelected ? 'var(--primary-400)' : 'var(--border-subtle)',
+                      backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-card)',
+                      color: isSelected ? 'var(--primary-400)' : 'var(--text-main)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Rs. {formatMoney(suggestionAmount)}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Change Banner */}
