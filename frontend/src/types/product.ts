@@ -35,8 +35,11 @@ export interface Product {
   allow_decimal: boolean;
   purchase_price: number;
   selling_price: number;
-  profit_margin_amount: number;
-  profit_margin_percentage: number;
+  profit_margin_amount?: number;
+  profit_margin_percentage?: number;
+  min_stock_level?: number;
+  opening_stock?: number;
+  current_stock?: number;
   image?: string | null;
   image_url?: string | null;
   description?: string | null;
@@ -50,4 +53,21 @@ export interface ProductFilterParams {
   category?: number | string;
   unit?: number | string;
   is_active?: boolean;
+}
+
+export interface BulkImportResult {
+  total_rows: number;
+  created_count: number;
+  skipped_count: number;
+  errors: string[];
+  created_products: {
+    id: number;
+    sku: string;
+    name: string;
+    category: string;
+    unit: string;
+    purchase_price: number;
+    selling_price: number;
+    opening_stock: number;
+  }[];
 }

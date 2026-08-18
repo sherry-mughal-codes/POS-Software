@@ -10,9 +10,16 @@ from django.dispatch import receiver
 
 class UserProfile(models.Model):
     """
-    Extends standard Django User with POS-specific attributes without duplicating employee master data.
+    Extends standard Django User with POS-specific attributes, company branch affiliation, and data scope boundaries.
     """
+    DATA_SCOPE_CHOICES = [
+        ("ALL_COMPANY", "All Company Data"),
+        ("OWN_DATA", "Own User / Terminal Data Only"),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    company = models.CharField(max_length=150, default="ApexPOS Enterprise Store", blank=True, null=True, help_text="Assigned company or store branch")
+    data_scope = models.CharField(max_length=50, default="ALL_COMPANY", choices=DATA_SCOPE_CHOICES, help_text="Data visibility boundary")
     phone = models.CharField(max_length=30, blank=True, null=True)
     pin_code = models.CharField(max_length=6, blank=True, null=True, help_text="Fast POS terminal unlock PIN")
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)

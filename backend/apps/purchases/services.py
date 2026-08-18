@@ -87,6 +87,8 @@ class PurchaseService:
         paid_amount: Decimal = Decimal("0.00"),
         payment_method: Optional[PaymentMethod] = None,
         payment_account: Optional[Account] = None,
+        supplier_invoice_number: Optional[str] = None,
+        supplier_invoice_file: Optional[str] = None,
         notes: str = "",
         created_by=None,
         submit_immediately: bool = True,
@@ -132,6 +134,8 @@ class PurchaseService:
             paid_amount=paid,
             payment_method=payment_method,
             payment_account=payment_account,
+            supplier_invoice_number=supplier_invoice_number or "",
+            supplier_invoice_file=supplier_invoice_file or "",
             notes=notes,
             created_by=created_by,
         )
@@ -177,7 +181,7 @@ class PurchaseService:
         if purchase.status == PurchaseStatus.CANCELLED:
             raise ValidationError("Cannot submit a cancelled purchase order.")
 
-        # 1. Create Stock Movements
+        # 1. Create Stock Movements & Update Latest Product Catalog Purchase Price
         for item in purchase.items.all():
             StockMovement.objects.create(
                 product=item.product,
@@ -188,6 +192,11 @@ class PurchaseService:
                 reference_id=purchase.purchase_number,
                 notes=f"Purchase from {purchase.supplier.name} ({purchase.purchase_number})",
             )
+            # Synchronize latest cost rate into Product Catalog
+            prod = item.product
+            if prod.purchase_price != item.purchase_rate:
+                prod.purchase_price = item.purchase_rate
+                prod.save(update_fields=["purchase_price", "updated_at"])
 
         # 2. Lookup standard accounting accounts
         inventory_acc = Account.objects.filter(code="1040").first() or Account.objects.get(code="1040")

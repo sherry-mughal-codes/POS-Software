@@ -1,4 +1,6 @@
 export interface UserProfile {
+  company?: string | null;
+  data_scope?: string | null;
   phone?: string | null;
   pin_code?: string | null;
   notes?: string | null;
@@ -38,6 +40,11 @@ export interface Role {
   user_count: number;
 }
 
+export interface CreateRoleData {
+  name: string;
+  permission_ids?: number[];
+}
+
 export interface AuditLogEntry {
   id: number;
   user: number | null;
@@ -62,6 +69,8 @@ export interface CreateUserData {
   first_name?: string;
   last_name?: string;
   password?: string;
+  company?: string;
+  data_scope?: string;
   phone?: string;
   pin_code?: string;
   roles?: number[];
@@ -73,6 +82,8 @@ export interface UpdateUserData {
   first_name?: string;
   last_name?: string;
   password?: string;
+  company?: string;
+  data_scope?: string;
   phone?: string;
   pin_code?: string;
   roles?: number[];

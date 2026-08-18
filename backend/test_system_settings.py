@@ -27,6 +27,8 @@ def run_tests():
     admin_user = User.objects.filter(is_superuser=True).first()
     factory = APIRequestFactory()
 
+    SystemSetting.set_setting("currency_symbol", "Rs.", description="Store currency symbol", group="pos")
+
     # -------------------------------------------------------------
     # Test 1: Fetch Default System Settings via GET
     # -------------------------------------------------------------

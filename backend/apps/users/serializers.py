@@ -42,7 +42,7 @@ class RoleSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ["phone", "pin_code", "notes", "created_at", "updated_at"]
+        fields = ["company", "data_scope", "phone", "pin_code", "notes", "created_at", "updated_at"]
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -88,11 +88,16 @@ class UserSerializer(serializers.ModelSerializer):
         return list(obj.get_all_permissions())
 
 
+import re
+
 class UserCreateUpdateSerializer(serializers.ModelSerializer):
     """
-    Serializer for creating and updating users with password handling and role assignment.
+    Serializer for creating and updating users with password handling, company scope, and role assignment.
     """
-    password = serializers.CharField(write_only=True, required=False, validators=[validate_password])
+    username = serializers.CharField(max_length=150, required=True)
+    password = serializers.CharField(write_only=True, required=False, min_length=4)
+    company = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    data_scope = serializers.CharField(write_only=True, required=False, allow_blank=True)
     phone = serializers.CharField(write_only=True, required=False, allow_blank=True)
     pin_code = serializers.CharField(write_only=True, required=False, allow_blank=True)
     roles = serializers.PrimaryKeyRelatedField(
@@ -113,13 +118,30 @@ class UserCreateUpdateSerializer(serializers.ModelSerializer):
             "password",
             "is_active",
             "is_staff",
+            "company",
+            "data_scope",
             "phone",
             "pin_code",
             "roles",
         ]
 
+    def validate_username(self, value):
+        if value:
+            # Clean and sanitize username by replacing whitespace with underscore
+            cleaned = re.sub(r"\s+", "_", value.strip().lower())
+            instance = getattr(self, "instance", None)
+            qs = User.objects.filter(username__iexact=cleaned)
+            if instance:
+                qs = qs.exclude(pk=instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(f"The username '{cleaned}' is already taken.")
+            return cleaned
+        return value
+
     def create(self, validated_data):
         password = validated_data.pop("password", None)
+        company = validated_data.pop("company", "ApexPOS Enterprise Store")
+        data_scope = validated_data.pop("data_scope", "ALL_COMPANY")
         phone = validated_data.pop("phone", "")
         pin_code = validated_data.pop("pin_code", "")
         roles = validated_data.pop("roles", [])
@@ -142,6 +164,8 @@ class UserCreateUpdateSerializer(serializers.ModelSerializer):
 
         # Update profile
         if hasattr(user, "profile"):
+            user.profile.company = company
+            user.profile.data_scope = data_scope
             user.profile.phone = phone
             user.profile.pin_code = pin_code
             user.profile.save()
@@ -150,6 +174,8 @@ class UserCreateUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
+        company = validated_data.pop("company", None)
+        data_scope = validated_data.pop("data_scope", None)
         phone = validated_data.pop("phone", None)
         pin_code = validated_data.pop("pin_code", None)
         roles = validated_data.pop("roles", None)
@@ -167,6 +193,10 @@ class UserCreateUpdateSerializer(serializers.ModelSerializer):
 
         # Update profile
         if hasattr(instance, "profile"):
+            if company is not None:
+                instance.profile.company = company
+            if data_scope is not None:
+                instance.profile.data_scope = data_scope
             if phone is not None:
                 instance.profile.phone = phone
             if pin_code is not None:

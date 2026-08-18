@@ -58,7 +58,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
         contactService.getNextSupplierId().then((res) => {
           setSupplierId(res.next_id);
         }).catch(() => {
-          setSupplierId(`SUP-${Math.floor(100000 + Math.random() * 900000)}`);
+          setSupplierId('SUP-000001');
         });
       }
     }
@@ -105,14 +105,14 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={supplierToEdit ? `Edit Supplier: ${supplierToEdit.company_name || supplierToEdit.name}` : 'Register New Supplier'}
-      subtitle="Canonical vendor master record for purchase orders, inventory restocking, and accounts payable."
+      title={supplierToEdit ? `Edit Supplier (${supplierToEdit.supplier_id})` : 'Register New Supplier'}
+      maxWidth="650px"
     >
       {error && (
         <div style={{
           padding: '0.75rem 1rem',
-          backgroundColor: 'var(--danger-bg)',
-          border: '1px solid var(--danger-border)',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid var(--danger)',
           borderRadius: '0.5rem',
           color: 'var(--danger)',
           fontSize: '0.8125rem',
@@ -130,7 +130,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
           <Input
             label="Supplier ID *"
-            placeholder="e.g. SUP-000006"
+            placeholder="e.g. SUP-000001"
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
             required
@@ -153,7 +153,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
           />
           <Input
             label="Phone Number"
-            placeholder="e.g. +92 42 111 2653"
+            placeholder="+92 300 1234567"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />

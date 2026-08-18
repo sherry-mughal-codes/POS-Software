@@ -31,6 +31,8 @@ export interface Purchase {
   payment_method?: number | null;
   payment_method_name?: string | null;
   payment_account?: number | null;
+  supplier_invoice_number?: string | null;
+  supplier_invoice_file?: string | null;
   notes?: string | null;
   created_by?: number | null;
   created_by_username?: string | null;
@@ -47,6 +49,8 @@ export interface PurchaseCreatePayload {
   paid_amount?: number;
   payment_method?: number | null;
   payment_account?: number | null;
+  supplier_invoice_number?: string | null;
+  supplier_invoice_file?: string | null;
   notes?: string;
   submit_immediately?: boolean;
   items: {

@@ -23,6 +23,33 @@ import { settingsService, SystemSettingsPayload } from '../../services/settingsS
 
 type SettingsTab = 'store' | 'pos' | 'inventory' | 'accounting' | 'system';
 
+interface CurrencyOption {
+  code: string;
+  symbol: string;
+  name: string;
+  country: string;
+}
+
+const CURRENCY_OPTIONS: CurrencyOption[] = [
+  { code: 'PKR', symbol: 'Rs.', name: 'Pakistani Rupee', country: 'Pakistan' },
+  { code: 'USD', symbol: '$', name: 'US Dollar', country: 'United States' },
+  { code: 'EUR', symbol: '€', name: 'Euro', country: 'European Union' },
+  { code: 'GBP', symbol: '£', name: 'British Pound', country: 'United Kingdom' },
+  { code: 'SAR', symbol: 'SAR', name: 'Saudi Riyal', country: 'Saudi Arabia' },
+  { code: 'AED', symbol: 'AED', name: 'UAE Dirham', country: 'United Arab Emirates' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee', country: 'India' },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', country: 'Canada' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', country: 'Australia' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', country: 'China' },
+  { code: 'TRY', symbol: '₺', name: 'Turkish Lira', country: 'Turkey' },
+  { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka', country: 'Bangladesh' },
+  { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit', country: 'Malaysia' },
+  { code: 'OMR', symbol: 'OMR', name: 'Omani Rial', country: 'Oman' },
+  { code: 'QAR', symbol: 'QAR', name: 'Qatari Riyal', country: 'Qatar' },
+  { code: 'KWD', symbol: 'KWD', name: 'Kuwaiti Dinar', country: 'Kuwait' },
+  { code: 'BHD', symbol: 'BHD', name: 'Bahraini Dinar', country: 'Bahrain' },
+];
+
 export const SettingsPage: React.FC = () => {
   const { updateSettings: ctxUpdateSettings } = useSettings();
   const [activeTab, setActiveTab] = useState<SettingsTab>('store');
@@ -375,6 +402,52 @@ export const SettingsPage: React.FC = () => {
                   onChange={(e) => handleChange('tax_id', e.target.value)}
                   placeholder="e.g. NTN-0891234-7"
                 />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
+                  Store Currency (Standard Dropdown)
+                </label>
+                <select
+                  value={
+                    CURRENCY_OPTIONS.some((c) => c.code === formData.currency_code)
+                      ? formData.currency_code
+                      : 'CUSTOM'
+                  }
+                  onChange={(e) => {
+                    const selectedCode = e.target.value;
+                    if (selectedCode === 'CUSTOM') {
+                      return;
+                    }
+                    const opt = CURRENCY_OPTIONS.find((c) => c.code === selectedCode);
+                    if (opt) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        currency_code: opt.code,
+                        currency_symbol: opt.symbol,
+                      }));
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.375rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                  }}
+                >
+                  {CURRENCY_OPTIONS.map((c) => (
+                    <option key={c.code} value={c.code} style={{ backgroundColor: 'var(--bg-sidebar)', color: '#fff' }}>
+                      {c.name} ({c.symbol} - {c.code}) - {c.country}
+                    </option>
+                  ))}
+                  <option value="CUSTOM" style={{ backgroundColor: 'var(--bg-sidebar)', color: '#fff' }}>
+                    Custom Currency (Manual Entry)
+                  </option>
+                </select>
               </div>
 
               <div>

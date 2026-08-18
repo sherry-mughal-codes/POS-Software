@@ -81,6 +81,8 @@ class PurchaseViewSet(viewsets.ModelViewSet):
                 paid_amount=data.get("paid_amount", 0),
                 payment_method=pay_method,
                 payment_account=pay_acc,
+                supplier_invoice_number=data.get("supplier_invoice_number"),
+                supplier_invoice_file=data.get("supplier_invoice_file"),
                 notes=data.get("notes", ""),
                 created_by=request.user,
                 submit_immediately=data.get("submit_immediately", True),

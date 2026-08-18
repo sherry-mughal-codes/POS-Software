@@ -46,6 +46,21 @@ class Customer(models.Model):
     def __str__(self):
         return f"[{self.customer_id}] {self.name}{' (Walk-in)' if self.is_walkin else ''}"
 
+    @classmethod
+    def generate_customer_id(cls):
+        """Generates sequential ID formatted as CUS-0001, CUS-0002, etc."""
+        prefix = "CUS-"
+        max_seq = 0
+        for c in cls.objects.filter(customer_id__startswith=prefix):
+            try:
+                num = int(c.customer_id[len(prefix):])
+                if num < 900000 and num > max_seq:
+                    max_seq = num
+            except (ValueError, TypeError):
+                continue
+        next_seq = max_seq + 1 if max_seq > 0 else (cls.objects.count() + 1)
+        return f"{prefix}{next_seq:04d}"
+
     def clean(self):
         # Enforce that Walk-in customer cannot have credit enabled
         if self.is_walkin:
@@ -58,6 +73,8 @@ class Customer(models.Model):
         if self.is_walkin:
             self.credit_enabled = False
             self.is_active = True
+        if not self.customer_id:
+            self.customer_id = self.generate_customer_id()
         super().save(*args, **kwargs)
 
 
@@ -86,6 +103,20 @@ class Supplier(models.Model):
         ordering = ["name"]
         verbose_name = "Supplier"
         verbose_name_plural = "Suppliers"
+
+    @classmethod
+    def generate_supplier_id(cls):
+        """Generates sequential ID formatted as SUP-000001"""
+        prefix = "SUP-"
+        last = cls.objects.filter(supplier_id__startswith=prefix).order_by("-id").first()
+        if last:
+            try:
+                seq = int(last.supplier_id.split("-")[-1]) + 1
+            except (ValueError, IndexError):
+                seq = cls.objects.count() + 1
+        else:
+            seq = cls.objects.count() + 1
+        return f"{prefix}{seq:06d}"
 
     def __str__(self):
         company = f" ({self.company_name})" if self.company_name else ""

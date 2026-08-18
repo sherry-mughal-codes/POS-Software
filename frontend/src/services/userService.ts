@@ -27,11 +27,20 @@ export const userService = {
     return response.data;
   },
 
+  async createRole(data: { name: string; permission_ids?: number[] }): Promise<Role> {
+    const response = await apiClient.post<Role>('/roles/', data);
+    return response.data;
+  },
+
   async updateRole(id: number, permissionIds: number[]): Promise<Role> {
     const response = await apiClient.patch<Role>(`/roles/${id}/`, {
       permission_ids: permissionIds,
     });
     return response.data;
+  },
+
+  async deleteRole(id: number): Promise<void> {
+    await apiClient.delete(`/roles/${id}/`);
   },
 
   async getPermissions(): Promise<Permission[]> {

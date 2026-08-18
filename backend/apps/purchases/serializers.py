@@ -79,6 +79,8 @@ class PurchaseSerializer(serializers.ModelSerializer):
             "payment_method",
             "payment_method_name",
             "payment_account",
+            "supplier_invoice_number",
+            "supplier_invoice_file",
             "notes",
             "created_by",
             "created_by_username",
@@ -103,6 +105,8 @@ class PurchaseCreateSerializer(serializers.Serializer):
     paid_amount = serializers.DecimalField(max_digits=14, decimal_places=2, required=False, default=0)
     payment_method = serializers.IntegerField(required=False, allow_null=True)
     payment_account = serializers.IntegerField(required=False, allow_null=True)
+    supplier_invoice_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    supplier_invoice_file = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True)
     submit_immediately = serializers.BooleanField(required=False, default=True)
     items = PurchaseCreateItemInputSerializer(many=True, required=True)

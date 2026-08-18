@@ -62,6 +62,18 @@ class Purchase(models.Model):
         blank=True,
         related_name="purchase_payments",
     )
+    supplier_invoice_number = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="Supplier's original invoice/bill number",
+    )
+    supplier_invoice_file = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Scanned invoice / bill document or image base64 data URL",
+    )
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(
         User,

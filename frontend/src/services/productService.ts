@@ -44,6 +44,24 @@ export const productService = {
     return response.data;
   },
 
+  async bulkImport(data: FormData | any[]): Promise<any> {
+    if (data instanceof FormData) {
+      const response = await apiClient.post('/products/bulk-import/', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    }
+    const response = await apiClient.post('/products/bulk-import/', data);
+    return response.data;
+  },
+
+  async downloadImportTemplate(): Promise<Blob> {
+    const response = await apiClient.get('/products/import-template/', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
   // Categories
   async getCategories(): Promise<Category[]> {
     const response = await apiClient.get<Category[]>('/categories/');

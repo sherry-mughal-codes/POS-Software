@@ -70,6 +70,12 @@ class UnitViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+import csv
+import io
+import openpyxl
+from django.http import HttpResponse
+from apps.products.services import ProductService
+
 class ProductViewSet(viewsets.ModelViewSet):
     """
     Product Master Catalog API with search, barcode lookup, category filtering, and soft-deactivation.
@@ -79,7 +85,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ["create", "update", "partial_update", "destroy", "toggle_status"]:
+        if self.action in ["create", "update", "partial_update", "destroy", "toggle_status", "bulk_import"]:
             return [IsAdminOrManager()]
         return [IsAuthenticated()]
 
@@ -122,18 +128,106 @@ class ProductViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="next-sku")
     def next_sku(self, request):
         """Generates the next sequential recommended SKU (e.g. PRD-00029)."""
-        prefix = "PRD-"
-        last_product = Product.objects.filter(sku__startswith=prefix).order_by("-id").first()
-        if last_product:
-            try:
-                seq = int(last_product.sku.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = Product.objects.count() + 1
-        else:
-            seq = Product.objects.count() + 1
+        return Response({"next_sku": ProductService.generate_sku()})
 
-        next_code = f"{prefix}{seq:05d}"
-        return Response({"next_sku": next_code})
+    @action(detail=False, methods=["post"], url_path="bulk-import")
+    def bulk_import(self, request):
+        """
+        Imports bulk products from uploaded Excel/CSV file or JSON row array.
+        """
+        rows = []
+        file_obj = request.FILES.get("file")
+
+        if file_obj:
+            filename = file_obj.name.lower()
+            if filename.endswith(".xlsx") or filename.endswith(".xls"):
+                try:
+                    wb = openpyxl.load_workbook(file_obj, data_only=True)
+                    ws = wb.active
+                    headers = [str(cell.value or "").strip().lower() for cell in ws[1]]
+                    
+                    # Map standard header variations
+                    field_map = {}
+                    for idx, h in enumerate(headers):
+                        if "product" in h or "name" in h or "title" in h or "item" in h:
+                            field_map["name"] = idx
+                        elif "sku" in h or "code" in h:
+                            field_map["sku"] = idx
+                        elif "barcode" in h or "ean" in h or "upc" in h:
+                            field_map["barcode"] = idx
+                        elif "cat" in h or "department" in h or "group" in h:
+                            field_map["category"] = idx
+                        elif "unit" in h or "uom" in h:
+                            field_map["unit"] = idx
+                        elif "purchase" in h or "cost" in h or "buy" in h:
+                            field_map["purchase_price"] = idx
+                        elif "sell" in h or "retail" in h or "price" in h:
+                            field_map["selling_price"] = idx
+                        elif "open" in h or "qty" in h or "quantity" in h or "stock" in h:
+                            field_map["opening_stock"] = idx
+                        elif "min" in h or "alert" in h or "threshold" in h:
+                            field_map["min_stock_level"] = idx
+                        elif "desc" in h or "note" in h or "detail" in h:
+                            field_map["description"] = idx
+
+                    for row_cells in ws.iter_rows(min_row=2, values_only=True):
+                        if not any(row_cells):
+                            continue
+                        row_dict = {}
+                        for field_name, col_idx in field_map.items():
+                            val = row_cells[col_idx] if col_idx < len(row_cells) else None
+                            row_dict[field_name] = str(val).strip() if val is not None else ""
+                        if row_dict.get("name"):
+                            rows.append(row_dict)
+                except Exception as e:
+                    return Response({"detail": f"Failed to parse Excel file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            elif filename.endswith(".csv"):
+                try:
+                    content = file_obj.read().decode("utf-8-sig")
+                    reader = csv.DictReader(io.StringIO(content))
+                    for r in reader:
+                        cleaned = {k.strip().lower(): v for k, v in r.items() if k}
+                        rows.append({
+                            "name": cleaned.get("product name") or cleaned.get("name") or cleaned.get("title") or "",
+                            "sku": cleaned.get("sku") or cleaned.get("code") or "",
+                            "barcode": cleaned.get("barcode") or cleaned.get("ean") or "",
+                            "category": cleaned.get("category") or "",
+                            "unit": cleaned.get("unit") or cleaned.get("uom") or "pcs",
+                            "purchase_price": cleaned.get("purchase price") or cleaned.get("purchase_price") or cleaned.get("cost") or 0,
+                            "selling_price": cleaned.get("selling price") or cleaned.get("selling_price") or cleaned.get("price") or 0,
+                            "opening_stock": cleaned.get("opening quantity") or cleaned.get("opening_stock") or cleaned.get("quantity") or 0,
+                            "min_stock_level": cleaned.get("min stock level") or cleaned.get("min_stock_level") or 10,
+                            "description": cleaned.get("description") or "",
+                        })
+                except Exception as e:
+                    return Response({"detail": f"Failed to parse CSV file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"detail": "Unsupported file format. Please upload .xlsx, .xls, or .csv"}, status=status.HTTP_400_BAD_REQUEST)
+        elif isinstance(request.data, list):
+            rows = request.data
+        elif isinstance(request.data.get("items"), list):
+            rows = request.data.get("items")
+        elif isinstance(request.data.get("products"), list):
+            rows = request.data.get("products")
+
+        if not rows:
+            return Response({"detail": "No valid product rows found to import."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = ProductService.bulk_import_products(rows, created_by=request.user)
+        return Response(result, status=status.HTTP_200_OK if result["created_count"] > 0 else status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=["get"], url_path="import-template")
+    def import_template(self, request):
+        """
+        Downloads styled sample Excel template for bulk product imports.
+        """
+        excel_bytes = ProductService.generate_excel_template()
+        response = HttpResponse(
+            excel_bytes,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="Product_Bulk_Import_Template.xlsx"'
+        return response
 
     @action(detail=True, methods=["post"], url_path="toggle-status")
     def toggle_status(self, request, pk=None):

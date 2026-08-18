@@ -141,7 +141,9 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserCreateUpdateSerializer
         return UserSerializer
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         user = serializer.save()
         AuditLog.objects.create(
             user=self.request.user,
@@ -152,8 +154,13 @@ class UserViewSet(viewsets.ModelViewSet):
             ip_address=get_client_ip(self.request),
             details={"created_username": user.username, "roles": list(user.groups.values_list("name", flat=True))},
         )
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
-    def perform_update(self, serializer):
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
         user = serializer.save()
         AuditLog.objects.create(
             user=self.request.user,
@@ -164,6 +171,7 @@ class UserViewSet(viewsets.ModelViewSet):
             ip_address=get_client_ip(self.request),
             details={"updated_username": user.username, "is_active": user.is_active},
         )
+        return Response(UserSerializer(user).data)
 
     @action(detail=True, methods=["post"], url_path="toggle-status")
     def toggle_status(self, request, pk=None):

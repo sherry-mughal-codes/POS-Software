@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, Send, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Save, Send, AlertCircle, Upload, FileText, X } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -34,6 +34,9 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
   // Form State
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
   const [purchaseDate, setPurchaseDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [supplierInvoiceNumber, setSupplierInvoiceNumber] = useState<string>('');
+  const [supplierInvoiceFile, setSupplierInvoiceFile] = useState<string | null>(null);
+  const [supplierInvoiceFileName, setSupplierInvoiceFileName] = useState<string>('');
   const [lineItems, setLineItems] = useState<LineItemRow[]>([]);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [taxAmount, setTaxAmount] = useState<number>(0);
@@ -45,6 +48,21 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
   const [selectedProductToAdd, setSelectedProductToAdd] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Invoice file size exceeds 10MB limit.');
+      return;
+    }
+    setSupplierInvoiceFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSupplierInvoiceFile(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     Promise.all([
@@ -132,6 +150,8 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
       tax_amount: taxAmount,
       paid_amount: paidAmount,
       payment_method: selectedPaymentMethodId ? parseInt(selectedPaymentMethodId) : null,
+      supplier_invoice_number: supplierInvoiceNumber.trim() || undefined,
+      supplier_invoice_file: supplierInvoiceFile || undefined,
       notes,
       submit_immediately: submitImmediately,
       items: lineItems.map((item) => ({
@@ -172,7 +192,7 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
       )}
 
       {/* Header Info Card */}
-      <Card title="Supplier & Order Details" subtitle="Transaction metadata and distributor attribution">
+      <Card title="Supplier & Order Details" subtitle="Transaction metadata, distributor attribution, and invoice archiving">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
@@ -208,8 +228,61 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
           />
 
           <Input
-            label="Order Notes / Invoice #"
-            placeholder="e.g. Inv #CC-9823 Delivery Slip"
+            label="Supplier Invoice / Bill #"
+            placeholder="e.g. INV-98721 or BL-0041"
+            value={supplierInvoiceNumber}
+            onChange={(e) => setSupplierInvoiceNumber(e.target.value)}
+          />
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+              Attach Supplier Invoice (Optional)
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', height: '42px' }}>
+              <label style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.55rem 0.875rem',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px dashed var(--border-medium)',
+                borderRadius: '0.5rem',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+              }}>
+                <Upload size={14} />
+                <span>{supplierInvoiceFileName ? 'Replace File' : 'Upload Invoice'}</span>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  style={{ display: 'none' }}
+                  onChange={handleFileUpload}
+                />
+              </label>
+              {supplierInvoiceFileName && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--primary-400)' }}>
+                  <FileText size={14} />
+                  <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={supplierInvoiceFileName}>
+                    {supplierInvoiceFileName}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setSupplierInvoiceFile(null); setSupplierInvoiceFileName(''); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 0 }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Input
+            label="Internal Notes / Remarks"
+            placeholder="e.g. Delivery received at central warehouse"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />

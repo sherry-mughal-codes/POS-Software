@@ -23,9 +23,28 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { userService } from '../../services/userService';
 import { User, Role, CreateUserData, UpdateUserData } from '../../types/auth';
 import { useAuth } from '../../hooks/useAuth';
+import { useSettings } from '../../context/SettingsContext';
+
+const formatErrorMessage = (err: any): string => {
+  const data = err?.response?.data;
+  if (!data) return err?.message || 'Operation failed';
+  if (typeof data === 'string') return data;
+  if (data.detail) return data.detail;
+  if (typeof data === 'object') {
+    return Object.entries(data)
+      .map(([field, msgs]) => {
+        const label = field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ');
+        const text = Array.isArray(msgs) ? msgs.join(', ') : String(msgs);
+        return `${label}: ${text}`;
+      })
+      .join(' | ');
+  }
+  return err?.message || 'Operation failed';
+};
 
 export const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const { companyName } = useSettings();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -45,6 +64,8 @@ export const UsersPage: React.FC = () => {
   const [newFirstName, setNewFirstName] = useState('');
   const [newLastName, setNewLastName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [newCompany, setNewCompany] = useState('');
+  const [newDataScope, setNewDataScope] = useState('ALL_COMPANY');
   const [newPhone, setNewPhone] = useState('');
   const [newPinCode, setNewPinCode] = useState('');
   const [newSelectedRoles, setNewSelectedRoles] = useState<number[]>([]);
@@ -64,7 +85,7 @@ export const UsersPage: React.FC = () => {
       setUsers(usersData);
       setRoles(rolesData);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load users.');
+      setError(formatErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -80,6 +101,8 @@ export const UsersPage: React.FC = () => {
     setNewFirstName('');
     setNewLastName('');
     setNewEmail('');
+    setNewCompany(companyName || 'ApexPOS Enterprise Store');
+    setNewDataScope('ALL_COMPANY');
     setNewPhone('');
     setNewPinCode('');
     // Default to Cashier role if exists
@@ -95,8 +118,8 @@ export const UsersPage: React.FC = () => {
       setFormError('Username and password are required.');
       return;
     }
-    if (newPassword.length < 6) {
-      setFormError('Password must be at least 6 characters.');
+    if (newPassword.length < 4) {
+      setFormError('Password must be at least 4 characters.');
       return;
     }
 
@@ -109,6 +132,8 @@ export const UsersPage: React.FC = () => {
         first_name: newFirstName,
         last_name: newLastName,
         email: newEmail,
+        company: newCompany || companyName || 'ApexPOS Enterprise Store',
+        data_scope: newDataScope,
         phone: newPhone,
         pin_code: newPinCode,
         roles: newSelectedRoles,
@@ -117,7 +142,7 @@ export const UsersPage: React.FC = () => {
       setIsCreateModalOpen(false);
       fetchUsersAndRoles();
     } catch (err: any) {
-      setFormError(err?.message || 'Failed to create user.');
+      setFormError(formatErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -128,6 +153,8 @@ export const UsersPage: React.FC = () => {
     setNewFirstName(targetUser.first_name || '');
     setNewLastName(targetUser.last_name || '');
     setNewEmail(targetUser.email || '');
+    setNewCompany(targetUser.profile?.company || companyName || 'ApexPOS Enterprise Store');
+    setNewDataScope(targetUser.profile?.data_scope || 'ALL_COMPANY');
     setNewPhone(targetUser.profile?.phone || '');
     setNewPinCode(targetUser.profile?.pin_code || '');
     setNewPassword('');
@@ -147,6 +174,8 @@ export const UsersPage: React.FC = () => {
         first_name: newFirstName,
         last_name: newLastName,
         email: newEmail,
+        company: newCompany,
+        data_scope: newDataScope,
         phone: newPhone,
         pin_code: newPinCode,
         roles: newSelectedRoles,
@@ -158,7 +187,7 @@ export const UsersPage: React.FC = () => {
       setIsEditModalOpen(false);
       fetchUsersAndRoles();
     } catch (err: any) {
-      setFormError(err?.message || 'Failed to update user.');
+      setFormError(formatErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -355,8 +384,10 @@ export const UsersPage: React.FC = () => {
                           <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
                             {u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : u.username}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>
-                            @{u.username}
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                            <span>@{u.username}</span>
+                            <span>•</span>
+                            <span style={{ color: 'var(--primary-400)' }}>{u.profile?.company || 'Default Store'}</span>
                           </div>
                         </div>
                       </div>
@@ -465,21 +496,32 @@ export const UsersPage: React.FC = () => {
 
         <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input
-              label="Username *"
-              placeholder="e.g. ahmed_cashier"
-              value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
-              required
-            />
-            <Input
-              label="Password *"
-              type="password"
-              placeholder="Min. 6 chars"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
+            <div>
+              <Input
+                label="Username / Login ID *"
+                placeholder="e.g. abdullah_mughal"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/\s+/g, '_'))}
+                required
+              />
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.25rem', display: 'block' }}>
+                Login ID (spaces auto-convert to underscores)
+              </span>
+            </div>
+
+            <div>
+              <Input
+                label="Password *"
+                type="password"
+                placeholder="Min. 4 chars"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.25rem', display: 'block' }}>
+                POS user authentication password
+              </span>
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -507,9 +549,50 @@ export const UsersPage: React.FC = () => {
           />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
+                Company / Store Branch *
+              </label>
+              <Input
+                placeholder="e.g. ApexPOS Enterprise Store"
+                value={newCompany}
+                onChange={(e) => setNewCompany(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
+                Data Scope Access *
+              </label>
+              <select
+                value={newDataScope}
+                onChange={(e) => setNewDataScope(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 0.75rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.875rem',
+                  outline: 'none',
+                }}
+              >
+                <option value="ALL_COMPANY" style={{ backgroundColor: 'var(--bg-sidebar)', color: '#fff' }}>
+                  All Company Data (Full Store Access)
+                </option>
+                <option value="OWN_DATA" style={{ backgroundColor: 'var(--bg-sidebar)', color: '#fff' }}>
+                  Own User / Terminal Data Only (Cloud Scoped)
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <Input
               label="Phone Number"
-              placeholder="+1 (555) 000-0000"
+              placeholder="+92 300 1234567"
               value={newPhone}
               onChange={(e) => setNewPhone(e.target.value)}
               icon={<Phone size={16} />}
@@ -620,8 +703,50 @@ export const UsersPage: React.FC = () => {
           />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
+                Company / Store Branch *
+              </label>
+              <Input
+                placeholder="e.g. ApexPOS Enterprise Store"
+                value={newCompany}
+                onChange={(e) => setNewCompany(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
+                Data Scope Access *
+              </label>
+              <select
+                value={newDataScope}
+                onChange={(e) => setNewDataScope(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 0.75rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.875rem',
+                  outline: 'none',
+                }}
+              >
+                <option value="ALL_COMPANY" style={{ backgroundColor: 'var(--bg-sidebar)', color: '#fff' }}>
+                  All Company Data (Full Store Access)
+                </option>
+                <option value="OWN_DATA" style={{ backgroundColor: 'var(--bg-sidebar)', color: '#fff' }}>
+                  Own User / Terminal Data Only (Cloud Scoped)
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <Input
               label="Phone Number"
+              placeholder="+92 300 1234567"
               value={newPhone}
               onChange={(e) => setNewPhone(e.target.value)}
               icon={<Phone size={16} />}

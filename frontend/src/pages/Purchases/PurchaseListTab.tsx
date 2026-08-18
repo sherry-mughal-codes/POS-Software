@@ -8,6 +8,8 @@ import {
   Search,
   RefreshCw,
   Building,
+  FileText,
+  Download,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -343,6 +345,51 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                 <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(selectedPurchase.payable_amount)}</span>
               </div>
             </div>
+
+            {/* Supplier Invoice Reference & Attachment */}
+            {(selectedPurchase.supplier_invoice_number || selectedPurchase.supplier_invoice_file) && (
+              <div style={{
+                padding: '0.75rem 1rem',
+                backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                borderRadius: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
+                  <FileText size={16} color="var(--primary-400)" />
+                  <span>
+                    Supplier Invoice Ref: <strong>{selectedPurchase.supplier_invoice_number || 'N/A'}</strong>
+                  </span>
+                </div>
+                {selectedPurchase.supplier_invoice_file && (
+                  <a
+                    href={selectedPurchase.supplier_invoice_file}
+                    target="_blank"
+                    rel="noreferrer"
+                    download={`Supplier_Invoice_${selectedPurchase.purchase_number}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      padding: '0.35rem 0.75rem',
+                      backgroundColor: 'var(--primary-600)',
+                      color: '#fff',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <Download size={13} />
+                    <span>View / Download Invoice</span>
+                  </a>
+                )}
+              </div>
+            )}
 
             {selectedPurchase.notes && (
               <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>

@@ -14,6 +14,7 @@ from .models import (
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    employee_id = serializers.CharField(required=False, allow_blank=True)
     user_username = serializers.CharField(source="user.username", read_only=True)
     created_by_name = serializers.SerializerMethodField()
 
@@ -44,6 +45,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_by", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        if not validated_data.get("employee_id"):
+            validated_data["employee_id"] = Employee.generate_employee_id()
+        return super().create(validated_data)
 
     def get_created_by_name(self, obj):
         if obj.created_by:

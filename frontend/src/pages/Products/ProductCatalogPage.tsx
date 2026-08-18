@@ -12,6 +12,7 @@ import {
   Power,
   RefreshCw,
   Sparkles,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -21,8 +22,10 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ProductModal } from './ProductModal';
 import { CategoryManagerModal } from './CategoryManagerModal';
 import { UnitManagerModal } from './UnitManagerModal';
+import { BulkImportModal } from './BulkImportModal';
 import { Product, Category, Unit } from '../../types/product';
 import { productService } from '../../services/productService';
+import { useSettings } from '../../context/SettingsContext';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -35,6 +38,7 @@ const formatPercent = (val: number | string | undefined | null): string => {
 };
 
 export const ProductCatalogPage: React.FC = () => {
+  const { currencySymbol } = useSettings();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
@@ -57,6 +61,7 @@ export const ProductCatalogPage: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
 
   const fetchCatalogData = useCallback(async () => {
     setLoading(true);
@@ -156,6 +161,9 @@ export const ProductCatalogPage: React.FC = () => {
           </Button>
           <Button variant="secondary" icon={<Scale size={16} />} onClick={() => setIsUnitModalOpen(true)}>
             Units ({units.length})
+          </Button>
+          <Button variant="secondary" icon={<FileSpreadsheet size={16} />} onClick={() => setIsBulkImportModalOpen(true)}>
+            Import Bulk Products
           </Button>
           <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenAddModal}>
             Add Product
@@ -422,18 +430,18 @@ export const ProductCatalogPage: React.FC = () => {
               <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
                   <div>
-                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>Cost: Rs. {formatMoney(p.purchase_price)}</div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>Cost: {currencySymbol || 'Rs.'} {formatMoney(p.purchase_price)}</div>
                     <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
-                      Rs. {formatMoney(p.selling_price)}
+                      {currencySymbol || 'Rs.'} {formatMoney(p.selling_price)}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       <Sparkles size={12} />
-                      {formatPercent(p.profit_margin_percentage)}%
+                      {formatPercent(p.profit_margin_percentage !== undefined ? p.profit_margin_percentage : (p.selling_price > 0 ? ((p.selling_price - p.purchase_price) / p.selling_price) * 100 : 0))}%
                     </span>
                     <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
-                      +Rs. {formatMoney(p.profit_margin_amount)}
+                      +{currencySymbol || 'Rs.'} {formatMoney(p.profit_margin_amount !== undefined ? p.profit_margin_amount : (p.selling_price - p.purchase_price))}
                     </div>
                   </div>
                 </div>
@@ -512,13 +520,13 @@ export const ProductCatalogPage: React.FC = () => {
                       <code style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>{p.barcode || '—'}</code>
                     </td>
                     <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                      Rs. {formatMoney(p.purchase_price)}
+                      {currencySymbol || 'Rs.'} {formatMoney(p.purchase_price)}
                     </td>
                     <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-main)' }}>
-                      Rs. {formatMoney(p.selling_price)}
+                      {currencySymbol || 'Rs.'} {formatMoney(p.selling_price)}
                     </td>
                     <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>
-                      {formatPercent(p.profit_margin_percentage)}%
+                      {formatPercent(p.profit_margin_percentage !== undefined ? p.profit_margin_percentage : (p.selling_price > 0 ? ((p.selling_price - p.purchase_price) / p.selling_price) * 100 : 0))}%
                     </td>
                     <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
                       <Badge variant={p.is_active ? 'success' : 'danger'}>
@@ -575,6 +583,13 @@ export const ProductCatalogPage: React.FC = () => {
         onClose={() => setIsUnitModalOpen(false)}
         units={units}
         onRefresh={fetchCatalogData}
+      />
+
+      {/* Bulk Product Import Modal */}
+      <BulkImportModal
+        isOpen={isBulkImportModalOpen}
+        onClose={() => setIsBulkImportModalOpen(false)}
+        onSuccess={fetchCatalogData}
       />
     </div>
   );

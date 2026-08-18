@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, AlertCircle, Package } from 'lucide-react';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Product, Category, Unit } from '../../types/product';
 import { productService } from '../../services/productService';
+import { useSettings } from '../../context/SettingsContext';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   units,
   onSaved,
 }) => {
+  const { currencySymbol } = useSettings();
   const [sku, setSku] = useState('');
   const [name, setName] = useState('');
   const [barcode, setBarcode] = useState('');
@@ -30,6 +32,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [unitId, setUnitId] = useState<string>('');
   const [purchasePrice, setPurchasePrice] = useState('0');
   const [sellingPrice, setSellingPrice] = useState('0');
+  const [openingStock, setOpeningStock] = useState('0');
+  const [minStockLevel, setMinStockLevel] = useState('10');
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
@@ -48,6 +52,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setUnitId(productToEdit.unit.toString());
         setPurchasePrice(productToEdit.purchase_price.toString());
         setSellingPrice(productToEdit.selling_price.toString());
+        setOpeningStock(productToEdit.current_stock ? productToEdit.current_stock.toString() : '0');
+        setMinStockLevel(productToEdit.min_stock_level ? productToEdit.min_stock_level.toString() : '10');
         setImageUrl(productToEdit.image_url || '');
         setDescription(productToEdit.description || '');
         setIsActive(productToEdit.is_active);
@@ -58,6 +64,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setUnitId(units.length > 0 ? units[0].id.toString() : '');
         setPurchasePrice('0');
         setSellingPrice('0');
+        setOpeningStock('0');
+        setMinStockLevel('10');
         setImageUrl('');
         setDescription('');
         setIsActive(true);
@@ -88,7 +96,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     setSaving(true);
     setError(null);
 
-    const payload: Partial<Product> = {
+    const payload: any = {
       sku: sku.trim(),
       name: name.trim(),
       barcode: barcode.trim() || null,
@@ -96,10 +104,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       unit: parseInt(unitId, 10),
       purchase_price: pPrice,
       selling_price: sPrice,
+      min_stock_level: parseFloat(minStockLevel) || 10,
       image_url: imageUrl.trim() || null,
       description: description.trim() || null,
       is_active: isActive,
     };
+
+    if (!productToEdit) {
+      payload.opening_stock = parseFloat(openingStock) || 0;
+    }
 
     try {
       if (productToEdit) {
@@ -110,7 +123,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       onSaved();
       onClose();
     } catch (err: any) {
-      setError(err?.message || 'Failed to save product.');
+      setError(err?.response?.data?.detail || err?.message || 'Failed to save product.');
     } finally {
       setSaving(false);
     }
@@ -227,25 +240,27 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           border: '1px solid var(--border-subtle)',
         }}>
           <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-            Default Reference Pricing & Margin
+            Default Reference Pricing & Margin ({currencySymbol || 'Rs.'})
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <Input
-              label="Purchase Reference Cost (Rs.)"
+              label={`Initial Purchase Cost (${currencySymbol || 'Rs.'})`}
               type="number"
               step="0.01"
               min="0"
               value={purchasePrice}
               onChange={(e) => setPurchasePrice(e.target.value)}
+              helperText="Auto-updates when purchase orders are submitted."
             />
             <Input
-              label="Default Selling Price (Rs.) *"
+              label={`Selling Price (${currencySymbol || 'Rs.'}) *`}
               type="number"
               step="0.01"
               min="0"
               value={sellingPrice}
               onChange={(e) => setSellingPrice(e.target.value)}
               required
+              helperText="Retail sales price at POS checkout."
             />
           </div>
 
@@ -263,11 +278,49 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: marginAmount >= 0 ? 'var(--success)' : 'var(--danger)' }}>
               <Sparkles size={14} />
-              <span>Gross Profit Margin: <strong>Rs. {marginAmount.toFixed(2)}</strong></span>
+              <span>Gross Profit Margin: <strong>{currencySymbol || 'Rs.'} {marginAmount.toFixed(2)}</strong></span>
             </div>
             <strong style={{ color: marginAmount >= 0 ? 'var(--success)' : 'var(--danger)' }}>
               {marginPercent}% Markup
             </strong>
+          </div>
+        </div>
+
+        {/* Row 5: Inventory & Opening Stock */}
+        <div style={{
+          backgroundColor: 'var(--bg-app)',
+          padding: '1rem',
+          borderRadius: '0.625rem',
+          border: '1px solid var(--border-subtle)',
+        }}>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Package size={15} color="var(--primary-400)" />
+            <span>Inventory Balance & Stock Controls</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <Input
+              label="Opening Quantity / Initial Stock"
+              type="number"
+              step="any"
+              min="0"
+              value={openingStock}
+              onChange={(e) => setOpeningStock(e.target.value)}
+              disabled={!!productToEdit}
+              helperText={
+                productToEdit
+                  ? `Current on-hand: ${openingStock} units (adjust via Stock Adjustments).`
+                  : 'Auto-initializes inventory balance & valuation report.'
+              }
+            />
+            <Input
+              label="Low Stock Alert Threshold"
+              type="number"
+              step="any"
+              min="0"
+              value={minStockLevel}
+              onChange={(e) => setMinStockLevel(e.target.value)}
+              helperText="Alerts manager when stock drops below this level."
+            />
           </div>
         </div>
 

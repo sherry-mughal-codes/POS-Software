@@ -34,6 +34,24 @@ import {
 import { Account } from '../../types/accounting';
 import { employeeService } from '../../services/employeeService';
 import { accountingService } from '../../services/accountingService';
+import { useSettings } from '../../context/SettingsContext';
+
+const formatErrorMessage = (err: any): string => {
+  const data = err?.response?.data;
+  if (!data) return err?.message || 'Operation failed';
+  if (typeof data === 'string') return data;
+  if (data.detail) return data.detail;
+  if (typeof data === 'object') {
+    return Object.entries(data)
+      .map(([field, msgs]) => {
+        const label = field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ');
+        const text = Array.isArray(msgs) ? msgs.join(', ') : String(msgs);
+        return `${label}: ${text}`;
+      })
+      .join(' | ');
+  }
+  return err?.message || 'Operation failed';
+};
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -56,6 +74,7 @@ const MONTHS = [
 ];
 
 export const EmployeesDashboardPage: React.FC = () => {
+  const { currencySymbol } = useSettings();
   const [activeTab, setActiveTab] = useState<'employees' | 'attendance' | 'payroll' | 'reports'>('employees');
 
   // Accounts master data
@@ -289,7 +308,7 @@ export const EmployeesDashboardPage: React.FC = () => {
       setIsEmployeeModalOpen(false);
       fetchEmployees();
     } catch (err: any) {
-      setEmployeeError(err?.response?.data?.detail || err?.message || 'Failed to save employee.');
+      setEmployeeError(formatErrorMessage(err));
     } finally {
       setEmployeeSubmitting(false);
     }
@@ -1292,7 +1311,7 @@ export const EmployeesDashboardPage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Basic Monthly Salary (Rs.) *
+                Basic Monthly Salary ({currencySymbol || 'Rs.'}) *
               </label>
               <input
                 type="number"

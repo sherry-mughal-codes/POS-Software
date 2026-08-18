@@ -67,17 +67,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="next-id")
     def next_id(self, request):
-        """Generates the next sequential customer identifier (e.g. CUS-000005)."""
-        prefix = "CUS-"
-        last = Customer.objects.filter(customer_id__startswith=prefix).order_by("-id").first()
-        if last:
-            try:
-                seq = int(last.customer_id.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = Customer.objects.count() + 1
-        else:
-            seq = Customer.objects.count() + 1
-        return Response({"next_id": f"{prefix}{seq:06d}"})
+        """Generates the next sequential customer identifier (e.g. CUS-0001, CUS-0002)."""
+        return Response({"next_id": Customer.generate_customer_id()})
 
     @action(detail=False, methods=["get"], url_path="walkin")
     def walkin(self, request):
@@ -166,17 +157,8 @@ class SupplierViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="next-id")
     def next_id(self, request):
-        """Generates the next sequential supplier identifier (e.g. SUP-000006)."""
-        prefix = "SUP-"
-        last = Supplier.objects.filter(supplier_id__startswith=prefix).order_by("-id").first()
-        if last:
-            try:
-                seq = int(last.supplier_id.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = Supplier.objects.count() + 1
-        else:
-            seq = Supplier.objects.count() + 1
-        return Response({"next_id": f"{prefix}{seq:06d}"})
+        """Generates the next sequential supplier identifier (e.g. SUP-000001)."""
+        return Response({"next_id": Supplier.generate_supplier_id()})
 
     @action(detail=True, methods=["post"], url_path="toggle-status")
     def toggle_status(self, request, pk=None):

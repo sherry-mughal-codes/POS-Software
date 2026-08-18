@@ -57,7 +57,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         contactService.getNextCustomerId().then((res) => {
           setCustomerId(res.next_id);
         }).catch(() => {
-          setCustomerId(`CUS-${Math.floor(100000 + Math.random() * 900000)}`);
+          setCustomerId('CUS-0001');
         });
       }
     }
@@ -146,7 +146,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
           <Input
             label="Customer ID *"
-            placeholder="e.g. CUS-000006"
+            placeholder="e.g. CUS-0001"
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
             disabled={isWalkin}
