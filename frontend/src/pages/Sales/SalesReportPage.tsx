@@ -269,8 +269,20 @@ export const SalesReportPage: React.FC = () => {
                         <td style={{ padding: '0.75rem 0.75rem' }}>
                           {row.payment_method === 'CASH' && <Badge variant="success">Cash</Badge>}
                           {row.payment_method === 'CARD' && <Badge variant="info">Card</Badge>}
-                          {row.payment_method === 'CREDIT' && <Badge variant="warning">Credit</Badge>}
-                          {row.payment_method === 'SPLIT' && <Badge variant="phase">Split</Badge>}
+                          {row.payment_method === 'CREDIT' && (
+                            row.due_amount <= 0 ? (
+                              <Badge variant="success">Credit (Paid)</Badge>
+                            ) : (
+                              <Badge variant="warning">Credit (Due)</Badge>
+                            )
+                          )}
+                          {row.payment_method === 'SPLIT' && (
+                            row.due_amount <= 0 ? (
+                              <Badge variant="success">Split (Paid)</Badge>
+                            ) : (
+                              <Badge variant="phase">Split (Due)</Badge>
+                            )
+                          )}
                         </td>
 
                         <td style={{ padding: '0.75rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>

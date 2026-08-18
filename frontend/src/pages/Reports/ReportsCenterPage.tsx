@@ -557,8 +557,8 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
                 View complete X-Reports (live shift preview) and Z-Reports (finalized daily audit with physical cash counts)
               </div>
             </div>
-            <Button variant="primary" icon={<ArrowRight size={16} />} onClick={() => onNavigate('pos')}>
-              Open POS Sessions Hub
+            <Button variant="primary" icon={<ArrowRight size={16} />} onClick={() => onNavigate('day-sessions')}>
+              Open POS Sessions & Z-Reports Hub
             </Button>
           </div>
         </Card>

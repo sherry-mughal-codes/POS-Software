@@ -1,5 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Scale, TrendingUp, PieChart, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  Scale,
+  TrendingUp,
+  PieChart,
+  RefreshCw,
+  Filter,
+  Search,
+  Download,
+  Printer,
+} from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
@@ -11,26 +20,96 @@ import {
 } from '../../types/accounting';
 import { accountingService } from '../../services/accountingService';
 
+type ReportType = 'TRIAL_BALANCE' | 'INCOME_STATEMENT' | 'BALANCE_SHEET';
+type PeriodPreset = 'this_month' | 'today' | 'this_week' | 'last_month' | 'this_quarter' | 'this_year' | 'all_time' | 'custom';
+
+const computePresetDates = (preset: PeriodPreset): { start: string; end: string } => {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  if (preset === 'today') {
+    return { start: todayStr, end: todayStr };
+  }
+  if (preset === 'this_week') {
+    const d = new Date(now);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    return { start: monday.toISOString().split('T')[0], end: todayStr };
+  }
+  if (preset === 'this_month') {
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return { start: `${y}-${m}-01`, end: todayStr };
+  }
+  if (preset === 'last_month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
+    return {
+      start: firstDay.toISOString().split('T')[0],
+      end: lastDay.toISOString().split('T')[0],
+    };
+  }
+  if (preset === 'this_quarter') {
+    const quarter = Math.floor(now.getMonth() / 3);
+    const firstDay = new Date(now.getFullYear(), quarter * 3, 1);
+    return { start: firstDay.toISOString().split('T')[0], end: todayStr };
+  }
+  if (preset === 'this_year') {
+    const y = now.getFullYear();
+    return { start: `${y}-01-01`, end: todayStr };
+  }
+  return { start: '', end: todayStr };
+};
+
+const formatMoney = (val: number | string | undefined | null): string => {
+  const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
+  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 export const FinancialReportsTab: React.FC = () => {
-  const [activeReport, setActiveReport] = useState<'TRIAL_BALANCE' | 'INCOME_STATEMENT' | 'BALANCE_SHEET'>('TRIAL_BALANCE');
+  const [activeReport, setActiveReport] = useState<ReportType>('TRIAL_BALANCE');
   const [trialBalance, setTrialBalance] = useState<TrialBalanceResponse | null>(null);
   const [incomeStatement, setIncomeStatement] = useState<IncomeStatementResponse | null>(null);
   const [balanceSheet, setBalanceSheet] = useState<BalanceSheetResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Filters
+  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('this_month');
+  const [startDate, setStartDate] = useState<string>(() => computePresetDates('this_month').start);
+  const [endDate, setEndDate] = useState<string>(() => computePresetDates('this_month').end);
+  const [asOfDate, setAsOfDate] = useState<string>(() => computePresetDates('this_month').end);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [hideZeroBalances, setHideZeroBalances] = useState<boolean>(true);
+
+  // Handle Preset Change
+  const handlePeriodPresetChange = (preset: PeriodPreset) => {
+    setPeriodPreset(preset);
+    if (preset !== 'custom') {
+      const { start, end } = computePresetDates(preset);
+      setStartDate(start);
+      setEndDate(end);
+      setAsOfDate(end);
+    }
+  };
+
   const fetchReports = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       if (activeReport === 'TRIAL_BALANCE') {
-        const data = await accountingService.getTrialBalance();
+        const effectiveAsOf = periodPreset === 'all_time' ? undefined : (asOfDate || undefined);
+        const data = await accountingService.getTrialBalance(effectiveAsOf);
         setTrialBalance(data);
       } else if (activeReport === 'INCOME_STATEMENT') {
-        const data = await accountingService.getIncomeStatement();
+        const effectiveStart = periodPreset === 'all_time' ? undefined : (startDate || undefined);
+        const effectiveEnd = periodPreset === 'all_time' ? undefined : (endDate || undefined);
+        const data = await accountingService.getIncomeStatement(effectiveStart, effectiveEnd);
         setIncomeStatement(data);
       } else if (activeReport === 'BALANCE_SHEET') {
-        const data = await accountingService.getBalanceSheet();
+        const effectiveAsOf = periodPreset === 'all_time' ? undefined : (asOfDate || undefined);
+        const data = await accountingService.getBalanceSheet(effectiveAsOf);
         setBalanceSheet(data);
       }
     } catch (err: any) {
@@ -38,32 +117,177 @@ export const FinancialReportsTab: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeReport]);
+  }, [activeReport, periodPreset, asOfDate, startDate, endDate]);
 
   useEffect(() => {
     fetchReports();
   }, [fetchReports]);
 
+  // Client-side filtered rows for Trial Balance
+  const filteredTrialBalanceRows = useMemo(() => {
+    if (!trialBalance) return [];
+    return trialBalance.rows.filter((row) => {
+      if (hideZeroBalances && row.debit === 0 && row.credit === 0) return false;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        const matchesName = row.account_name.toLowerCase().includes(term);
+        const matchesCode = row.account_code.toLowerCase().includes(term);
+        const matchesType = (row.account_type || '').toLowerCase().includes(term);
+        return matchesName || matchesCode || matchesType;
+      }
+      return true;
+    });
+  }, [trialBalance, hideZeroBalances, searchTerm]);
+
+  // Client-side filtered rows for Income Statement
+  const filteredRevenueRows = useMemo(() => {
+    if (!incomeStatement) return [];
+    return incomeStatement.revenue.rows.filter((r) => {
+      if (hideZeroBalances && r.amount === 0) return false;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        return r.name.toLowerCase().includes(term) || r.code.toLowerCase().includes(term);
+      }
+      return true;
+    });
+  }, [incomeStatement, hideZeroBalances, searchTerm]);
+
+  const filteredExpenseRows = useMemo(() => {
+    if (!incomeStatement) return [];
+    return incomeStatement.expenses.rows.filter((r) => {
+      if (hideZeroBalances && r.amount === 0) return false;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        return r.name.toLowerCase().includes(term) || r.code.toLowerCase().includes(term);
+      }
+      return true;
+    });
+  }, [incomeStatement, hideZeroBalances, searchTerm]);
+
+  // Client-side filtered rows for Balance Sheet
+  const filteredAssetRows = useMemo(() => {
+    if (!balanceSheet) return [];
+    return balanceSheet.assets.rows.filter((r) => {
+      if (hideZeroBalances && r.amount === 0) return false;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        return r.name.toLowerCase().includes(term) || r.code.toLowerCase().includes(term);
+      }
+      return true;
+    });
+  }, [balanceSheet, hideZeroBalances, searchTerm]);
+
+  const filteredLiabilityRows = useMemo(() => {
+    if (!balanceSheet) return [];
+    return balanceSheet.liabilities.rows.filter((r) => {
+      if (hideZeroBalances && r.amount === 0) return false;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        return r.name.toLowerCase().includes(term) || r.code.toLowerCase().includes(term);
+      }
+      return true;
+    });
+  }, [balanceSheet, hideZeroBalances, searchTerm]);
+
+  const filteredEquityRows = useMemo(() => {
+    if (!balanceSheet) return [];
+    return balanceSheet.equity.rows.filter((r) => {
+      if (hideZeroBalances && r.amount === 0) return false;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        return r.name.toLowerCase().includes(term) || r.code.toLowerCase().includes(term);
+      }
+      return true;
+    });
+  }, [balanceSheet, hideZeroBalances, searchTerm]);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportCSV = () => {
+    let headers: string[] = [];
+    let rows: (string | number)[][] = [];
+    let filename = '';
+
+    if (activeReport === 'TRIAL_BALANCE' && trialBalance) {
+      filename = `Trial_Balance_${asOfDate || 'All_Time'}`;
+      headers = ['Account Code', 'Account Name', 'Category', 'Debit (DR)', 'Credit (CR)'];
+      rows = filteredTrialBalanceRows.map((r) => [
+        r.account_code,
+        r.account_name,
+        r.account_type || '',
+        r.debit,
+        r.credit,
+      ]);
+      rows.push(['TOTAL', '', '', trialBalance.total_debit, trialBalance.total_credit]);
+    } else if (activeReport === 'INCOME_STATEMENT' && incomeStatement) {
+      filename = `Profit_and_Loss_${startDate || 'Start'}_to_${endDate || 'End'}`;
+      headers = ['Category', 'Account Code', 'Account Name', 'Amount (PKR)'];
+      filteredRevenueRows.forEach((r) => {
+        rows.push(['Revenue', r.code, r.name, r.amount]);
+      });
+      rows.push(['Total Revenue', '', '', incomeStatement.revenue.total]);
+      filteredExpenseRows.forEach((r) => {
+        rows.push(['Expense', r.code, r.name, r.amount]);
+      });
+      rows.push(['Total Expenses', '', '', incomeStatement.expenses.total]);
+      rows.push(['Net Profit', '', '', incomeStatement.net_profit]);
+    } else if (activeReport === 'BALANCE_SHEET' && balanceSheet) {
+      filename = `Balance_Sheet_${asOfDate || 'All_Time'}`;
+      headers = ['Category', 'Account Code', 'Account Name', 'Amount (PKR)'];
+      filteredAssetRows.forEach((r) => rows.push(['Asset', r.code, r.name, r.amount]));
+      rows.push(['Total Assets', '', '', balanceSheet.assets.total]);
+      filteredLiabilityRows.forEach((r) => rows.push(['Liability', r.code, r.name, r.amount]));
+      rows.push(['Total Liabilities', '', '', balanceSheet.liabilities.total]);
+      filteredEquityRows.forEach((r) => rows.push(['Equity', r.code, r.name, r.amount]));
+      rows.push(['Total Equity', '', '', balanceSheet.equity.total]);
+    }
+
+    if (rows.length === 0) return;
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) =>
+        row
+          .map((item) => {
+            const str = String(item ?? '');
+            return str.includes(',') ? `"${str.replace(/"/g, '""')}"` : str;
+          })
+          .join(',')
+      ),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Report Switcher & Actions */}
+      {/* Report Switcher */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
             onClick={() => setActiveReport('TRIAL_BALANCE')}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              padding: '0.625rem 1rem',
+              padding: '0.625rem 1.125rem',
               borderRadius: '0.5rem',
               fontSize: '0.875rem',
-              fontWeight: 600,
+              fontWeight: 700,
               border: '1px solid',
               borderColor: activeReport === 'TRIAL_BALANCE' ? 'var(--primary-400)' : 'var(--border-subtle)',
               backgroundColor: activeReport === 'TRIAL_BALANCE' ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-elevated)',
               color: activeReport === 'TRIAL_BALANCE' ? 'var(--primary-400)' : 'var(--text-muted)',
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
             <Scale size={16} />
@@ -76,15 +300,16 @@ export const FinancialReportsTab: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              padding: '0.625rem 1rem',
+              padding: '0.625rem 1.125rem',
               borderRadius: '0.5rem',
               fontSize: '0.875rem',
-              fontWeight: 600,
+              fontWeight: 700,
               border: '1px solid',
               borderColor: activeReport === 'INCOME_STATEMENT' ? 'var(--success)' : 'var(--border-subtle)',
               backgroundColor: activeReport === 'INCOME_STATEMENT' ? 'var(--success-bg)' : 'var(--bg-elevated)',
               color: activeReport === 'INCOME_STATEMENT' ? 'var(--success)' : 'var(--text-muted)',
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
             <TrendingUp size={16} />
@@ -97,15 +322,16 @@ export const FinancialReportsTab: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              padding: '0.625rem 1rem',
+              padding: '0.625rem 1.125rem',
               borderRadius: '0.5rem',
               fontSize: '0.875rem',
-              fontWeight: 600,
+              fontWeight: 700,
               border: '1px solid',
               borderColor: activeReport === 'BALANCE_SHEET' ? 'var(--accent-500)' : 'var(--border-subtle)',
               backgroundColor: activeReport === 'BALANCE_SHEET' ? 'rgba(99, 102, 241, 0.15)' : 'var(--bg-elevated)',
               color: activeReport === 'BALANCE_SHEET' ? '#a5b4fc' : 'var(--text-muted)',
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
             <PieChart size={16} />
@@ -113,15 +339,183 @@ export const FinancialReportsTab: React.FC = () => {
           </button>
         </div>
 
-        <Button
-          variant="secondary"
-          icon={<RefreshCw size={14} />}
-          loading={loading}
-          onClick={fetchReports}
-        >
-          Recalculate
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Button variant="outline" icon={<Download size={14} />} onClick={handleExportCSV}>
+            Export CSV
+          </Button>
+          <Button variant="outline" icon={<Printer size={14} />} onClick={handlePrint}>
+            Print Report
+          </Button>
+          <Button variant="secondary" icon={<RefreshCw size={14} />} loading={loading} onClick={fetchReports}>
+            Recalculate
+          </Button>
+        </div>
       </div>
+
+      {/* Comprehensive Filter Control Panel */}
+      <Card
+        title="Report Parameters & Date Range Filters"
+        subtitle="Filter financial accounting transactions by date periods, specific as-of dates, or account codes"
+        icon={<Filter size={18} />}
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
+          {/* Period Preset */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+              Period Preset
+            </label>
+            <select
+              value={periodPreset}
+              onChange={(e) => handlePeriodPresetChange(e.target.value as PeriodPreset)}
+              style={{
+                width: '100%',
+                padding: '0.55rem 0.75rem',
+                fontSize: '0.8125rem',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.5rem',
+                color: 'var(--text-main)',
+                outline: 'none',
+              }}
+            >
+              <option value="this_month">This Month</option>
+              <option value="today">Today</option>
+              <option value="this_week">This Week</option>
+              <option value="last_month">Last Month</option>
+              <option value="this_quarter">This Quarter</option>
+              <option value="this_year">This Financial Year</option>
+              <option value="all_time">All Time (Cumulative)</option>
+              <option value="custom">Custom Date Range</option>
+            </select>
+          </div>
+
+          {/* Date Range Inputs */}
+          {activeReport === 'INCOME_STATEMENT' ? (
+            <>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  disabled={periodPreset === 'all_time'}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setPeriodPreset('custom');
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.75rem',
+                    fontSize: '0.8125rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    outline: 'none',
+                    opacity: periodPreset === 'all_time' ? 0.5 : 1,
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  disabled={periodPreset === 'all_time'}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setPeriodPreset('custom');
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.75rem',
+                    fontSize: '0.8125rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    outline: 'none',
+                    opacity: periodPreset === 'all_time' ? 0.5 : 1,
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                As of Date
+              </label>
+              <input
+                type="date"
+                value={asOfDate}
+                disabled={periodPreset === 'all_time'}
+                onChange={(e) => {
+                  setAsOfDate(e.target.value);
+                  setPeriodPreset('custom');
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 0.75rem',
+                  fontSize: '0.8125rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.5rem',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                  opacity: periodPreset === 'all_time' ? 0.5 : 1,
+                }}
+              />
+            </div>
+          )}
+
+          {/* Account Filter / Search */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+              Search Line Item / Code
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
+              <input
+                type="text"
+                placeholder="Filter by name or code..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 0.75rem 0.55rem 2.25rem',
+                  fontSize: '0.8125rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.5rem',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Toggles bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-main)', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={hideZeroBalances}
+              onChange={(e) => setHideZeroBalances(e.target.checked)}
+              style={{ width: '1rem', height: '1rem', accentColor: 'var(--primary-500)', cursor: 'pointer' }}
+            />
+            <span style={{ fontWeight: 600 }}>Hide accounts with zero (0.00) balances</span>
+          </label>
+
+          <Button variant="primary" icon={<Filter size={14} />} onClick={fetchReports}>
+            Apply Parameters
+          </Button>
+        </div>
+      </Card>
 
       {loading ? (
         <LoadingSpinner label="Generating real-time financial report..." />
@@ -135,7 +529,7 @@ export const FinancialReportsTab: React.FC = () => {
           {activeReport === 'TRIAL_BALANCE' && trialBalance && (
             <Card
               title="General Ledger Trial Balance"
-              subtitle={`Verified as of ${trialBalance.as_of_date}`}
+              subtitle={`Verified double-entry summary as of ${trialBalance.as_of_date} (${filteredTrialBalanceRows.length} active accounts displayed)`}
               icon={<Scale size={20} />}
               action={
                 <Badge variant={trialBalance.is_balanced ? 'success' : 'danger'}>
@@ -155,34 +549,44 @@ export const FinancialReportsTab: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {trialBalance.rows.map((row) => (
-                      <tr key={row.account_id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--primary-400)' }}>
-                            {row.account_code}
-                          </code>
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>{row.account_name}</td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{row.account_type}</span>
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: row.debit > 0 ? 'var(--primary-400)' : 'var(--text-subtle)' }}>
-                          {row.debit > 0 ? `Rs. ${row.debit.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: row.credit > 0 ? 'var(--warning)' : 'var(--text-subtle)' }}>
-                          {row.credit > 0 ? `Rs. ${row.credit.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                    {filteredTrialBalanceRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                          No accounts match the current filter criteria.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredTrialBalanceRows.map((row) => (
+                        <tr key={row.account_id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--primary-400)', fontWeight: 700 }}>
+                              {row.account_code}
+                            </code>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{row.account_name}</td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{row.account_type}</span>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: row.debit > 0 ? 'var(--primary-400)' : 'var(--text-subtle)', fontWeight: row.debit > 0 ? 700 : 400 }}>
+                            {row.debit > 0 ? `Rs. ${formatMoney(row.debit)}` : '—'}
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: row.credit > 0 ? 'var(--warning)' : 'var(--text-subtle)', fontWeight: row.credit > 0 ? 700 : 400 }}>
+                            {row.credit > 0 ? `Rs. ${formatMoney(row.credit)}` : '—'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                   <tfoot>
-                    <tr style={{ borderTop: '2px solid var(--border-medium)', fontWeight: 800 }}>
-                      <td colSpan={3} style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-main)' }}>Grand Total:</td>
-                      <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--primary-400)', fontSize: '1rem' }}>
-                        Rs. {trialBalance.total_debit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    <tr style={{ borderTop: '2px solid var(--border-medium)', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                      <td colSpan={3} style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-main)', fontSize: '0.9375rem' }}>
+                        Grand Total:
                       </td>
-                      <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--warning)', fontSize: '1rem' }}>
-                        Rs. {trialBalance.total_credit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--primary-400)', fontSize: '1.0625rem' }}>
+                        Rs. {formatMoney(trialBalance.total_debit)}
+                      </td>
+                      <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--warning)', fontSize: '1.0625rem' }}>
+                        Rs. {formatMoney(trialBalance.total_credit)}
                       </td>
                     </tr>
                   </tfoot>
@@ -195,29 +599,29 @@ export const FinancialReportsTab: React.FC = () => {
           {activeReport === 'INCOME_STATEMENT' && incomeStatement && (
             <Card
               title="Profit & Loss Statement (Income Statement)"
-              subtitle={`Period: ${incomeStatement.period.start_date} to ${incomeStatement.period.end_date}`}
+              subtitle={`Accounting Period: ${incomeStatement.period.start_date} to ${incomeStatement.period.end_date}`}
               icon={<TrendingUp size={20} />}
               action={
                 <Badge variant={incomeStatement.net_profit >= 0 ? 'success' : 'danger'}>
-                  Net {incomeStatement.net_profit >= 0 ? 'Profit' : 'Loss'}: Rs. {Math.abs(incomeStatement.net_profit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  Net {incomeStatement.net_profit >= 0 ? 'Profit' : 'Loss'}: Rs. {formatMoney(Math.abs(incomeStatement.net_profit))}
                 </Badge>
               }
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {/* Revenue Section */}
                 <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--success)', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--success)', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>1. Operating Revenue</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {incomeStatement.revenue.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.125rem' }}>Rs. {formatMoney(incomeStatement.revenue.total)}</span>
                   </h4>
-                  <div style={{ backgroundColor: 'var(--bg-app)', borderRadius: '0.5rem', padding: '0.5rem 1rem' }}>
-                    {incomeStatement.revenue.rows.length === 0 ? (
-                      <div style={{ padding: '0.75rem', color: 'var(--text-subtle)', fontSize: '0.8125rem' }}>No revenue recorded in this period.</div>
+                  <div style={{ backgroundColor: 'var(--bg-app)', borderRadius: '0.5rem', padding: '0.5rem 1rem', border: '1px solid var(--border-subtle)' }}>
+                    {filteredRevenueRows.length === 0 ? (
+                      <div style={{ padding: '0.75rem', color: 'var(--text-subtle)', fontSize: '0.8125rem' }}>No revenue accounts recorded in this period.</div>
                     ) : (
-                      incomeStatement.revenue.rows.map((row) => (
-                        <div key={row.code} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
-                          <span><code style={{ color: 'var(--primary-400)' }}>[{row.code}]</code> {row.name}</span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Rs. {row.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                      filteredRevenueRows.map((row) => (
+                        <div key={row.code} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.625rem 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
+                          <span><code style={{ color: 'var(--primary-400)', fontWeight: 700 }}>[{row.code}]</code> {row.name}</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-main)' }}>Rs. {formatMoney(row.amount)}</span>
                         </div>
                       ))
                     )}
@@ -226,18 +630,18 @@ export const FinancialReportsTab: React.FC = () => {
 
                 {/* Expenses Section */}
                 <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--danger)', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>2. Operating & COGS Expenses</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {incomeStatement.expenses.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--danger)', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>2. Operating Expenses & Cost of Goods Sold (COGS)</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.125rem' }}>Rs. {formatMoney(incomeStatement.expenses.total)}</span>
                   </h4>
-                  <div style={{ backgroundColor: 'var(--bg-app)', borderRadius: '0.5rem', padding: '0.5rem 1rem' }}>
-                    {incomeStatement.expenses.rows.length === 0 ? (
-                      <div style={{ padding: '0.75rem', color: 'var(--text-subtle)', fontSize: '0.8125rem' }}>No expenses recorded in this period.</div>
+                  <div style={{ backgroundColor: 'var(--bg-app)', borderRadius: '0.5rem', padding: '0.5rem 1rem', border: '1px solid var(--border-subtle)' }}>
+                    {filteredExpenseRows.length === 0 ? (
+                      <div style={{ padding: '0.75rem', color: 'var(--text-subtle)', fontSize: '0.8125rem' }}>No expense accounts recorded in this period.</div>
                     ) : (
-                      incomeStatement.expenses.rows.map((row) => (
-                        <div key={row.code} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
-                          <span><code style={{ color: 'var(--primary-400)' }}>[{row.code}]</code> {row.name}</span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Rs. {row.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                      filteredExpenseRows.map((row) => (
+                        <div key={row.code} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.625rem 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
+                          <span><code style={{ color: 'var(--danger)', fontWeight: 700 }}>[{row.code}]</code> {row.name}</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-main)' }}>Rs. {formatMoney(row.amount)}</span>
                         </div>
                       ))
                     )}
@@ -248,23 +652,27 @@ export const FinancialReportsTab: React.FC = () => {
                 <div style={{
                   backgroundColor: 'var(--bg-elevated)',
                   borderRadius: '0.75rem',
-                  padding: '1.25rem',
+                  padding: '1.25rem 1.5rem',
                   border: '1px solid var(--border-medium)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
                 }}>
                   <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Net Operating Profit / (Loss)</h3>
-                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Revenue minus Operating Expenses and COGS</p>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
+                      Total Operating Revenue minus COGS and Operating Expenses
+                    </p>
                   </div>
                   <div style={{
-                    fontSize: '1.5rem',
-                    fontWeight: 800,
+                    fontSize: '1.75rem',
+                    fontWeight: 900,
                     fontFamily: 'var(--font-mono)',
                     color: incomeStatement.net_profit >= 0 ? 'var(--success)' : 'var(--danger)',
                   }}>
-                    Rs. {incomeStatement.net_profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    Rs. {formatMoney(incomeStatement.net_profit)}
                   </div>
                 </div>
               </div>
@@ -283,20 +691,24 @@ export const FinancialReportsTab: React.FC = () => {
                 </Badge>
               }
             >
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
                 {/* Left: Assets */}
                 <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <h4 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary-400)', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Assets</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {balanceSheet.assets.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  <h4 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary-400)', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>1. Total Assets</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(balanceSheet.assets.total)}</span>
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {balanceSheet.assets.rows.map((r) => (
-                      <div key={r.code} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
-                        <span><code style={{ color: 'var(--text-subtle)' }}>[{r.code}]</code> {r.name}</span>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Rs. {r.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    ))}
+                    {filteredAssetRows.length === 0 ? (
+                      <div style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)' }}>No asset line items match filter.</div>
+                    ) : (
+                      filteredAssetRows.map((r) => (
+                        <div key={r.code} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
+                          <span><code style={{ color: 'var(--text-subtle)', fontWeight: 700 }}>[{r.code}]</code> {r.name}</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Rs. {formatMoney(r.amount)}</span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -304,18 +716,18 @@ export const FinancialReportsTab: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {/* Liabilities */}
                   <div className="glass-card" style={{ padding: '1.25rem' }}>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--warning)', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Liabilities</span>
-                      <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {balanceSheet.liabilities.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <h4 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--warning)', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>2. Liabilities</span>
+                      <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(balanceSheet.liabilities.total)}</span>
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {balanceSheet.liabilities.rows.length === 0 ? (
+                      {filteredLiabilityRows.length === 0 ? (
                         <div style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)' }}>No liabilities recorded.</div>
                       ) : (
-                        balanceSheet.liabilities.rows.map((r) => (
+                        filteredLiabilityRows.map((r) => (
                           <div key={r.code} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
-                            <span><code style={{ color: 'var(--text-subtle)' }}>[{r.code}]</code> {r.name}</span>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Rs. {r.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            <span><code style={{ color: 'var(--text-subtle)', fontWeight: 700 }}>[{r.code}]</code> {r.name}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Rs. {formatMoney(r.amount)}</span>
                           </div>
                         ))
                       )}
@@ -324,17 +736,21 @@ export const FinancialReportsTab: React.FC = () => {
 
                   {/* Equity */}
                   <div className="glass-card" style={{ padding: '1.25rem' }}>
-                    <h4 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#a5b4fc', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Equity</span>
-                      <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {balanceSheet.equity.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <h4 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#a5b4fc', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>3. Equity</span>
+                      <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(balanceSheet.equity.total)}</span>
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {balanceSheet.equity.rows.map((r) => (
-                        <div key={r.code} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
-                          <span><code style={{ color: 'var(--text-subtle)' }}>[{r.code}]</code> {r.name}</span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Rs. {r.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                        </div>
-                      ))}
+                      {filteredEquityRows.length === 0 ? (
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)' }}>No equity accounts recorded.</div>
+                      ) : (
+                        filteredEquityRows.map((r) => (
+                          <div key={r.code} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
+                            <span><code style={{ color: 'var(--text-subtle)', fontWeight: 700 }}>[{r.code}]</code> {r.name}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Rs. {formatMoney(r.amount)}</span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>

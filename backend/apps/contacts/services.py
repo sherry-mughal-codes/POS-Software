@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from apps.accounting.models import Account, AccountType, JournalEntry, ReferenceType
 from apps.accounting.services import AccountingService
-from apps.sales.models import Sale, SaleStatus, SalesReturn
+from apps.sales.models import Sale, SaleStatus, SalesReturn, PaymentMethodType
 from .models import Customer, CustomerPayment, CustomerPaymentStatus
 
 
@@ -16,6 +16,51 @@ class CustomerReceivableService:
     """
     Authoritative calculation engine for customer credit receivables, statements, and payments.
     """
+
+    @classmethod
+    def reallocate_customer_payments(cls, customer: Customer):
+        """
+        Allocates all submitted CustomerPayment records across the customer's completed credit sales in FIFO order.
+        Updates each Sale's paid_amount and due_amount so that the Sales Invoices list stays 100% in sync with Customer Payments.
+        """
+        if customer.is_walkin:
+            return
+
+        sales = list(Sale.objects.filter(customer=customer, status=SaleStatus.COMPLETED).order_by("date", "id"))
+        payments = list(CustomerPayment.objects.filter(customer=customer, status=CustomerPaymentStatus.SUBMITTED).order_by("date", "id"))
+
+        total_payment_pool = sum(p.amount for p in payments)
+
+        # 1. Reset each sale's initial paid and due amounts based on upfront payment (at checkout)
+        for s in sales:
+            upfront_paid = Decimal("0.00")
+            if s.payment_method in [PaymentMethodType.CASH, PaymentMethodType.CARD]:
+                upfront_paid = s.grand_total
+            elif s.payments.exists():
+                upfront_paid = sum(
+                    p.amount for p in s.payments.filter(
+                        payment_method__in=[PaymentMethodType.CASH, PaymentMethodType.CARD]
+                    )
+                )
+            else:
+                if s.payment_method != PaymentMethodType.CREDIT:
+                    upfront_paid = min(s.paid_amount, s.grand_total)
+
+            returns_amt = sum(r.refund_amount for r in s.returns.all())
+            effective_grand_total = max(Decimal("0.00"), s.grand_total - returns_amt)
+
+            s.paid_amount = min(upfront_paid, effective_grand_total)
+            s.due_amount = max(Decimal("0.00"), effective_grand_total - s.paid_amount)
+
+        # 2. Allocate CustomerPayment pool across sales in FIFO order
+        for s in sales:
+            if s.due_amount > Decimal("0.00") and total_payment_pool > Decimal("0.00"):
+                alloc = min(total_payment_pool, s.due_amount)
+                s.paid_amount += alloc
+                s.due_amount -= alloc
+                total_payment_pool -= alloc
+
+            s.save(update_fields=["paid_amount", "due_amount", "updated_at"])
 
     @classmethod
     def get_customer_outstanding(cls, customer_id: int) -> dict:
@@ -37,25 +82,29 @@ class CustomerReceivableService:
                 "outstanding_balance": Decimal("0.00"),
             }
 
-        # 1. Total credit sales due (from completed Sales)
-        sales_due = Sale.objects.filter(
-            customer=customer,
-            status=SaleStatus.COMPLETED,
-        ).aggregate(total_due=models.Sum("due_amount"))["total_due"] or Decimal("0.00")
+        sales = list(Sale.objects.filter(customer=customer, status=SaleStatus.COMPLETED))
+        
+        # Calculate total credit value granted
+        total_credit_sales = Decimal("0.00")
+        for s in sales:
+            if s.payment_method == PaymentMethodType.CREDIT:
+                total_credit_sales += s.grand_total
+            elif s.payments.exists():
+                credit_part = sum(p.amount for p in s.payments.filter(payment_method=PaymentMethodType.CREDIT))
+                total_credit_sales += credit_part
 
-        # 2. Total customer payments submitted
         payments_total = CustomerPayment.objects.filter(
             customer=customer,
             status=CustomerPaymentStatus.SUBMITTED,
         ).aggregate(total_paid=models.Sum("amount"))["total_paid"] or Decimal("0.00")
 
-        # 3. Total returns against credit sales
         returns_total = SalesReturn.objects.filter(
             original_sale__customer=customer,
             original_sale__status=SaleStatus.COMPLETED,
         ).aggregate(total_refund=models.Sum("refund_amount"))["total_refund"] or Decimal("0.00")
 
-        outstanding = max(Decimal("0.00"), sales_due - payments_total)
+        # Sum of actual due_amount on sales
+        outstanding = sum(s.due_amount for s in sales)
 
         return {
             "customer_id": customer.id,
@@ -63,7 +112,7 @@ class CustomerReceivableService:
             "customer_name": customer.name,
             "is_walkin": False,
             "credit_enabled": customer.credit_enabled,
-            "total_credit_sales": sales_due,
+            "total_credit_sales": total_credit_sales,
             "total_payments": payments_total,
             "total_returns": returns_total,
             "outstanding_balance": outstanding,
@@ -179,6 +228,9 @@ class CustomerReceivableService:
         payment.submitted_at = timezone.now()
         payment.save(update_fields=["journal_entry", "status", "submitted_by", "submitted_at", "updated_at"])
 
+        # Reallocate customer payments across invoices in FIFO order
+        cls.reallocate_customer_payments(payment.customer)
+
         return payment
 
     @classmethod
@@ -226,6 +278,9 @@ class CustomerReceivableService:
         payment.cancelled_at = timezone.now()
         payment.cancellation_reason = reason
         payment.save(update_fields=["status", "reversal_journal_entry", "cancelled_by", "cancelled_at", "cancellation_reason", "updated_at"])
+
+        # Reallocate customer payments across invoices
+        cls.reallocate_customer_payments(payment.customer)
 
         return payment
 

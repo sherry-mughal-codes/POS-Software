@@ -126,6 +126,8 @@ class SaleSerializer(serializers.ModelSerializer):
     cashier_name = serializers.SerializerMethodField()
     payment_method_display = serializers.CharField(source="get_payment_method_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    payment_status = serializers.SerializerMethodField()
+    payment_status_display = serializers.SerializerMethodField()
 
     subtotal = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
     discount_amount = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
@@ -151,6 +153,8 @@ class SaleSerializer(serializers.ModelSerializer):
             "status_display",
             "payment_method",
             "payment_method_display",
+            "payment_status",
+            "payment_status_display",
             "subtotal",
             "discount_amount",
             "tax_amount",
@@ -168,6 +172,26 @@ class SaleSerializer(serializers.ModelSerializer):
             "payments",
             "returns",
         ]
+
+    def get_payment_status(self, obj) -> str:
+        if obj.due_amount <= Decimal("0.00"):
+            return "PAID"
+        elif obj.paid_amount > Decimal("0.00"):
+            return "PARTIAL"
+        return "UNPAID"
+
+    def get_payment_status_display(self, obj) -> str:
+        if obj.payment_method == PaymentMethodType.CREDIT:
+            if obj.due_amount <= Decimal("0.00"):
+                return "Credit (Paid)"
+            elif obj.paid_amount > Decimal("0.00"):
+                return "Credit (Partial)"
+            return "Credit (Unpaid AR)"
+        elif obj.payment_method == PaymentMethodType.SPLIT:
+            if obj.due_amount <= Decimal("0.00"):
+                return "Split (Paid)"
+            return "Split (Due)"
+        return obj.get_payment_method_display()
 
     def get_cashier_name(self, obj):
         if not obj.created_by:

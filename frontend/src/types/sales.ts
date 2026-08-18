@@ -81,6 +81,8 @@ export interface Sale {
   status_display: string;
   payment_method: PaymentMethodType;
   payment_method_display: string;
+  payment_status?: 'PAID' | 'PARTIAL' | 'UNPAID';
+  payment_status_display?: string;
   subtotal: number;
   discount_amount: number;
   tax_amount: number;

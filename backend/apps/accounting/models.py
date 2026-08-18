@@ -56,7 +56,10 @@ class Account(models.Model):
 
     @property
     def normal_balance(self):
-        """Returns 'DEBIT' or 'CREDIT' based on account type."""
+        """Returns 'DEBIT' or 'CREDIT' based on account type and contra nature."""
+        # Contra-income accounts (like 4020 Sales Returns & Allowances) have a normal DEBIT balance
+        if self.code in ["4020", "4030"] or ("return" in self.name.lower() and self.account_type == AccountType.INCOME):
+            return "DEBIT"
         if self.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
             return "DEBIT"
         return "CREDIT"

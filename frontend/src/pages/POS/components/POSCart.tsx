@@ -25,6 +25,8 @@ interface POSCartProps {
   overallDiscount: number;
   onUpdateOverallDiscount: (discount: number) => void;
   onOpenCheckout: () => void;
+  isDayOpen?: boolean;
+  onOpenDay?: () => void;
 }
 
 const formatMoney = (val: number | string | undefined | null): string => {
@@ -44,6 +46,8 @@ export const POSCart: React.FC<POSCartProps> = ({
   overallDiscount,
   onUpdateOverallDiscount,
   onOpenCheckout,
+  isDayOpen = true,
+  onOpenDay,
 }) => {
   const [showDiscountInput, setShowDiscountInput] = useState(false);
 
@@ -405,6 +409,47 @@ export const POSCart: React.FC<POSCartProps> = ({
           </span>
         </div>
 
+        {/* Day Session Closed Warning */}
+        {!isDayOpen && (
+          <div
+            style={{
+              padding: '0.5rem 0.75rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid var(--danger)',
+              borderRadius: '0.375rem',
+              fontSize: '0.75rem',
+              color: 'var(--danger)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.5rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <AlertCircle size={14} style={{ flexShrink: 0 }} />
+              <span style={{ fontWeight: 600 }}>Day Session Closed</span>
+            </div>
+            {onOpenDay && (
+              <button
+                type="button"
+                onClick={onOpenDay}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#38bdf8',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  padding: 0,
+                }}
+              >
+                Open Day Now
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '0.375rem' }}>
           <Button
@@ -415,21 +460,39 @@ export const POSCart: React.FC<POSCartProps> = ({
             title="Clear Cart"
           />
 
-          <Button
-            variant="primary"
-            onClick={onOpenCheckout}
-            disabled={cart.length === 0}
-            style={{
-              flex: 1,
-              padding: '0.625rem',
-              fontSize: '0.9375rem',
-              fontWeight: 800,
-              background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-              boxShadow: cart.length > 0 ? '0 4px 14px rgba(6, 182, 212, 0.4)' : 'none',
-            }}
-          >
-            Pay Rs. {formatMoney(grandTotal)} (F9)
-          </Button>
+          {!isDayOpen ? (
+            <Button
+              variant="secondary"
+              onClick={onOpenDay || (() => {})}
+              style={{
+                flex: 1,
+                padding: '0.625rem',
+                fontSize: '0.8125rem',
+                fontWeight: 800,
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                color: 'var(--danger)',
+                border: '1px solid var(--danger)',
+              }}
+            >
+              🔒 Day Closed (Open Day to Sale)
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={onOpenCheckout}
+              disabled={cart.length === 0}
+              style={{
+                flex: 1,
+                padding: '0.625rem',
+                fontSize: '0.9375rem',
+                fontWeight: 800,
+                background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                boxShadow: cart.length > 0 ? '0 4px 14px rgba(6, 182, 212, 0.4)' : 'none',
+              }}
+            >
+              Pay Rs. {formatMoney(grandTotal)} (F9)
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -2,9 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw,
   Zap,
+  Lock,
+  Unlock,
+  AlertTriangle,
+  DollarSign,
 } from 'lucide-react';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
+import { Input } from '../../components/common/Input';
+import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { POSProductGrid } from './components/POSProductGrid';
 import { POSCart } from './components/POSCart';
@@ -20,12 +26,14 @@ import { productService } from '../../services/productService';
 import { contactService } from '../../services/contactService';
 import { salesService } from '../../services/salesService';
 import { daySessionService } from '../../services/daySessionService';
+import { useSettings } from '../../context/SettingsContext';
 
 interface POSTerminalPageProps {
   isSidebarCollapsed?: boolean;
 }
 
 export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarCollapsed = false }) => {
+  const { currencySymbol } = useSettings();
   const [products, setProducts] = useState<InventorySummaryItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -42,6 +50,13 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // Open Day Modal State
+  const [isOpenDayModalOpen, setIsOpenDayModalOpen] = useState(false);
+  const [openingCashInput, setOpeningCashInput] = useState('0');
+  const [openingNotesInput, setOpeningNotesInput] = useState('');
+  const [openDaySubmitting, setOpenDaySubmitting] = useState(false);
+  const [openDayError, setOpenDayError] = useState<string | null>(null);
 
   const fetchCatalogData = useCallback(async () => {
     setLoading(true);
@@ -73,20 +88,47 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
     fetchCatalogData();
   }, [fetchCatalogData]);
 
+  // Open Day Handler
+  const handleOpenDaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOpenDaySubmitting(true);
+    setOpenDayError(null);
+    try {
+      const res = await daySessionService.openDay({
+        opening_cash: parseFloat(openingCashInput) || 0,
+        opening_notes: openingNotesInput,
+      });
+      setActiveSession(res);
+      setIsOpenDayModalOpen(false);
+      setOpeningCashInput('0');
+      setOpeningNotesInput('');
+    } catch (err: any) {
+      setOpenDayError(err?.response?.data?.detail || err?.message || 'Failed to open day session.');
+    } finally {
+      setOpenDaySubmitting(false);
+    }
+  };
+
   // Global F9 keyboard shortcut to trigger checkout
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F9' && cart.length > 0 && !isCheckoutOpen && !isReceiptOpen) {
+      if (e.key === 'F9' && cart.length > 0 && !isCheckoutOpen && !isReceiptOpen && activeSession) {
         e.preventDefault();
         setIsCheckoutOpen(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [cart.length, isCheckoutOpen, isReceiptOpen]);
+  }, [cart.length, isCheckoutOpen, isReceiptOpen, activeSession]);
 
   // Cart handlers
   const handleAddToCart = (prod: InventorySummaryItem) => {
+    if (!activeSession) {
+      setOpenDayError('Please open the business day session before adding products and processing sales.');
+      setIsOpenDayModalOpen(true);
+      return;
+    }
+
     if (prod.current_stock <= 0) return;
 
     setCart((prevCart) => {
@@ -227,9 +269,27 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
               <code style={{ color: 'var(--text-main)', fontWeight: 800 }}>{activeSession.session_number}</code>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.35rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem' }}>
-              <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', backgroundColor: 'var(--danger)', display: 'inline-block' }} />
-              <span style={{ fontWeight: 700, color: 'var(--danger)' }}>Day Closed / Not Open</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.35rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem' }}>
+                <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', backgroundColor: 'var(--danger)', display: 'inline-block' }} />
+                <span style={{ fontWeight: 700, color: 'var(--danger)' }}>Day Closed</span>
+              </div>
+              <Button
+                variant="primary"
+                icon={<Unlock size={14} />}
+                onClick={() => {
+                  setOpenDayError(null);
+                  setIsOpenDayModalOpen(true);
+                }}
+                style={{
+                  backgroundColor: '#ef4444',
+                  borderColor: '#dc2626',
+                  fontSize: '0.8125rem',
+                  padding: '0.35rem 0.75rem',
+                }}
+              >
+                Open Day Session
+              </Button>
             </div>
           )}
 
@@ -242,6 +302,50 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
           </Button>
         </div>
       </div>
+
+      {/* Day Closed Warning Alert Bar */}
+      {!activeSession && (
+        <div
+          style={{
+            padding: '0.75rem 1rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid var(--danger)',
+            borderRadius: '0.5rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <Lock size={18} color="var(--danger)" />
+            <div>
+              <strong style={{ color: 'var(--text-main)', fontSize: '0.875rem' }}>POS Register Terminal is Closed</strong>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                Sales and cashier checkout are locked. Please open the business day session with the cash drawer opening amount to enable sales.
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            icon={<Unlock size={15} />}
+            onClick={() => {
+              setOpenDayError(null);
+              setIsOpenDayModalOpen(true);
+            }}
+            style={{
+              backgroundColor: '#ef4444',
+              borderColor: '#dc2626',
+              fontWeight: 700,
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+            }}
+          >
+            Open Day Session Now
+          </Button>
+        </div>
+      )}
 
       {/* Main Split Screen: Products Grid (Left) | Cart (Right 340px) */}
       {loading && products.length === 0 ? (
@@ -281,10 +385,72 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
               overallDiscount={overallDiscount}
               onUpdateOverallDiscount={setOverallDiscount}
               onOpenCheckout={() => setIsCheckoutOpen(true)}
+              isDayOpen={!!activeSession}
+              onOpenDay={() => {
+                setOpenDayError(null);
+                setIsOpenDayModalOpen(true);
+              }}
             />
           </div>
         </div>
       )}
+
+      {/* Open Day Modal */}
+      <Modal
+        isOpen={isOpenDayModalOpen}
+        onClose={() => setIsOpenDayModalOpen(false)}
+        title="Open Business Day / POS Session"
+        subtitle="Initialize the daily register session with the starting physical cash present in the cash drawer."
+        maxWidth="500px"
+      >
+        <form onSubmit={handleOpenDaySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {openDayError && (
+            <div style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid var(--danger)',
+              borderRadius: '0.5rem',
+              color: 'var(--danger)',
+              fontSize: '0.8125rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}>
+              <AlertTriangle size={16} />
+              <span>{openDayError}</span>
+            </div>
+          )}
+
+          <Input
+            label={`Opening Drawer Cash (${currencySymbol || 'Rs.'}) *`}
+            type="number"
+            step="0.01"
+            min="0"
+            value={openingCashInput}
+            onChange={(e) => setOpeningCashInput(e.target.value)}
+            placeholder="0.00"
+            required
+            helperText="Starting physical cash float in the cash drawer at day opening."
+            icon={<DollarSign size={14} />}
+          />
+
+          <Input
+            label="Opening Notes / Shift Details (Optional)"
+            placeholder="e.g. Morning Shift - Cash float verified"
+            value={openingNotesInput}
+            onChange={(e) => setOpeningNotesInput(e.target.value)}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <Button type="button" variant="outline" onClick={() => setIsOpenDayModalOpen(false)} disabled={openDaySubmitting}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" icon={<Unlock size={16} />} loading={openDaySubmitting}>
+              Open Day Session
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Checkout Modal */}
       {selectedCustomer && (

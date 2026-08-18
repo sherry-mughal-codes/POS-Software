@@ -253,6 +253,19 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                 );
               })}
             </tbody>
+            {selectedType !== 'ALL' && (
+              <tfoot>
+                <tr style={{ borderTop: '2px solid var(--border-medium)', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <td colSpan={4} style={{ padding: '1rem', color: 'var(--text-main)', textAlign: 'right' }}>
+                    Net {accountTypes.find((t) => t.key === selectedType)?.label} Total:
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '1rem', color: 'var(--primary-400)' }}>
+                    Rs. {filteredAccounts.reduce((sum, a) => sum + a.current_balance, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td colSpan={2} />
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       </Card>

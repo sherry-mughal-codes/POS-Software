@@ -4,7 +4,6 @@ import {
   BookOpen,
   Book,
   BarChart3,
-  Zap,
   DollarSign,
   TrendingUp,
   Scale,
@@ -17,12 +16,11 @@ import { ChartOfAccountsTab } from './ChartOfAccountsTab';
 import { JournalEntriesTab } from './JournalEntriesTab';
 import { AccountLedgerTab } from './AccountLedgerTab';
 import { FinancialReportsTab } from './FinancialReportsTab';
-import { TransactionSimulatorTab } from './TransactionSimulatorTab';
 import { Account, JournalEntry, BalanceSheetResponse, IncomeStatementResponse } from '../../types/accounting';
 import { accountingService } from '../../services/accountingService';
 
 export const AccountingDashboardPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'COA' | 'JOURNAL' | 'LEDGER' | 'REPORTS' | 'SIMULATOR'>('COA');
+  const [activeTab, setActiveTab] = useState<'COA' | 'JOURNAL' | 'LEDGER' | 'REPORTS'>('COA');
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [balanceSheet, setBalanceSheet] = useState<BalanceSheetResponse | null>(null);
@@ -66,7 +64,6 @@ export const AccountingDashboardPage: React.FC = () => {
     { id: 'JOURNAL', label: 'Journal Entries', icon: <BookOpen size={16} />, count: entries.length },
     { id: 'LEDGER', label: 'Account Ledger', icon: <Book size={16} /> },
     { id: 'REPORTS', label: 'Financial Reports', icon: <BarChart3 size={16} /> },
-    { id: 'SIMULATOR', label: 'Transaction Simulator', icon: <Zap size={16} />, badge: 'Testbed' },
   ];
 
   return (
@@ -212,7 +209,6 @@ export const AccountingDashboardPage: React.FC = () => {
                   {t.count}
                 </span>
               )}
-              {t.badge && <Badge variant="phase">{t.badge}</Badge>}
             </button>
           );
         })}
@@ -253,12 +249,6 @@ export const AccountingDashboardPage: React.FC = () => {
 
           {activeTab === 'REPORTS' && (
             <FinancialReportsTab />
-          )}
-
-          {activeTab === 'SIMULATOR' && (
-            <TransactionSimulatorTab
-              onTransactionPosted={fetchAccountingData}
-            />
           )}
         </>
       )}

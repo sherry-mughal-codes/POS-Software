@@ -103,6 +103,13 @@ class SalesService:
         5. Writes StockMovements (-Qty).
         6. Generates balanced General Ledger Journal Entries (Revenue & COGS).
         """
+        # Validate that an active business day session is open
+        active_session = DaySessionService.get_active_session()
+        if not active_session:
+            raise ValidationError(
+                "Cannot complete sale: Business Day / POS Session is CLOSED. Please open the register session with an opening cash drawer balance before processing sales."
+            )
+
         if not items_data:
             raise ValidationError("At least one product item is required to complete a sale.")
 
@@ -257,6 +264,11 @@ class SalesService:
         # 7. Post General Ledger Accounting Entries
         cls._post_sale_accounting(sale, total_cogs, created_by)
 
+        # 8. Reallocate customer payments if registered customer
+        if not customer.is_walkin:
+            from apps.contacts.services import CustomerReceivableService
+            CustomerReceivableService.reallocate_customer_payments(customer)
+
         return sale
 
     @classmethod
@@ -371,6 +383,13 @@ class SalesService:
         4. Re-increases inventory (+Qty) in StockMovement.
         5. Posts General Ledger Reversal entries.
         """
+        # Validate that an active business day session is open
+        active_session = DaySessionService.get_active_session()
+        if not active_session:
+            raise ValidationError(
+                "Cannot process sales return/refund: Business Day / POS Session is CLOSED. Please open the day session first."
+            )
+
         sale = Sale.objects.select_for_update().get(pk=sale_id)
         if sale.status != SaleStatus.COMPLETED:
             raise ValidationError(f"Returns can only be processed on completed sales (Status is {sale.status}).")
@@ -461,6 +480,11 @@ class SalesService:
 
         # General Ledger Accounting Reversal
         cls._post_sales_return_accounting(sales_return, total_refund, total_returned_cogs, created_by)
+
+        # Reallocate customer payments
+        if not sale.customer.is_walkin:
+            from apps.contacts.services import CustomerReceivableService
+            CustomerReceivableService.reallocate_customer_payments(sale.customer)
 
         return sales_return
 

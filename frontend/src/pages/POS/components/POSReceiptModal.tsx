@@ -162,7 +162,9 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
-              <span>Payment ({sale.payment_method_display}):</span>
+              <span>
+                Payment ({sale.payment_method === 'CREDIT' ? (sale.due_amount <= 0 ? 'Credit - Settled' : 'Credit') : sale.payment_method_display}):
+              </span>
               <span>{currencySymbol} {formatMoney(sale.paid_amount)}</span>
             </div>
 
@@ -173,12 +175,17 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
               </div>
             )}
 
-            {sale.due_amount > 0 && (
+            {sale.due_amount > 0 ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#d97706', fontWeight: 700 }}>
                 <span>Receivable Due:</span>
                 <span>{currencySymbol} {formatMoney(sale.due_amount)}</span>
               </div>
-            )}
+            ) : sale.payment_method === 'CREDIT' ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#15803d', fontWeight: 700, fontSize: '0.75rem' }}>
+                <span>Payment Status:</span>
+                <span>PAID IN FULL (SETTLED)</span>
+              </div>
+            ) : null}
           </div>
 
           {/* Footer Barcode / Slogan */}

@@ -2,6 +2,7 @@
 Serializers for Purchases, Purchase Items, Returns, and Supplier Payments.
 """
 
+from decimal import Decimal
 from rest_framework import serializers
 from apps.purchases.models import (
     Purchase,

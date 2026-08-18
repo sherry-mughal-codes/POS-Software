@@ -119,7 +119,7 @@ const AppContent: React.FC = () => {
         <EmployeesDashboardPage />
       )}
 
-      {currentTab === 'day-sessions' && (
+      {(currentTab === 'day-sessions' || currentTab === 'pos' || currentTab === 'pos-sessions' || currentTab === 'z-reports') && (
         <DaySessionsPage />
       )}
 

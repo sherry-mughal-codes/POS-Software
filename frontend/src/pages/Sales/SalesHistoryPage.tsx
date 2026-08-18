@@ -288,8 +288,28 @@ export const SalesHistoryPage: React.FC = () => {
                       <td style={{ padding: '0.875rem 1rem' }}>
                         {sale.payment_method === 'CASH' && <Badge variant="success">Cash</Badge>}
                         {sale.payment_method === 'CARD' && <Badge variant="info">Card</Badge>}
-                        {sale.payment_method === 'CREDIT' && <Badge variant="warning">Credit (AR)</Badge>}
-                        {sale.payment_method === 'SPLIT' && <Badge variant="phase">Split</Badge>}
+                        {sale.payment_method === 'CREDIT' && (
+                          sale.due_amount <= 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                              <Badge variant="success">Credit (Paid)</Badge>
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--success)', fontWeight: 600 }}>Settled</span>
+                            </div>
+                          ) : sale.paid_amount > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                              <Badge variant="warning">Credit (Partial)</Badge>
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--warning)', fontWeight: 600 }}>Due: Rs. {formatMoney(sale.due_amount)}</span>
+                            </div>
+                          ) : (
+                            <Badge variant="warning">Credit (Unpaid)</Badge>
+                          )
+                        )}
+                        {sale.payment_method === 'SPLIT' && (
+                          sale.due_amount <= 0 ? (
+                            <Badge variant="success">Split (Paid)</Badge>
+                          ) : (
+                            <Badge variant="phase">Split (Due)</Badge>
+                          )
+                        )}
                       </td>
 
                       <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--text-main)' }}>
