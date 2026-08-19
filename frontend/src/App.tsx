@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { MainLayout } from './components/layout/MainLayout';
@@ -24,32 +24,10 @@ import { SettingsPage } from './pages/Settings/SettingsPage';
 import { NotFoundPage } from './pages/NotFound/NotFoundPage';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { Can } from './components/auth/Can';
-import { healthService } from './services/healthService';
-import { HealthCheckResponse } from './types/api';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
-  const [healthData, setHealthData] = useState<HealthCheckResponse | null>(null);
-  const [healthLoading, setHealthLoading] = useState<boolean>(true);
-
-  const fetchHealth = useCallback(async () => {
-    setHealthLoading(true);
-    try {
-      const data = await healthService.getHealth();
-      setHealthData(data);
-    } catch (err: any) {
-      console.error('Failed to connect to Django API backend:', err);
-    } finally {
-      setHealthLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchHealth();
-    const interval = setInterval(fetchHealth, 30000);
-    return () => clearInterval(interval);
-  }, [fetchHealth]);
 
   if (authLoading) {
     return (
@@ -67,9 +45,6 @@ const AppContent: React.FC = () => {
     <MainLayout
       currentTab={currentTab}
       onSelectTab={setCurrentTab}
-      healthData={healthData}
-      loading={healthLoading}
-      onRefreshHealth={fetchHealth}
     >
       {currentTab === 'dashboard' && (
         <DashboardPage onNavigate={setCurrentTab} />

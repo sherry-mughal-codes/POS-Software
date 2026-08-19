@@ -15,7 +15,6 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
-import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useSettings } from '../../context/SettingsContext';
@@ -138,39 +137,20 @@ export const SettingsPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header Banner */}
-      <div
-        className="glass-card"
-        style={{
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)',
-          border: '1px solid rgba(99, 102, 241, 0.25)',
-          padding: '1.25rem 1.5rem',
-          borderRadius: '0.75rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-        }}
-      >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-              System & Store Settings
-            </span>
-            <Badge variant="info">Configuration Master</Badge>
-          </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', margin: 0 }}>
-            Manage store profile, tax rules, receipts, inventory policies, and accounting ledger defaults.
-          </p>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            System Settings
+          </h2>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <Button
             variant="outline"
-            style={{ padding: '0.4rem 0.75rem', fontSize: '0.8125rem' }}
-            icon={<RefreshCw size={14} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+            icon={<RefreshCw size={13} />}
             loading={loading}
             onClick={fetchSettings}
           >
@@ -179,12 +159,12 @@ export const SettingsPage: React.FC = () => {
 
           <Button
             variant="primary"
-            style={{ padding: '0.4rem 0.875rem', fontSize: '0.8125rem' }}
-            icon={<Save size={15} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+            icon={<Save size={13} />}
             loading={saving}
             onClick={handleSave}
           >
-            Save All Changes
+            Save Changes
           </Button>
         </div>
       </div>
@@ -192,18 +172,18 @@ export const SettingsPage: React.FC = () => {
       {successMsg && (
         <div
           style={{
-            padding: '0.875rem 1rem',
+            padding: '0.5rem 0.75rem',
             backgroundColor: 'rgba(16, 185, 129, 0.12)',
             border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: '0.5rem',
+            borderRadius: '0.375rem',
             color: 'var(--success)',
-            fontSize: '0.875rem',
+            fontSize: '0.8125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.4rem',
           }}
         >
-          <CheckCircle2 size={18} />
+          <CheckCircle2 size={16} />
           <span>{successMsg}</span>
         </div>
       )}
@@ -211,18 +191,18 @@ export const SettingsPage: React.FC = () => {
       {error && (
         <div
           style={{
-            padding: '0.875rem 1rem',
+            padding: '0.5rem 0.75rem',
             backgroundColor: 'rgba(239, 68, 68, 0.12)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '0.5rem',
+            borderRadius: '0.375rem',
             color: 'var(--danger)',
-            fontSize: '0.875rem',
+            fontSize: '0.8125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.4rem',
           }}
         >
-          <AlertCircle size={18} />
+          <AlertCircle size={16} />
           <span>{error}</span>
         </div>
       )}
@@ -231,9 +211,9 @@ export const SettingsPage: React.FC = () => {
       <div
         style={{
           display: 'flex',
-          gap: '0.375rem',
-          borderBottom: '1px solid var(--border-medium)',
-          paddingBottom: '0.5rem',
+          gap: '0.35rem',
+          borderBottom: '1px solid var(--border-subtle)',
+          paddingBottom: '0.35rem',
           overflowX: 'auto',
         }}
       >
@@ -244,15 +224,15 @@ export const SettingsPage: React.FC = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.5rem 0.875rem',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
+              gap: '0.375rem',
+              padding: '0.35rem 0.75rem',
+              fontSize: '0.78125rem',
+              fontWeight: 700,
               borderRadius: '0.375rem',
               border: 'none',
               cursor: 'pointer',
-              backgroundColor: activeTab === t.id ? 'var(--primary-500)' : 'transparent',
-              color: activeTab === t.id ? '#fff' : 'var(--text-muted)',
+              backgroundColor: activeTab === t.id ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+              color: activeTab === t.id ? 'var(--primary-400)' : 'var(--text-muted)',
               transition: 'all 0.15s ease',
               whiteSpace: 'nowrap',
             }}

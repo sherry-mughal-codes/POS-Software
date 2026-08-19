@@ -24,7 +24,7 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
   products,
   categories,
   onAddToCart,
-  isSidebarCollapsed = false,
+  isSidebarCollapsed: _isSidebarCollapsed = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
@@ -186,16 +186,14 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
         })}
       </div>
 
-      {/* Product Cards Grid: Minimum 4 columns (6 columns when collapsed) */}
+      {/* Product Cards Grid */}
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
           display: 'grid',
-          gridTemplateColumns: isSidebarCollapsed
-            ? 'repeat(6, minmax(0, 1fr))'
-            : 'repeat(4, minmax(0, 1fr))',
-          gap: '0.625rem',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+          gap: '0.5rem',
           paddingRight: '0.25rem',
           alignContent: 'start',
         }}
@@ -220,6 +218,8 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
             const isStockFree = p.maintain_stock === false || p.stock_status === 'STOCK_FREE';
             const isOutOfStock = !isStockFree && p.current_stock <= 0;
             const isLowStock = !isStockFree && !isOutOfStock && p.current_stock <= p.min_stock_level;
+            const sellingPrice = p.selling_price !== undefined && p.selling_price !== null ? p.selling_price : ((p as any).price ?? (p as any).unit_price ?? 0);
+            const productName = p.product_name || (p as any).name || 'Product';
 
             return (
               <div
@@ -228,7 +228,7 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: '0.625rem',
+                  borderRadius: '0.5rem',
                   overflow: 'hidden',
                   cursor: isOutOfStock ? 'not-allowed' : 'pointer',
                   opacity: isOutOfStock ? 0.55 : 1,
@@ -236,8 +236,9 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                   backgroundColor: 'var(--bg-card)',
                   border: isOutOfStock ? '1px dashed var(--danger)' : isStockFree ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid var(--border-subtle)',
                   position: 'relative',
-                  padding: '0.5rem',
-                  gap: '0.375rem',
+                  padding: '0.45rem',
+                  gap: '0.3rem',
+                  minWidth: 0,
                 }}
                 onMouseEnter={(e) => {
                   if (!isOutOfStock) {
@@ -256,32 +257,47 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                   }
                 }}
               >
-                {/* Product Top Box: Icon & Stock Pill */}
+                {/* Product Top Box: Image / Icon & Stock Pill */}
                 <div
                   style={{
                     height: '52px',
                     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                    borderRadius: '0.375rem',
+                    borderRadius: '0.35rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'relative',
+                    overflow: 'hidden',
                   }}
                 >
-                  <Package size={24} style={{ color: isStockFree ? 'var(--primary-400)' : 'var(--text-subtle)' }} />
+                  {p.image_url || p.image ? (
+                    <img
+                      src={p.image_url || p.image}
+                      alt={productName}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <Package size={22} style={{ color: isStockFree ? 'var(--primary-400)' : 'var(--text-subtle)' }} />
+                  )}
 
                   {/* Stock Pill Badge */}
-                  <div style={{ position: 'absolute', top: '0.25rem', right: '0.25rem' }}>
+                  <div style={{ position: 'absolute', top: '0.2rem', right: '0.2rem', zIndex: 1 }}>
                     {isStockFree ? (
                       <span
                         style={{
                           fontSize: '0.625rem',
                           fontWeight: 700,
-                          backgroundColor: 'rgba(56, 189, 248, 0.2)',
-                          color: 'var(--primary-400)',
-                          border: '1px solid var(--info-border)',
-                          padding: '0.1rem 0.3rem',
-                          borderRadius: '0.25rem',
+                          backgroundColor: 'rgba(56, 189, 248, 0.9)',
+                          color: '#000',
+                          padding: '0.05rem 0.25rem',
+                          borderRadius: '0.2rem',
                         }}
                       >
                         Service
@@ -291,11 +307,10 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                         style={{
                           fontSize: '0.625rem',
                           fontWeight: 700,
-                          backgroundColor: 'rgba(239, 68, 68, 0.25)',
-                          color: 'var(--danger)',
-                          border: '1px solid var(--danger)',
-                          padding: '0.1rem 0.3rem',
-                          borderRadius: '0.25rem',
+                          backgroundColor: 'rgba(239, 68, 68, 0.9)',
+                          color: '#fff',
+                          padding: '0.05rem 0.25rem',
+                          borderRadius: '0.2rem',
                         }}
                       >
                         Out
@@ -305,11 +320,10 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                         style={{
                           fontSize: '0.625rem',
                           fontWeight: 700,
-                          backgroundColor: 'rgba(245, 158, 11, 0.25)',
-                          color: 'var(--warning)',
-                          border: '1px solid var(--warning)',
-                          padding: '0.1rem 0.3rem',
-                          borderRadius: '0.25rem',
+                          backgroundColor: 'rgba(245, 158, 11, 0.9)',
+                          color: '#000',
+                          padding: '0.05rem 0.25rem',
+                          borderRadius: '0.2rem',
                         }}
                       >
                         Low ({p.current_stock})
@@ -318,12 +332,11 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                       <span
                         style={{
                           fontSize: '0.625rem',
-                          fontWeight: 600,
-                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                          color: 'var(--success)',
-                          border: '1px solid rgba(16, 185, 129, 0.3)',
-                          padding: '0.1rem 0.3rem',
-                          borderRadius: '0.25rem',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(16, 185, 129, 0.9)',
+                          color: '#fff',
+                          padding: '0.05rem 0.25rem',
+                          borderRadius: '0.2rem',
                         }}
                       >
                         {p.current_stock}
@@ -333,38 +346,38 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                 </div>
 
                 {/* Info Container */}
-                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
                   {/* Product Title */}
                   <div
                     style={{
                       fontWeight: 700,
                       fontSize: '0.75rem',
                       color: 'var(--text-main)',
-                      lineHeight: 1.25,
+                      lineHeight: 1.2,
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
-                      height: '1.9rem',
+                      height: '1.8rem',
                       wordBreak: 'break-word',
                     }}
-                    title={p.product_name}
+                    title={productName}
                   >
-                    {p.product_name}
+                    {productName}
                   </div>
 
-                  {/* Price & SKU */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
-                    <code style={{ fontSize: '0.625rem', color: 'var(--text-muted)' }}>{p.sku}</code>
+                  {/* Price */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '0.2rem' }}>
                     <div
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontWeight: 800,
                         fontSize: '0.8125rem',
                         color: 'var(--primary-400)',
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      Rs. {formatMoney(p.selling_price)}
+                      Rs. {formatMoney(sellingPrice)}
                     </div>
                   </div>
                 </div>

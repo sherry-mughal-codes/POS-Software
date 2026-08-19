@@ -92,93 +92,92 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Metrics Banner */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Active Products</span>
-            <Layers size={18} style={{ color: 'var(--primary-400)' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Active Products</span>
+            <Layers size={15} style={{ color: 'var(--primary-400)' }} />
           </div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
             {items.length}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Master catalog items</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Master catalog items</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total On-Hand Stock</span>
-            <Scale size={18} style={{ color: 'var(--success)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>On-Hand Stock</span>
+            <Scale size={15} style={{ color: 'var(--success)' }} />
           </div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
             {totalStockUnits.toLocaleString()} units
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Across all categories</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Across all categories</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Inventory Value</span>
-            <DollarSign size={18} style={{ color: 'var(--primary-400)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Inventory Value</span>
+            <DollarSign size={15} style={{ color: 'var(--primary-400)' }} />
           </div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
             Rs. {formatMoney(totalValuation)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Weighted Average Cost (WAC) basis</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>WAC basis</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Low Stock Alert</span>
-            <AlertTriangle size={18} style={{ color: 'var(--warning)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Low Stock Alert</span>
+            <AlertTriangle size={15} style={{ color: 'var(--warning)' }} />
           </div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
             {lowStockCount}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Below threshold level</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Below threshold level</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Out of Stock</span>
-            <XCircle size={18} style={{ color: 'var(--danger)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Out of Stock</span>
+            <XCircle size={15} style={{ color: 'var(--danger)' }} />
           </div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
             {outOfStockCount}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Zero stock available</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Zero stock available</div>
         </div>
       </div>
 
       {/* Main Stock Table Card */}
       <Card
-        title="Live Stock Catalog & Inventory Valuation"
-        subtitle="Authoritative on-hand quantities derived exclusively from atomic stock movements"
-        icon={<Scale size={20} />}
+        title="Live Stock Catalog & Valuation"
+        icon={<Scale size={16} />}
       >
         {/* Filter Toolbar */}
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '1rem',
+          gap: '0.5rem',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '1.25rem',
+          marginBottom: '0.75rem',
         }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', flex: 1, minWidth: '280px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', flex: 1, minWidth: '260px' }}>
             {/* Search Input */}
             <div style={{
               position: 'relative',
               flex: 1,
-              minWidth: '220px',
-              maxWidth: '360px',
+              minWidth: '200px',
+              maxWidth: '320px',
             }}>
               <Search
-                size={16}
+                size={13}
                 style={{
                   position: 'absolute',
-                  left: '0.875rem',
+                  left: '0.65rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   color: 'var(--text-subtle)',
@@ -191,13 +190,13 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.55rem 0.875rem 0.55rem 2.4rem',
+                  padding: '0.35rem 0.65rem 0.35rem 1.9rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
-                  borderRadius: '0.5rem',
+                  borderRadius: '0.375rem',
                   color: 'var(--text-main)',
                   outline: 'none',
-                  fontSize: '0.875rem',
+                  fontSize: '0.78125rem',
                 }}
               />
             </div>
@@ -209,11 +208,11 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
               style={{
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.55rem 0.875rem',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
                 color: 'var(--text-main)',
                 outline: 'none',
-                fontSize: '0.875rem',
+                fontSize: '0.78125rem',
               }}
             >
               <option value="ALL">All Categories</option>
@@ -231,11 +230,11 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
               style={{
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.55rem 0.875rem',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
                 color: 'var(--text-main)',
                 outline: 'none',
-                fontSize: '0.875rem',
+                fontSize: '0.78125rem',
               }}
             >
               <option value="ALL">All Statuses</option>
@@ -247,7 +246,8 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
 
           <Button
             variant="primary"
-            icon={<SlidersHorizontal size={16} />}
+            icon={<SlidersHorizontal size={13} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             onClick={() => onOpenAdjustmentModal()}
           >
             New Stock Adjustment
@@ -256,23 +256,23 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
 
         {/* Table */}
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Product / SKU</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Category</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Current Stock</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Min Level</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Avg Cost (WAC)</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Valuation</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+              <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Product / SKU</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Category</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Current Stock</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Min Level</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Avg Cost (WAC)</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Valuation</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={8} style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
                     No products found matching the current filters.
                   </td>
                 </tr>
@@ -284,27 +284,27 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{item.product_name}</div>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.125rem' }}>
-                        <code style={{ fontSize: '0.75rem', color: 'var(--primary-400)' }}>{item.sku}</code>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.8125rem' }}>{item.product_name}</div>
+                      <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginTop: '0.1rem' }}>
+                        <code style={{ fontSize: '0.71875rem', color: 'var(--primary-400)' }}>{item.sku}</code>
                         {item.barcode && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            Barcode: {item.barcode}
+                          <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                            {item.barcode}
                           </span>
                         )}
                       </div>
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                       {item.category_name}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
                       <span style={{
                         fontFamily: 'var(--font-mono)',
                         fontWeight: 800,
-                        fontSize: '1rem',
+                        fontSize: '0.875rem',
                         color:
                           item.current_stock <= 0
                             ? 'var(--danger)'
@@ -314,33 +314,33 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
                       }}>
                         {item.current_stock}
                       </span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.25rem' }}>
+                      <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginLeft: '0.2rem' }}>
                         {item.unit_abbr || item.unit_name}
                       </span>
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                       {item.min_stock_level}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.78125rem' }}>
                       Rs. {formatMoney(item.weighted_average_cost)}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--primary-400)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--primary-400)', fontSize: '0.85rem' }}>
                       Rs. {formatMoney(item.inventory_valuation)}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
                       {renderStatusBadge(item.stock_status)}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
                         <Button
                           variant="outline"
-                          icon={<History size={13} />}
-                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                          icon={<History size={11} />}
+                          style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
                           onClick={() => onOpenStockCard(item.product_id)}
                           title="View Stock Card History"
                         >
@@ -348,8 +348,8 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
                         </Button>
                         <Button
                           variant="secondary"
-                          icon={<SlidersHorizontal size={13} />}
-                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                          icon={<SlidersHorizontal size={11} />}
+                          style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
                           onClick={() => onOpenAdjustmentModal(item)}
                           title="Record Stock Adjustment"
                         >

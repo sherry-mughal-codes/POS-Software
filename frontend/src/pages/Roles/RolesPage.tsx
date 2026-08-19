@@ -240,36 +240,34 @@ export const RolesPage: React.FC = () => {
     if (!acc[category]) {
       acc[category] = [];
     }
-    acc[category].push(perm);
+  acc[category].push(perm);
     return acc;
   }, {});
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header Banner */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '1rem',
+          gap: '0.5rem',
         }}
       >
         <div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Roles, Permissions & Company Scopes
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Roles & Permissions
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Define custom role capabilities, toggle module permissions with one click, and scope cloud tenant access.
-          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
           {activeSubTab === 'roles' && (
             <Button
               variant="primary"
-              icon={<Plus size={16} />}
+              icon={<Plus size={14} />}
+              style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
               onClick={() => {
                 setNewRoleName('');
                 setNewRolePermIds([]);
@@ -277,14 +275,15 @@ export const RolesPage: React.FC = () => {
                 setIsCreateRoleModalOpen(true);
               }}
             >
-              Create New Role
+              Create Role
             </Button>
           )}
 
           <Button
             variant="secondary"
-            icon={<RefreshCw size={16} />}
+            icon={<RefreshCw size={13} />}
             loading={loading}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             onClick={fetchData}
           >
             Refresh
@@ -296,9 +295,9 @@ export const RolesPage: React.FC = () => {
       <div
         style={{
           display: 'flex',
-          gap: '0.5rem',
-          borderBottom: '1px solid var(--border-medium)',
-          paddingBottom: '0.5rem',
+          gap: '0.35rem',
+          borderBottom: '1px solid var(--border-subtle)',
+          paddingBottom: '0.35rem',
         }}
       >
         <button
@@ -306,19 +305,19 @@ export const RolesPage: React.FC = () => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.5rem 1rem',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
+            gap: '0.375rem',
+            padding: '0.35rem 0.75rem',
+            fontSize: '0.78125rem',
+            fontWeight: 700,
             borderRadius: '0.375rem',
             border: 'none',
             cursor: 'pointer',
-            backgroundColor: activeSubTab === 'roles' ? 'var(--primary-500)' : 'transparent',
-            color: activeSubTab === 'roles' ? '#fff' : 'var(--text-muted)',
+            backgroundColor: activeSubTab === 'roles' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+            color: activeSubTab === 'roles' ? 'var(--primary-400)' : 'var(--text-muted)',
             transition: 'all 0.15s ease',
           }}
         >
-          <ShieldCheck size={16} />
+          <ShieldCheck size={14} />
           Role Permission Matrix
         </button>
 
@@ -327,20 +326,20 @@ export const RolesPage: React.FC = () => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.5rem 1rem',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
+            gap: '0.375rem',
+            padding: '0.35rem 0.75rem',
+            fontSize: '0.78125rem',
+            fontWeight: 700,
             borderRadius: '0.375rem',
             border: 'none',
             cursor: 'pointer',
-            backgroundColor: activeSubTab === 'user_scopes' ? 'var(--primary-500)' : 'transparent',
-            color: activeSubTab === 'user_scopes' ? '#fff' : 'var(--text-muted)',
+            backgroundColor: activeSubTab === 'user_scopes' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+            color: activeSubTab === 'user_scopes' ? 'var(--primary-400)' : 'var(--text-muted)',
             transition: 'all 0.15s ease',
           }}
         >
-          <Building size={16} />
-          Set User Company & Data Scope
+          <Building size={14} />
+          Multi-Store Company Data Scopes
         </button>
       </div>
 

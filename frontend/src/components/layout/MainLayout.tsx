@@ -1,28 +1,29 @@
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
-import { Header } from './Header';
-import { HealthCheckResponse } from '../../types/api';
 
 interface MainLayoutProps {
   children: React.ReactNode;
   currentTab: string;
   onSelectTab: (tabId: string) => void;
-  healthData: HealthCheckResponse | null;
-  loading: boolean;
-  onRefreshHealth: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
   children,
   currentTab,
   onSelectTab,
-  healthData,
-  loading,
-  onRefreshHealth,
 }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('apexpos_sidebar_collapsed') === 'true';
   });
+
+  const isPOS = currentTab === 'register';
+
+  // Automatically collapse sidebar when on POS register terminal
+  React.useEffect(() => {
+    if (isPOS) {
+      setIsSidebarCollapsed(true);
+    }
+  }, [isPOS]);
 
   const handleToggleCollapse = () => {
     setIsSidebarCollapsed((prev) => {
@@ -32,10 +33,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     });
   };
 
-  const isPOS = currentTab === 'register';
-
   return (
-    <div className="app-container" style={{ overflow: 'hidden', height: '100vh' }}>
+    <div className="app-container" style={{ overflow: 'hidden', height: '100vh', display: 'flex' }}>
       <Sidebar
         currentTab={currentTab}
         onSelectTab={onSelectTab}
@@ -50,18 +49,18 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           flexDirection: 'column',
           height: '100vh',
           overflow: isPOS ? 'hidden' : 'auto',
+          backgroundColor: 'var(--bg-app)',
         }}
       >
-        <Header healthData={healthData} loading={loading} onRefresh={onRefreshHealth} />
         <main
           className="page-container"
           style={{
             flex: 1,
-            padding: isPOS ? '0.75rem 1rem' : '2rem',
-            maxWidth: isPOS ? '100%' : '1400px',
+            padding: isPOS ? '0.4rem 0.6rem' : '1.5rem 2rem',
+            maxWidth: isPOS ? '100%' : '1440px',
             margin: '0 auto',
             width: '100%',
-            height: isPOS ? 'calc(100vh - var(--header-height))' : 'auto',
+            height: '100vh',
             display: isPOS ? 'flex' : 'block',
             flexDirection: 'column',
             overflow: isPOS ? 'hidden' : 'visible',

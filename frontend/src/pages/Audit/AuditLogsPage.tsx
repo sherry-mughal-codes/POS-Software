@@ -50,39 +50,36 @@ export const AuditLogsPage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Security Audit Trail
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Security Audit Logs
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Immutable chronological record of logins, administrative modifications, and security events.
-          </p>
         </div>
 
         <Button
           variant="secondary"
-          icon={<RefreshCw size={16} />}
+          icon={<RefreshCw size={13} />}
           loading={loading}
+          style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
           onClick={fetchLogs}
         >
-          Refresh Audit Trail
+          Refresh
         </Button>
       </div>
 
       {/* Audit Log Table Card */}
       <Card
         title="Audit Events Log"
-        subtitle={`${logs.length} logged security activities`}
-        icon={<History size={20} />}
+        icon={<History size={16} />}
       >
         {loading ? (
           <LoadingSpinner label="Loading audit logs..." />
         ) : error ? (
           <div style={{
-            padding: '1.5rem',
+            padding: '1rem',
             backgroundColor: 'var(--danger-bg)',
             border: '1px solid var(--danger-border)',
             borderRadius: '0.5rem',
@@ -91,19 +88,19 @@ export const AuditLogsPage: React.FC = () => {
             {error}
           </div>
         ) : logs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
             No audit records found.
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Timestamp</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>User</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Action</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>IP Address</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Event Details</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Timestamp</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>User</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Action</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>IP Address</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Event Details</th>
                 </tr>
               </thead>
               <tbody>
@@ -115,9 +112,9 @@ export const AuditLogsPage: React.FC = () => {
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     {/* Timestamp */}
-                    <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                        <Clock size={14} />
+                    <td style={{ padding: '0.45rem 0.6rem', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                        <Clock size={12} />
                         <span>{new Date(log.timestamp).toLocaleString()}</span>
                       </div>
                     </td>

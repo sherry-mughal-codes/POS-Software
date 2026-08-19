@@ -139,42 +139,23 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* 1. Header & Controls */}
-      <div
-        className="glass-card"
-        style={{
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)',
-          border: '1px solid rgba(99, 102, 241, 0.25)',
-          padding: '1.25rem 1.5rem',
-          borderRadius: '0.75rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-        }}
-      >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* 1. Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-              Central Business Reports Hub
-            </span>
-          </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', margin: 0 }}>
-            Official management reports with real-time SQL aggregations for{' '}
-            <strong style={{ color: 'var(--primary-400)' }}>{dashboardData?.period_label || 'Selected Period'}</strong>
-          </p>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Reports Center
+          </h2>
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as DashboardPeriod)}
             style={{
-              padding: '0.4rem 0.75rem',
-              fontSize: '0.8125rem',
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.75rem',
               backgroundColor: 'var(--bg-input)',
               border: '1px solid var(--border-medium)',
               borderRadius: '0.375rem',
@@ -191,21 +172,21 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
           </select>
 
           {period === 'custom' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                style={{ padding: '0.35rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)' }}
+                style={{ padding: '0.2rem 0.4rem', fontSize: '0.71875rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)' }}
               />
-              <span style={{ color: 'var(--text-muted)' }}>to</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                style={{ padding: '0.35rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)' }}
+                style={{ padding: '0.2rem 0.4rem', fontSize: '0.71875rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)' }}
               />
-              <Button variant="primary" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }} onClick={fetchReportData}>
+              <Button variant="primary" style={{ padding: '0.2rem 0.45rem', fontSize: '0.71875rem' }} onClick={fetchReportData}>
                 Apply
               </Button>
             </div>
@@ -213,68 +194,66 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
 
           <Button
             variant="outline"
-            style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-            icon={<RefreshCw size={13} />}
+            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+            icon={<RefreshCw size={12} />}
             loading={loading}
             onClick={fetchReportData}
+            title="Refresh Report Data"
           >
             Refresh
           </Button>
 
           <Button
             variant="outline"
-            style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-            icon={<Download size={13} />}
+            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+            icon={<Download size={12} />}
             onClick={handleExportCSV}
+            title="Export CSV"
           >
-            Export CSV
+            CSV
           </Button>
 
           <Button
             variant="outline"
-            style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-            icon={<Printer size={13} />}
+            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+            icon={<Printer size={12} />}
             onClick={handlePrint}
+            title="Print Official Statement"
           >
             Print
           </Button>
         </div>
       </div>
 
-      {/* 2. Navigation Tabs */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '0.375rem',
-          borderBottom: '1px solid var(--border-medium)',
-          paddingBottom: '0.5rem',
-          overflowX: 'auto',
-        }}
-      >
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.5rem 0.875rem',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              borderRadius: '0.375rem',
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: activeTab === t.id ? 'var(--primary-500)' : 'transparent',
-              color: activeTab === t.id ? '#fff' : 'var(--text-muted)',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
+      {/* 2. Sub-Tabs Navigation */}
+      <div style={{ display: 'flex', gap: '0.35rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.35rem', overflowX: 'auto' }}>
+        {tabs.map((tab) => {
+          const isSelected = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.35rem 0.75rem',
+                borderRadius: '0.375rem',
+                border: 'none',
+                backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                color: isSelected ? 'var(--primary-400)' : 'var(--text-muted)',
+                fontWeight: isSelected ? 700 : 500,
+                fontSize: '0.78125rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 3. Report Views */}

@@ -16,6 +16,8 @@ export interface InventorySummaryItem {
   product_name: string;
   sku: string;
   barcode: string;
+  image_url?: string;
+  image?: string;
   category_id: number | null;
   category_name: string;
   unit_name: string;

@@ -505,24 +505,18 @@ export const EmployeesDashboardPage: React.FC = () => {
   const departments = Array.from(new Set(employees.map((e) => e.department).filter(Boolean)));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Human Capital & Payroll</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Employees, Attendance & Payroll
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Employees & Payroll
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Employee master records, daily attendance tracking, monthly salary slips, and accounting-integrated payroll disbursements.
-          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
           {activeTab === 'attendance' && (
-            <Button variant="primary" icon={<Clock size={16} />} onClick={handleOpenMarkAttendance}>
+            <Button variant="primary" icon={<Clock size={14} />} style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }} onClick={handleOpenMarkAttendance}>
               Mark Attendance
             </Button>
           )}
@@ -530,20 +524,30 @@ export const EmployeesDashboardPage: React.FC = () => {
           {activeTab === 'payroll' && (
             <Button
               variant="primary"
-              icon={<Plus size={16} />}
+              icon={<Plus size={14} />}
+              style={{
+                background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                fontWeight: 700,
+                padding: '0.25rem 0.55rem',
+                fontSize: '0.75rem',
+              }}
               onClick={handleOpenCreateSlip}
-              style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)', fontWeight: 700 }}
             >
-              Generate Salary Slip
+              Create Salary Slip
             </Button>
           )}
 
           {activeTab === 'employees' && (
             <Button
               variant="primary"
-              icon={<Plus size={16} />}
+              icon={<Plus size={14} />}
+              style={{
+                background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                fontWeight: 700,
+                padding: '0.25rem 0.55rem',
+                fontSize: '0.75rem',
+              }}
               onClick={handleOpenAddEmployee}
-              style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)', fontWeight: 700 }}
             >
               Register Employee
             </Button>
@@ -552,85 +556,85 @@ export const EmployeesDashboardPage: React.FC = () => {
       </div>
 
       {/* Sub-Tabs Selector */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.35rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.35rem' }}>
         <button
           onClick={() => setActiveTab('employees')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'employees' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'employees' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <Users size={16} />
-          <span>Employees Master ({employees.length})</span>
+          <Users size={14} />
+          <span>Staff Directory ({employees.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('attendance')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'attendance' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'attendance' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <Clock size={16} />
-          <span>Attendance Tracker</span>
+          <Clock size={14} />
+          <span>Attendance Roster</span>
         </button>
 
         <button
           onClick={() => setActiveTab('payroll')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'payroll' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'payroll' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <Receipt size={16} />
-          <span>Payroll & Salary Slips</span>
+          <DollarSign size={14} />
+          <span>Salary Slips & Payouts</span>
         </button>
 
         <button
           onClick={() => setActiveTab('reports')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'reports' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'reports' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <BarChart3 size={16} />
-          <span>HR & Payroll Reports</span>
+          <BarChart3 size={14} />
+          <span>Payroll Reports</span>
         </button>
       </div>
 

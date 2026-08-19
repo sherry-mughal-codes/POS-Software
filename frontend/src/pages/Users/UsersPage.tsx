@@ -3,12 +3,9 @@ import {
   Users,
   UserPlus,
   Search,
-  Shield,
   CheckCircle2,
-  XCircle,
   Edit2,
   Power,
-  Key,
   Lock,
   Phone,
   Mail,
@@ -69,10 +66,6 @@ export const UsersPage: React.FC = () => {
   const [newPhone, setNewPhone] = useState('');
   const [newPinCode, setNewPinCode] = useState('');
   const [newSelectedRoles, setNewSelectedRoles] = useState<number[]>([]);
-
-  // Security test state
-  const [securityTestResult, setSecurityTestResult] = useState<{ status: number; message: string; timestamp: string } | null>(null);
-  const [testingSecurity, setTestingSecurity] = useState(false);
 
   const fetchUsersAndRoles = useCallback(async () => {
     setLoading(true);
@@ -207,26 +200,6 @@ export const UsersPage: React.FC = () => {
     }
   };
 
-  const handleTestSecurityEnforcement = async () => {
-    setTestingSecurity(true);
-    try {
-      await userService.getUsers();
-      setSecurityTestResult({
-        status: 200,
-        message: 'Request Allowed: Your current role is authorized to query User Management.',
-        timestamp: new Date().toLocaleTimeString(),
-      });
-    } catch (err: any) {
-      setSecurityTestResult({
-        status: err?.status || 403,
-        message: `Backend Rejected (${err?.status || 403} Forbidden): ${err?.message || 'Permission Denied by Django.'}`,
-        timestamp: new Date().toLocaleTimeString(),
-      });
-    } finally {
-      setTestingSecurity(false);
-    }
-  };
-
   const filteredUsers = users.filter((u) => {
     const q = searchQuery.toLowerCase();
     return (
@@ -239,30 +212,29 @@ export const UsersPage: React.FC = () => {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Top Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            User Management & System Access
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            User Management
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Configure POS operator accounts, assign roles, and control active credentials.
-          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
           <Button
             variant="primary"
-            icon={<UserPlus size={16} />}
+            icon={<UserPlus size={14} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             onClick={handleOpenCreateModal}
           >
             Create New User
           </Button>
           <Button
             variant="secondary"
-            icon={<RefreshCw size={16} />}
+            icon={<RefreshCw size={13} />}
             loading={loading}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             onClick={fetchUsersAndRoles}
           >
             Refresh
@@ -270,55 +242,18 @@ export const UsersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Security Proof Card */}
-      <div className="glass-card" style={{
-        padding: '1.25rem 1.5rem',
-        borderLeft: '4px solid var(--primary-500)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '1rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Shield size={22} style={{ color: 'var(--primary-400)' }} />
-          <div>
-            <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>Two-Tier Security Verification Probe</div>
-            <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-              Test how Django REST Framework enforces permissions independently from the frontend.
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {securityTestResult && (
-            <Badge variant={securityTestResult.status === 200 ? 'success' : 'danger'}>
-              {securityTestResult.status === 200 ? '200 OK Authorized' : `${securityTestResult.status} Forbidden`}
-            </Badge>
-          )}
-          <Button
-            variant="outline"
-            icon={<Key size={14} />}
-            loading={testingSecurity}
-            onClick={handleTestSecurityEnforcement}
-          >
-            Test API Enforcement
-          </Button>
-        </div>
-      </div>
-
       {/* Users Table Card */}
       <Card
         title="Registered System Users"
-        subtitle={`${filteredUsers.length} active/inactive accounts`}
-        icon={<Users size={20} />}
+        icon={<Users size={16} />}
         action={
-          <div style={{ width: '260px' }}>
+          <div style={{ width: '220px' }}>
             <Input
               type="text"
-              placeholder="Search user, name, or role..."
+              placeholder="Search user, name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search size={15} />}
+              icon={<Search size={13} />}
             />
           </div>
         }
@@ -327,29 +262,26 @@ export const UsersPage: React.FC = () => {
           <LoadingSpinner label="Fetching user accounts..." />
         ) : error ? (
           <div style={{
-            padding: '1.5rem',
-            backgroundColor: 'var(--danger-bg)',
-            border: '1px solid var(--danger-border)',
+            padding: '1rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: '0.5rem',
             color: 'var(--danger)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
+            fontSize: '0.875rem',
           }}>
-            <XCircle size={20} />
             <div>{error}</div>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>User</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Contact</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Assigned Role(s)</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>POS PIN</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Status</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>User</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Contact</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Assigned Role(s)</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>POS PIN</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Status</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -364,12 +296,12 @@ export const UsersPage: React.FC = () => {
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     {/* User info */}
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <td style={{ padding: '0.45rem 0.6rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <div style={{
-                          width: '2.25rem',
-                          height: '2.25rem',
-                          borderRadius: '0.5rem',
+                          width: '1.75rem',
+                          height: '1.75rem',
+                          borderRadius: '0.375rem',
                           backgroundColor: u.is_active ? 'rgba(56, 189, 248, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                           color: u.is_active ? 'var(--primary-400)' : 'var(--danger)',
                           display: 'flex',

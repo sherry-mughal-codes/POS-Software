@@ -295,30 +295,25 @@ export const ExpensesDashboardPage: React.FC = () => {
     } catch (err: any) {
       setCancelError(err?.response?.data?.detail || err?.message || 'Failed to cancel transaction.');
     } finally {
-      setCancelSubmitting(false);
+setCancelSubmitting(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Financial Operations</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Operational Expenses & Cash Transfers
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Expense & Transfers
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Record store utility bills, rents, salaries, supplies, and internal cash/bank money transfers.
-          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
           <Button
             variant="outline"
-            icon={<ArrowRightLeft size={16} />}
+            icon={<ArrowRightLeft size={14} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             onClick={handleOpenCreateTransfer}
           >
             Transfer Cash/Bank
@@ -326,11 +321,13 @@ export const ExpensesDashboardPage: React.FC = () => {
 
           <Button
             variant="primary"
-            icon={<Plus size={16} />}
+            icon={<Plus size={14} />}
             onClick={handleOpenCreateExpense}
             style={{
               background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
               fontWeight: 700,
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.75rem',
             }}
           >
             Record Expense
@@ -339,65 +336,65 @@ export const ExpensesDashboardPage: React.FC = () => {
       </div>
 
       {/* Sub-Tabs Selector */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.35rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.35rem' }}>
         <button
           onClick={() => setActiveTab('expenses')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'expenses' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'expenses' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <DollarSign size={16} />
-          <span>Operational Expenses ({expenses.length})</span>
+          <Receipt size={14} />
+          <span>Expense Logs ({expenses.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('transfers')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'transfers' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'transfers' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <ArrowRightLeft size={16} />
-          <span>Cash/Bank Transfers</span>
+          <ArrowRightLeft size={14} />
+          <span>Internal Transfers</span>
         </button>
 
         <button
           onClick={() => setActiveTab('reports')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'reports' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'reports' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <BarChart3 size={16} />
-          <span>Expense Analytics Report</span>
+          <BarChart3 size={14} />
+          <span>Expense Analytics</span>
         </button>
       </div>
 

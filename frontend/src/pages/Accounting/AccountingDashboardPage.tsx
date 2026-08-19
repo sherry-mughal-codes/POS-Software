@@ -67,25 +67,20 @@ export const AccountingDashboardPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Double-Entry Engine</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Chart of Accounts & General Ledger
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Double Entry Ledger
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Double-entry accounting foundation with automatic journal creation, trial balance verification, and financial reporting.
-          </p>
         </div>
 
         <Button
           variant="secondary"
-          icon={<RefreshCw size={16} />}
+          icon={<RefreshCw size={13} />}
           loading={loading}
+          style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
           onClick={fetchAccountingData}
         >
           Refresh Ledger
@@ -95,71 +90,71 @@ export const AccountingDashboardPage: React.FC = () => {
       {/* High-Level Accounting Metrics */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '1.25rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '0.625rem',
       }}>
         {/* Total Assets */}
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Assets</span>
-            <DollarSign size={18} style={{ color: 'var(--primary-400)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Assets</span>
+            <DollarSign size={15} style={{ color: 'var(--primary-400)' }} />
           </div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
             Rs. {balanceSheet ? balanceSheet.assets.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Cash, Bank, Inventory & Receivables</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Cash, Bank, Inventory & AR</div>
         </div>
 
         {/* Total Liabilities */}
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Liabilities</span>
-            <Scale size={18} style={{ color: 'var(--warning)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Liabilities</span>
+            <Scale size={15} style={{ color: 'var(--warning)' }} />
           </div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
             Rs. {balanceSheet ? balanceSheet.liabilities.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Accounts Payable & Taxes</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Payables & Accruals</div>
         </div>
 
         {/* Total Equity */}
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Owner's Equity</span>
-            <TrendingUp size={18} style={{ color: '#a5b4fc' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Owner's Equity</span>
+            <TrendingUp size={15} style={{ color: '#a5b4fc' }} />
           </div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#a5b4fc', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#a5b4fc', fontFamily: 'var(--font-mono)' }}>
             Rs. {balanceSheet ? balanceSheet.equity.total.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Capital & Retained Earnings</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Capital & Retained Earnings</div>
         </div>
 
         {/* Net Operating Profit */}
-        <div className="glass-card" style={{ padding: '1.25rem', borderColor: (incomeStatement?.net_profit || 0) >= 0 ? 'var(--success-border)' : 'var(--danger-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Net Operating Profit</span>
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem', borderColor: (incomeStatement?.net_profit || 0) >= 0 ? 'var(--success-border)' : 'var(--danger-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Operating Profit</span>
             <Badge variant={(incomeStatement?.net_profit || 0) >= 0 ? 'success' : 'danger'}>
-              {(incomeStatement?.net_profit || 0) >= 0 ? 'Profitable' : 'Loss'}
+              {(incomeStatement?.net_profit || 0) >= 0 ? 'Profit' : 'Loss'}
             </Badge>
           </div>
           <div style={{
-            fontSize: '1.375rem',
+            fontSize: '1.125rem',
             fontWeight: 800,
             color: (incomeStatement?.net_profit || 0) >= 0 ? 'var(--success)' : 'var(--danger)',
             fontFamily: 'var(--font-mono)',
           }}>
             Rs. {incomeStatement ? incomeStatement.net_profit.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Revenue minus Expenses</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Revenue minus Expenses</div>
         </div>
       </div>
 
       {/* Tabs Navigation Bar */}
       <div style={{
         display: 'flex',
-        gap: '0.5rem',
+        gap: '0.35rem',
         borderBottom: '1px solid var(--border-subtle)',
-        paddingBottom: '0.5rem',
+        paddingBottom: '0.35rem',
         overflowX: 'auto',
       }}>
         {tabs.map((t) => {
@@ -171,41 +166,30 @@ export const AccountingDashboardPage: React.FC = () => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.625rem 1.25rem',
-                borderRadius: '0.5rem',
+                gap: '0.375rem',
+                padding: '0.35rem 0.75rem',
+                borderRadius: '0.375rem',
                 border: 'none',
                 backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
                 color: isSelected ? 'var(--primary-400)' : 'var(--text-muted)',
                 fontWeight: isSelected ? 700 : 500,
-                fontSize: '0.875rem',
+                fontSize: '0.78125rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={(e) => {
-                if (!isSelected) {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-                  e.currentTarget.style.color = 'var(--text-main)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isSelected) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }
               }}
             >
               {t.icon}
               <span>{t.label}</span>
               {t.count !== undefined && (
-                <span style={{
-                  fontSize: '0.75rem',
-                  backgroundColor: isSelected ? 'var(--primary-500)' : 'var(--bg-elevated)',
-                  color: isSelected ? '#ffffff' : 'var(--text-muted)',
-                  padding: '0.125rem 0.375rem',
-                  borderRadius: '9999px',
-                }}>
+                <span
+                  style={{
+                    backgroundColor: isSelected ? 'var(--primary-500)' : 'rgba(255, 255, 255, 0.08)',
+                    color: isSelected ? '#ffffff' : 'var(--text-muted)',
+                    fontSize: '0.6875rem',
+                    padding: '0.1rem 0.35rem',
+                    borderRadius: '1rem',
+                  }}
+                >
                   {t.count}
                 </span>
               )}

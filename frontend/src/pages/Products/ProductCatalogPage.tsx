@@ -140,43 +140,37 @@ export const ProductCatalogPage: React.FC = () => {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Master Catalog</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Products, Categories & Units
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Product Catalog
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Single source of truth for items across Purchasing, Inventory, POS Sales, and Financial Reports.
-          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Button variant="secondary" icon={<FolderTree size={16} />} onClick={() => setIsCategoryModalOpen(true)}>
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <Button variant="secondary" icon={<FolderTree size={14} />} style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} onClick={() => setIsCategoryModalOpen(true)}>
             Categories ({categories.length})
           </Button>
-          <Button variant="secondary" icon={<Scale size={16} />} onClick={() => setIsUnitModalOpen(true)}>
+          <Button variant="secondary" icon={<Scale size={14} />} style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} onClick={() => setIsUnitModalOpen(true)}>
             Units ({units.length})
           </Button>
-          <Button variant="secondary" icon={<FileSpreadsheet size={16} />} onClick={() => setIsBulkImportModalOpen(true)}>
-            Import Bulk Products
+          <Button variant="secondary" icon={<FileSpreadsheet size={14} />} style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} onClick={() => setIsBulkImportModalOpen(true)}>
+            Import Bulk
           </Button>
-          <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenAddModal}>
+          <Button variant="primary" icon={<Plus size={14} />} style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }} onClick={handleOpenAddModal}>
             Add Product
           </Button>
         </div>
       </div>
 
       {/* Barcode Quick Scanner Simulator Bar */}
-      <div className="glass-card" style={{ padding: '1rem 1.25rem' }}>
-        <form onSubmit={handleBarcodeLookup} style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-400)', fontWeight: 600, fontSize: '0.875rem' }}>
-            <Scan size={18} />
-            <span>Barcode Scanner Lookup:</span>
+      <div className="glass-card" style={{ padding: '0.5rem 0.75rem' }}>
+        <form onSubmit={handleBarcodeLookup} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary-400)', fontWeight: 600, fontSize: '0.78125rem' }}>
+            <Scan size={15} />
+            <span>Barcode Lookup:</span>
           </div>
           <div style={{ flex: 1, minWidth: '240px', maxWidth: '400px' }}>
             <Input
@@ -332,15 +326,15 @@ export const ProductCatalogPage: React.FC = () => {
         /* ================= GRID VIEW ================= */
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '1.25rem',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+          gap: '0.625rem',
         }}>
           {filteredProducts.map((p) => (
             <div
               key={p.id}
               className="glass-card"
               style={{
-                padding: '1.25rem',
+                padding: '0.625rem 0.75rem',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
@@ -350,120 +344,138 @@ export const ProductCatalogPage: React.FC = () => {
             >
               <div>
                 {/* Image & Header */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.4rem' }}>
                   {p.image_url ? (
                     <img
                       src={p.image_url}
                       alt={p.name}
                       style={{
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '0.5rem',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '0.375rem',
                         objectFit: 'cover',
                         backgroundColor: 'var(--bg-app)',
                         border: '1px solid var(--border-medium)',
+                        flexShrink: 0,
                       }}
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   ) : (
                     <div style={{
-                      width: '64px',
-                      height: '64px',
-                      borderRadius: '0.5rem',
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '0.375rem',
                       backgroundColor: 'var(--bg-app)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: 'var(--text-subtle)',
                       border: '1px solid var(--border-subtle)',
+                      flexShrink: 0,
                     }}>
-                      <Package size={24} />
+                      <Package size={16} />
                     </div>
                   )}
 
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.25rem' }}>
                       <code style={{
                         fontFamily: 'var(--font-mono)',
                         fontWeight: 700,
                         color: 'var(--primary-400)',
-                        fontSize: '0.75rem',
+                        fontSize: '0.6875rem',
                         backgroundColor: 'var(--bg-app)',
-                        padding: '0.125rem 0.375rem',
-                        borderRadius: '0.25rem',
+                        padding: '0.1rem 0.25rem',
+                        borderRadius: '0.2rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                       }}>
                         {p.sku}
                       </code>
-                      <Badge variant={p.is_active ? 'success' : 'danger'}>
-                        {p.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <span style={{
+                        fontSize: '0.625rem',
+                        fontWeight: 700,
+                        color: p.is_active ? 'var(--success)' : 'var(--danger)',
+                        backgroundColor: p.is_active ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                        padding: '0.05rem 0.3rem',
+                        borderRadius: '0.2rem',
+                      }}>
+                        {p.is_active ? 'Active' : 'Off'}
+                      </span>
                     </div>
 
                     <h4 style={{
-                      fontSize: '0.9375rem',
+                      fontSize: '0.8125rem',
                       fontWeight: 700,
-                      marginTop: '0.375rem',
+                      marginTop: '0.2rem',
                       color: 'var(--text-main)',
-                      lineHeight: 1.25,
-                    }}>
+                      lineHeight: 1.2,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }} title={p.name}>
                       {p.name}
                     </h4>
                   </div>
                 </div>
 
                 {/* Category & Unit Info */}
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                  <Badge variant="phase">{p.category_name || 'Unassigned'}</Badge>
-                  <Badge variant="info">{p.unit_name || 'Unit'} ({p.unit_code || 'pcs'})</Badge>
+                <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-input)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem', border: '1px solid var(--border-subtle)' }}>
+                    {p.category_name || 'General'}
+                  </span>
+                  <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-input)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem', border: '1px solid var(--border-subtle)' }}>
+                    {p.unit_code || p.unit_name || 'pcs'}
+                  </span>
                   {p.maintain_stock === false && (
-                    <Badge variant="warning">Stock-Free / Service</Badge>
+                    <span style={{ fontSize: '0.625rem', color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>
+                      Service
+                    </span>
                   )}
                 </div>
 
                 {/* Barcode */}
                 {p.barcode && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <Scan size={13} style={{ color: 'var(--primary-400)' }} />
-                    <code>{p.barcode}</code>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Scan size={10} style={{ color: 'var(--primary-400)' }} />
+                    <code style={{ fontSize: '0.65rem' }}>{p.barcode}</code>
                   </div>
                 )}
               </div>
 
               {/* Pricing & Actions */}
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.4rem', marginTop: '0.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.35rem' }}>
                   <div>
-                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>Cost: {currencySymbol || 'Rs.'} {formatMoney(p.purchase_price)}</div>
-                    <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontSize: '0.625rem', color: 'var(--text-subtle)' }}>Cost: {currencySymbol || 'Rs.'} {formatMoney(p.purchase_price)}</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                       {currencySymbol || 'Rs.'} {formatMoney(p.selling_price)}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Sparkles size={12} />
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.15rem', justifyContent: 'flex-end' }}>
+                      <Sparkles size={10} />
                       {formatPercent(p.profit_margin_percentage !== undefined ? p.profit_margin_percentage : (p.selling_price > 0 ? ((p.selling_price - p.purchase_price) / p.selling_price) * 100 : 0))}%
                     </span>
-                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
-                      +{currencySymbol || 'Rs.'} {formatMoney(p.profit_margin_amount !== undefined ? p.profit_margin_amount : (p.selling_price - p.purchase_price))}
-                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.35rem' }}>
                   <Button
                     variant="outline"
-                    icon={<Edit2 size={13} />}
-                    style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem' }}
+                    icon={<Edit2 size={11} />}
+                    style={{ flex: 1, padding: '0.2rem 0.4rem', fontSize: '0.6875rem' }}
                     onClick={() => handleOpenEditModal(p)}
                   >
                     Edit
                   </Button>
                   <Button
                     variant="outline"
-                    icon={<Power size={13} />}
+                    icon={<Power size={11} />}
                     title={p.is_active ? 'Deactivate item' : 'Activate item'}
                     style={{
-                      padding: '0.4rem 0.625rem',
+                      padding: '0.2rem 0.45rem',
                       color: p.is_active ? 'var(--warning)' : 'var(--success)',
                       borderColor: p.is_active ? 'var(--warning-border)' : 'var(--success-border)',
                     }}
@@ -478,23 +490,22 @@ export const ProductCatalogPage: React.FC = () => {
         /* ================= TABLE VIEW ================= */
         <Card
           title="Product Master Catalog"
-          subtitle={`${filteredProducts.length} items defined`}
-          icon={<Package size={20} />}
+          icon={<Package size={16} />}
         >
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>SKU</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Product Name</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Category</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Unit</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Barcode</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Cost Price</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Selling Price</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Gross Margin</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>SKU</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Product Name</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Category</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Unit</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Barcode</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Cost Price</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Selling Price</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Gross Margin</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -505,57 +516,57 @@ export const ProductCatalogPage: React.FC = () => {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      <code style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--primary-400)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
+                      <code style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--primary-400)', fontSize: '0.75rem' }}>
                         {p.sku}
                       </code>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <span>{p.name}</span>
                         {p.maintain_stock === false && (
                           <Badge variant="warning">Stock-Free</Badge>
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
                       <Badge variant="phase">{p.category_name || 'Unassigned'}</Badge>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                       {p.unit_name} ({p.unit_code})
                     </td>
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      <code style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>{p.barcode || '—'}</code>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
+                      <code style={{ fontSize: '0.71875rem', color: 'var(--text-subtle)' }}>{p.barcode || '—'}</code>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
                       {currencySymbol || 'Rs.'} {formatMoney(p.purchase_price)}
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-main)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-main)', fontSize: '0.85rem' }}>
                       {currencySymbol || 'Rs.'} {formatMoney(p.selling_price)}
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)', fontSize: '0.78125rem' }}>
                       {formatPercent(p.profit_margin_percentage !== undefined ? p.profit_margin_percentage : (p.selling_price > 0 ? ((p.selling_price - p.purchase_price) / p.selling_price) * 100 : 0))}%
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
                       <Badge variant={p.is_active ? 'success' : 'danger'}>
                         {p.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
                         <Button
                           variant="outline"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                          style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
                           onClick={() => handleOpenEditModal(p)}
                         >
                           Edit
                         </Button>
                         <Button
                           variant="outline"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                          style={{ padding: '0.2rem 0.4rem', fontSize: '0.6875rem' }}
                           onClick={() => handleToggleStatus(p)}
                         >
-                          {p.is_active ? 'Disable' : 'Enable'}
+                          {p.is_active ? 'Deactivate' : 'Activate'}
                         </Button>
                       </div>
                     </td>

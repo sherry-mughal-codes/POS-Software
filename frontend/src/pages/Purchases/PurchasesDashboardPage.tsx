@@ -6,7 +6,6 @@ import {
   CreditCard,
   BarChart3,
 } from 'lucide-react';
-import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { PurchaseListTab } from './PurchaseListTab';
@@ -59,23 +58,22 @@ export const PurchasesDashboardPage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Purchasing & Payables</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Purchasing, Supplier Payables & Returns
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Purchasing & Payables
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Atomic purchase orders with automatic stock-in ledger movements, double-entry accounting, and supplier payable settlement.
-          </p>
         </div>
 
         {activeTab !== 'create' && (
-          <Button variant="primary" icon={<Plus size={16} />} onClick={() => setActiveTab('create')}>
+          <Button
+            variant="primary"
+            icon={<Plus size={14} />}
+            onClick={() => setActiveTab('create')}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+          >
             New Purchase Order
           </Button>
         )}
@@ -84,108 +82,108 @@ export const PurchasesDashboardPage: React.FC = () => {
       {/* Tabs Navigation */}
       <div style={{
         display: 'flex',
-        gap: '0.5rem',
-        borderBottom: '1px solid var(--border-medium)',
+        gap: '0.35rem',
+        borderBottom: '1px solid var(--border-subtle)',
         overflowX: 'auto',
-        paddingBottom: '0.25rem',
+        paddingBottom: '0.35rem',
       }}>
         <button
           onClick={() => setActiveTab('orders')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'orders' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'orders' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'orders' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <ShoppingBag size={16} />
-          <span>Purchase Orders ({purchases.length})</span>
+          <ShoppingBag size={14} />
+          <span>Orders ({purchases.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('create')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'create' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'create' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'create' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <Plus size={16} />
+          <Plus size={14} />
           <span>Create Purchase</span>
         </button>
 
         <button
           onClick={() => setActiveTab('returns')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'returns' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'returns' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'returns' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <RotateCcw size={16} />
-          <span>Purchase Returns ({returns.length})</span>
+          <RotateCcw size={14} />
+          <span>Returns ({returns.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('payables')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'payables' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'payables' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'payables' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <CreditCard size={16} />
-          <span>Supplier Payables & Payments</span>
+          <CreditCard size={14} />
+          <span>Supplier Payables</span>
         </button>
 
         <button
           onClick={() => setActiveTab('reports')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'reports' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'reports' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'reports' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <BarChart3 size={16} />
+          <BarChart3 size={14} />
           <span>Purchase Analytics</span>
         </button>
       </div>

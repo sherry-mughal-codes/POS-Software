@@ -7,7 +7,6 @@ import {
   BarChart3,
   RefreshCw,
 } from 'lucide-react';
-import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { LiveStockCatalogTab } from './LiveStockCatalogTab';
@@ -70,24 +69,19 @@ export const InventoryDashboardPage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Inventory & Stock Control</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Inventory Management & Stock Control
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Inventory & Stock Control
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Single source of truth for stock balances maintained exclusively via immutable transaction movements with atomic race-condition safety.
-          </p>
         </div>
 
         <Button
           variant="outline"
-          icon={<RefreshCw size={14} />}
+          icon={<RefreshCw size={13} />}
+          style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
           onClick={fetchInventoryData}
         >
           Refresh Stock
@@ -97,109 +91,109 @@ export const InventoryDashboardPage: React.FC = () => {
       {/* Tabs Navigation */}
       <div style={{
         display: 'flex',
-        gap: '0.5rem',
-        borderBottom: '1px solid var(--border-medium)',
+        gap: '0.35rem',
+        borderBottom: '1px solid var(--border-subtle)',
         overflowX: 'auto',
-        paddingBottom: '0.25rem',
+        paddingBottom: '0.35rem',
       }}>
         <button
           onClick={() => setActiveTab('catalog')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'catalog' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'catalog' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'catalog' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <Scale size={16} />
-          <span>Live Stock Catalog ({inventoryItems.length})</span>
+          <Scale size={14} />
+          <span>Live Stock ({inventoryItems.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('adjustments')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'adjustments' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'adjustments' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'adjustments' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <SlidersHorizontal size={16} />
-          <span>Stock Adjustments ({adjustments.length})</span>
+          <SlidersHorizontal size={14} />
+          <span>Adjustments ({adjustments.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('movements')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'movements' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'movements' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'movements' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <History size={16} />
-          <span>Stock Movement Ledger</span>
+          <History size={14} />
+          <span>Movement Ledger</span>
         </button>
 
         <button
           onClick={() => setActiveTab('stock-card')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'stock-card' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'stock-card' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'stock-card' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <FileSpreadsheet size={16} />
-          <span>Product Stock Card</span>
+          <FileSpreadsheet size={14} />
+          <span>Stock Card</span>
         </button>
 
         <button
           onClick={() => setActiveTab('reports')}
           style={{
-            padding: '0.625rem 1rem',
+            padding: '0.35rem 0.75rem',
             border: 'none',
-            borderBottom: activeTab === 'reports' ? '2px solid var(--primary-400)' : '2px solid transparent',
-            backgroundColor: 'transparent',
+            borderRadius: '0.375rem',
+            backgroundColor: activeTab === 'reports' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'reports' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 600,
-            fontSize: '0.875rem',
+            fontWeight: 700,
+            fontSize: '0.78125rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             cursor: 'pointer',
           }}
         >
-          <BarChart3 size={16} />
-          <span>Inventory Report</span>
+          <BarChart3 size={14} />
+          <span>Valuation & Reports</span>
         </button>
       </div>
 

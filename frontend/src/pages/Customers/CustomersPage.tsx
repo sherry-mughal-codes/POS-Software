@@ -311,25 +311,20 @@ export const CustomersPage: React.FC = () => {
   const totalReceivables = customers.reduce((acc, c) => acc + (c.outstanding_balance || 0), 0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Credit & Receivables</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Customer Receivables & Payments
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Customers & Receivables
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Track customer balances, statements of account, and record receipt vouchers against Accounts Receivable.
-          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Button
             variant="outline"
-            icon={<DollarSign size={16} />}
+            icon={<DollarSign size={14} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             onClick={() => handleOpenPaymentModal()}
           >
             Record Payment
@@ -337,11 +332,13 @@ export const CustomersPage: React.FC = () => {
 
           <Button
             variant="primary"
-            icon={<Plus size={16} />}
+            icon={<Plus size={14} />}
             onClick={handleOpenAddCustomer}
             style={{
               background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
               fontWeight: 700,
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.75rem',
             }}
           >
             Register Customer
@@ -350,104 +347,104 @@ export const CustomersPage: React.FC = () => {
       </div>
 
       {/* Sub-Tabs Selector */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.35rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.35rem' }}>
         <button
           onClick={() => setActiveTab('customers')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'customers' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'customers' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <Users size={16} />
+          <Users size={14} />
           <span>Customers Directory ({customers.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('payments')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'payments' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'payments' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <Receipt size={16} />
-          <span>Payment Vouchers History</span>
+          <Receipt size={14} />
+          <span>Payment Vouchers</span>
         </button>
 
         <button
           onClick={() => setActiveTab('receivables')}
           style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '0.5rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '0.375rem',
             border: 'none',
             backgroundColor: activeTab === 'receivables' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
             color: activeTab === 'receivables' ? 'var(--primary-400)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: '0.875rem',
+            fontSize: '0.78125rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
           }}
         >
-          <BarChart3 size={16} />
+          <BarChart3 size={14} />
           <span>Receivables Aging Report</span>
         </button>
       </div>
 
       {/* TAB 1: CUSTOMERS DIRECTORY & BALANCES */}
       {activeTab === 'customers' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {/* Metrics Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Receivables Owed</span>
-                <DollarSign size={18} style={{ color: 'var(--danger)' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Receivables</span>
+                <DollarSign size={15} style={{ color: 'var(--danger)' }} />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                 Rs. {formatMoney(totalReceivables)}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Outstanding customer credit</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Outstanding customer credit</div>
             </div>
 
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Credit Authorized</span>
-                <CreditCard size={18} style={{ color: 'var(--success)' }} />
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Credit Authorized</span>
+                <CreditCard size={15} style={{ color: 'var(--success)' }} />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
                 {creditEligibleCount}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Allowed on-account purchases</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Allowed on-account purchases</div>
             </div>
 
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Customers</span>
-                <Users size={18} style={{ color: 'var(--primary-400)' }} />
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Customers</span>
+                <Users size={15} style={{ color: 'var(--primary-400)' }} />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                 {totalCount}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Registered + Walk-in</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Registered + Walk-in</div>
             </div>
           </div>
 
@@ -523,15 +520,15 @@ export const CustomersPage: React.FC = () => {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Customer ID</th>
-                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Full Name</th>
-                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Contact Info</th>
-                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Location</th>
-                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Outstanding Receivable</th>
-                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Credit Policy</th>
-                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
-                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                    <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
+                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Customer ID</th>
+                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Customer / Ledger Name</th>
+                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Contact Info</th>
+                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Address / Area</th>
+                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Receivable Balance</th>
+                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Credit Policy</th>
+                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
+                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -547,14 +544,15 @@ export const CustomersPage: React.FC = () => {
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)')}
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = cust.is_walkin ? 'rgba(56, 189, 248, 0.03)' : 'transparent')}
                         >
-                          <td style={{ padding: '0.875rem 1rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem' }}>
                             <code
                               style={{
                                 fontFamily: 'var(--font-mono)',
                                 fontWeight: 700,
+                                fontSize: '0.75rem',
                                 color: cust.is_walkin ? 'var(--primary-400)' : 'var(--text-main)',
                                 backgroundColor: 'var(--bg-app)',
-                                padding: '0.2rem 0.5rem',
+                                padding: '0.15rem 0.4rem',
                                 borderRadius: '0.25rem',
                               }}
                             >
@@ -562,39 +560,39 @@ export const CustomersPage: React.FC = () => {
                             </code>
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <strong style={{ color: 'var(--text-main)' }}>{cust.name}</strong>
+                          <td style={{ padding: '0.4rem 0.6rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <strong style={{ color: 'var(--text-main)', fontSize: '0.8125rem' }}>{cust.name}</strong>
                               {cust.is_walkin && <Badge variant="phase">Default Walk-in</Badge>}
                             </div>
                             {cust.notes && (
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', marginTop: '0.2rem' }}>
+                              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.1rem' }}>
                                 {cust.notes}
                               </div>
                             )}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem' }}>
                             {cust.phone ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--text-main)' }}>
-                                <Phone size={13} style={{ color: 'var(--primary-400)' }} />
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: 'var(--text-main)' }}>
+                                <Phone size={11} style={{ color: 'var(--primary-400)' }} />
                                 <span>{cust.phone}</span>
                               </div>
                             ) : (
-                              <span style={{ color: 'var(--text-subtle)', fontSize: '0.75rem' }}>No phone</span>
+                              <span style={{ color: 'var(--text-subtle)', fontSize: '0.6875rem' }}>No phone</span>
                             )}
                             {cust.email && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                                <Mail size={12} />
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                                <Mail size={11} />
                                 <span>{cust.email}</span>
                               </div>
                             )}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                             {cust.address ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                                <MapPin size={13} style={{ color: 'var(--text-subtle)', flexShrink: 0 }} />
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                <MapPin size={11} style={{ color: 'var(--text-subtle)', flexShrink: 0 }} />
                                 <span>{cust.address}</span>
                               </div>
                             ) : (
@@ -602,27 +600,27 @@ export const CustomersPage: React.FC = () => {
                             )}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
                             {cust.is_walkin ? (
-                              <span style={{ color: 'var(--text-subtle)', fontSize: '0.8125rem' }}>Rs. 0.00 (Cash-only)</span>
+                              <span style={{ color: 'var(--text-subtle)', fontSize: '0.75rem' }}>Rs. 0.00 (Cash-only)</span>
                             ) : balance > 0 ? (
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--danger)', fontSize: '0.9375rem' }}>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--danger)', fontSize: '0.85rem' }}>
                                   Rs. {formatMoney(balance)}
                                 </span>
-                                <span style={{ fontSize: '0.6875rem', color: 'var(--danger)', fontWeight: 600 }}>Due Receivable</span>
+                                <span style={{ fontSize: '0.625rem', color: 'var(--danger)', fontWeight: 600 }}>Due Receivable</span>
                               </div>
                             ) : (
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--success)', fontSize: '0.875rem' }}>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--success)', fontSize: '0.78125rem' }}>
                                   Rs. 0.00
                                 </span>
-                                <span style={{ fontSize: '0.6875rem', color: 'var(--success)', fontWeight: 600 }}>All Cleared</span>
+                                <span style={{ fontSize: '0.625rem', color: 'var(--success)', fontWeight: 600 }}>All Cleared</span>
                               </div>
                             )}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
                             {cust.credit_enabled ? (
                               <Badge variant="success">Credit Enabled</Badge>
                             ) : (
@@ -630,19 +628,19 @@ export const CustomersPage: React.FC = () => {
                             )}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
                             <Badge variant={cust.is_active ? 'success' : 'danger'}>
                               {cust.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
                               {!cust.is_walkin && balance > 0 && (
                                 <Button
                                   variant="primary"
-                                  icon={<DollarSign size={12} />}
-                                  style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--success)', borderColor: 'var(--success)' }}
+                                  icon={<DollarSign size={11} />}
+                                  style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem', backgroundColor: 'var(--success)', borderColor: 'var(--success)' }}
                                   onClick={() => handleOpenPaymentModal(cust)}
                                   title="Record Payment"
                                 >
@@ -653,8 +651,8 @@ export const CustomersPage: React.FC = () => {
                               {!cust.is_walkin && (
                                 <Button
                                   variant="outline"
-                                  icon={<FileText size={12} />}
-                                  style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }}
+                                  icon={<FileText size={11} />}
+                                  style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
                                   onClick={() => handleOpenStatement(cust)}
                                   title="View Statement of Account"
                                 >
@@ -664,8 +662,8 @@ export const CustomersPage: React.FC = () => {
 
                               <Button
                                 variant="outline"
-                                icon={<Edit2 size={12} />}
-                                style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }}
+                                icon={<Edit2 size={11} />}
+                                style={{ padding: '0.2rem 0.4rem', fontSize: '0.6875rem' }}
                                 onClick={() => handleOpenEditCustomer(cust)}
                                 title="Edit Customer Profile"
                               />
@@ -673,10 +671,10 @@ export const CustomersPage: React.FC = () => {
                               {!cust.is_walkin && (
                                 <Button
                                   variant="outline"
-                                  icon={<Power size={12} />}
+                                  icon={<Power size={11} />}
                                   title={cust.is_active ? 'Deactivate customer' : 'Reactivate customer'}
                                   style={{
-                                    padding: '0.3rem 0.45rem',
+                                    padding: '0.2rem 0.4rem',
                                     color: cust.is_active ? 'var(--warning)' : 'var(--success)',
                                     borderColor: cust.is_active ? 'var(--warning-border)' : 'var(--success-border)',
                                   }}

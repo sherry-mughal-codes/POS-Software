@@ -9,7 +9,6 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
-import { Badge } from '../../../components/common/Badge';
 import { CartItem } from '../../../types/sales';
 import { Customer } from '../../../types/contact';
 
@@ -64,7 +63,7 @@ export const POSCart: React.FC<POSCartProps> = ({
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        borderRadius: '0.75rem',
+        borderRadius: '0.625rem',
         overflow: 'hidden',
         border: '1px solid var(--border-medium)',
         padding: 0,
@@ -73,28 +72,28 @@ export const POSCart: React.FC<POSCartProps> = ({
       {/* Customer Header Bar */}
       <div
         style={{
-          padding: '0.625rem 0.875rem',
+          padding: '0.4rem 0.6rem',
           borderBottom: '1px solid var(--border-subtle)',
           backgroundColor: 'rgba(0, 0, 0, 0.25)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.375rem',
+          gap: '0.25rem',
           flexShrink: 0,
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <label style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            <UserCheck size={12} />
-            Customer Master
+          <label style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <UserCheck size={11} />
+            Customer
           </label>
           {selectedCustomer && (
             <div>
               {selectedCustomer.is_walkin ? (
-                <Badge variant="phase">Walk-in</Badge>
+                <span style={{ fontSize: '0.625rem', color: 'var(--primary-400)', backgroundColor: 'rgba(56, 189, 248, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>Walk-in</span>
               ) : selectedCustomer.credit_enabled ? (
-                <Badge variant="success">Credit OK</Badge>
+                <span style={{ fontSize: '0.625rem', color: 'var(--success)', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>Credit OK</span>
               ) : (
-                <Badge variant="warning">No Credit</Badge>
+                <span style={{ fontSize: '0.625rem', color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>No Credit</span>
               )}
             </div>
           )}
@@ -107,10 +106,10 @@ export const POSCart: React.FC<POSCartProps> = ({
             width: '100%',
             backgroundColor: 'var(--bg-input)',
             border: '1px solid var(--border-medium)',
-            borderRadius: '0.375rem',
-            padding: '0.375rem 0.5rem',
+            borderRadius: '0.3rem',
+            padding: '0.25rem 0.45rem',
             color: 'var(--text-main)',
-            fontSize: '0.8125rem',
+            fontSize: '0.78125rem',
             fontWeight: 600,
             outline: 'none',
           }}
@@ -128,10 +127,10 @@ export const POSCart: React.FC<POSCartProps> = ({
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '0.5rem 0.75rem',
+          padding: '0.35rem 0.5rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.5rem',
+          gap: '0.35rem',
           minHeight: 0,
         }}
       >
@@ -144,15 +143,15 @@ export const POSCart: React.FC<POSCartProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--text-muted)',
-              gap: '0.375rem',
+              gap: '0.25rem',
               textAlign: 'center',
-              padding: '1.5rem 0.5rem',
+              padding: '1rem 0.5rem',
             }}
           >
-            <ShoppingCart size={32} style={{ color: 'var(--text-subtle)' }} />
-            <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Cart is empty</div>
-            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
-              Scan a barcode or click a product to add items
+            <ShoppingCart size={28} style={{ color: 'var(--text-subtle)' }} />
+            <div style={{ fontWeight: 600, fontSize: '0.8125rem' }}>Cart is empty</div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-subtle)' }}>
+              Scan barcode or click product to add
             </div>
           </div>
         ) : (
@@ -163,43 +162,35 @@ export const POSCart: React.FC<POSCartProps> = ({
               <div
                 key={item.product_id}
                 style={{
-                  padding: '0.5rem 0.625rem',
+                  padding: '0.35rem 0.5rem',
                   backgroundColor: 'var(--bg-card)',
-                  borderRadius: '0.375rem',
+                  borderRadius: '0.35rem',
                   border: '1px solid var(--border-subtle)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.25rem',
+                  gap: '0.2rem',
                 }}
               >
                 {/* Top Row: Title & Remove */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.375rem' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: '0.8125rem',
-                        color: 'var(--text-main)',
-                        lineHeight: 1.2,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                      title={item.name}
-                    >
-                      {item.name}
-                    </div>
-                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>
-                      Rs. {formatMoney(item.unit_price)} / {item.unit_abbr || 'unit'}
-                      {item.discount > 0 && (
-                        <span style={{ color: 'var(--warning)', marginLeft: '0.375rem' }}>
-                          (-Rs. {formatMoney(item.discount)})
-                        </span>
-                      )}
-                    </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.3rem' }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontWeight: 700,
+                      fontSize: '0.78125rem',
+                      color: 'var(--text-main)',
+                      lineHeight: 1.15,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={item.name}
+                  >
+                    {item.name}
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0 }}>
                     <button
                       type="button"
                       onClick={() => {
@@ -211,10 +202,10 @@ export const POSCart: React.FC<POSCartProps> = ({
                       style={{
                         background: 'none',
                         border: '1px solid var(--border-subtle)',
-                        borderRadius: '0.25rem',
+                        borderRadius: '0.2rem',
                         color: item.discount > 0 ? 'var(--warning)' : 'var(--text-muted)',
-                        padding: '0.1rem 0.3rem',
-                        fontSize: '0.625rem',
+                        padding: '0.05rem 0.25rem',
+                        fontSize: '0.6rem',
                         cursor: 'pointer',
                       }}
                     >
@@ -228,15 +219,15 @@ export const POSCart: React.FC<POSCartProps> = ({
                         border: 'none',
                         color: 'var(--text-subtle)',
                         cursor: 'pointer',
-                        padding: '0.2rem',
-                        borderRadius: '0.25rem',
+                        padding: '0.1rem',
+                        borderRadius: '0.2rem',
                         display: 'flex',
                         alignItems: 'center',
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--danger)')}
                       onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-subtle)')}
                     >
-                      <Trash2 size={13} />
+                      <Trash2 size={12} />
                     </button>
                   </div>
                 </div>
@@ -244,12 +235,12 @@ export const POSCart: React.FC<POSCartProps> = ({
                 {/* Bottom Row: Stepper & Subtotal */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   {/* Quantity Stepper */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', backgroundColor: 'var(--bg-input)', padding: '0.1rem', borderRadius: '0.25rem', border: '1px solid var(--border-medium)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.15rem', backgroundColor: 'var(--bg-input)', padding: '0.05rem', borderRadius: '0.2rem', border: '1px solid var(--border-medium)' }}>
                     <button
                       onClick={() => onUpdateQuantity(item.product_id, item.quantity - 1)}
                       style={{
-                        width: '1.25rem',
-                        height: '1.25rem',
+                        width: '1.125rem',
+                        height: '1.125rem',
                         border: 'none',
                         backgroundColor: 'transparent',
                         color: 'var(--text-main)',
@@ -259,7 +250,7 @@ export const POSCart: React.FC<POSCartProps> = ({
                         cursor: 'pointer',
                       }}
                     >
-                      <Minus size={10} />
+                      <Minus size={9} />
                     </button>
 
                     <input
@@ -269,13 +260,13 @@ export const POSCart: React.FC<POSCartProps> = ({
                       max={item.available_stock}
                       onChange={(e) => onUpdateQuantity(item.product_id, parseFloat(e.target.value) || 1)}
                       style={{
-                        width: '2rem',
+                        width: '1.75rem',
                         textAlign: 'center',
                         backgroundColor: 'transparent',
                         border: 'none',
                         color: 'var(--text-main)',
                         fontWeight: 700,
-                        fontSize: '0.75rem',
+                        fontSize: '0.71875rem',
                         outline: 'none',
                       }}
                     />
@@ -284,8 +275,8 @@ export const POSCart: React.FC<POSCartProps> = ({
                       onClick={() => onUpdateQuantity(item.product_id, item.quantity + 1)}
                       disabled={isAtMaxStock}
                       style={{
-                        width: '1.25rem',
-                        height: '1.25rem',
+                        width: '1.125rem',
+                        height: '1.125rem',
                         border: 'none',
                         backgroundColor: 'transparent',
                         color: isAtMaxStock ? 'var(--text-subtle)' : 'var(--text-main)',
@@ -295,8 +286,13 @@ export const POSCart: React.FC<POSCartProps> = ({
                         cursor: isAtMaxStock ? 'not-allowed' : 'pointer',
                       }}
                     >
-                      <Plus size={10} />
+                      <Plus size={9} />
                     </button>
+                  </div>
+
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                    Rs. {formatMoney(item.unit_price)}
+                    {item.discount > 0 && <span style={{ color: 'var(--warning)', marginLeft: '0.2rem' }}>(-Rs. {formatMoney(item.discount)})</span>}
                   </div>
 
                   {/* Subtotal */}
@@ -304,7 +300,7 @@ export const POSCart: React.FC<POSCartProps> = ({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontWeight: 800,
-                      fontSize: '0.875rem',
+                      fontSize: '0.8125rem',
                       color: 'var(--primary-400)',
                     }}
                   >
@@ -313,8 +309,8 @@ export const POSCart: React.FC<POSCartProps> = ({
                 </div>
 
                 {isAtMaxStock && (
-                  <div style={{ fontSize: '0.625rem', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <AlertCircle size={9} />
+                  <div style={{ fontSize: '0.59375rem', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                    <AlertCircle size={8} />
                     Max stock ({item.available_stock} avail)
                   </div>
                 )}
@@ -327,17 +323,17 @@ export const POSCart: React.FC<POSCartProps> = ({
       {/* Cart Footer Summary & Pay Button */}
       <div
         style={{
-          padding: '0.75rem 0.875rem',
+          padding: '0.45rem 0.6rem',
           borderTop: '1px solid var(--border-subtle)',
           backgroundColor: 'rgba(0, 0, 0, 0.35)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.5rem',
+          gap: '0.35rem',
           flexShrink: 0,
         }}
       >
         {/* Breakdown lines */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.75rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.71875rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
             <span>Subtotal ({totalItemsCount} items)</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-main)' }}>
@@ -352,25 +348,25 @@ export const POSCart: React.FC<POSCartProps> = ({
                 background: 'none',
                 border: 'none',
                 color: overallDiscount > 0 ? 'var(--warning)' : 'var(--primary-400)',
-                fontSize: '0.6875rem',
+                fontSize: '0.65rem',
                 fontWeight: 600,
                 cursor: 'pointer',
                 padding: 0,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.25rem',
+                gap: '0.2rem',
               }}
             >
-              <Percent size={10} />
-              <span>{showDiscountInput ? 'Hide Discount' : 'Add Overall Disc.'}</span>
+              <Percent size={9} />
+              <span>{showDiscountInput ? 'Hide' : 'Add Overall Disc.'}</span>
             </button>
-            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--warning)', fontWeight: 600 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--warning)', fontWeight: 600, fontSize: '0.71875rem' }}>
               {overallDiscount > 0 ? `- Rs. ${formatMoney(overallDiscount)}` : 'Rs. 0.00'}
             </span>
           </div>
 
           {showDiscountInput && (
-            <div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.125rem' }}>
+            <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.1rem' }}>
               <input
                 type="number"
                 placeholder="Discount (Rs.)"
@@ -378,12 +374,12 @@ export const POSCart: React.FC<POSCartProps> = ({
                 onChange={(e) => onUpdateOverallDiscount(parseFloat(e.target.value) || 0)}
                 style={{
                   flex: 1,
-                  padding: '0.25rem 0.5rem',
+                  padding: '0.2rem 0.4rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
-                  borderRadius: '0.25rem',
+                  borderRadius: '0.2rem',
                   color: 'var(--text-main)',
-                  fontSize: '0.75rem',
+                  fontSize: '0.71875rem',
                   outline: 'none',
                 }}
               />
@@ -394,8 +390,8 @@ export const POSCart: React.FC<POSCartProps> = ({
         {/* Grand Total Banner */}
         <div
           style={{
-            padding: '0.5rem 0.75rem',
-            borderRadius: '0.375rem',
+            padding: '0.35rem 0.55rem',
+            borderRadius: '0.35rem',
             backgroundColor: 'rgba(56, 189, 248, 0.1)',
             border: '1px solid rgba(56, 189, 248, 0.25)',
             display: 'flex',
@@ -403,8 +399,8 @@ export const POSCart: React.FC<POSCartProps> = ({
             alignItems: 'center',
           }}
         >
-          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-main)' }}>Grand Total</span>
-          <span style={{ fontSize: '1.25rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: 'var(--primary-400)' }}>
+          <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: 'var(--text-main)' }}>Grand Total</span>
+          <span style={{ fontSize: '1.125rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: 'var(--primary-400)' }}>
             Rs. {formatMoney(grandTotal)}
           </span>
         </div>
@@ -413,20 +409,20 @@ export const POSCart: React.FC<POSCartProps> = ({
         {!isDayOpen && (
           <div
             style={{
-              padding: '0.5rem 0.75rem',
+              padding: '0.35rem 0.5rem',
               backgroundColor: 'rgba(239, 68, 68, 0.15)',
               border: '1px solid var(--danger)',
-              borderRadius: '0.375rem',
-              fontSize: '0.75rem',
+              borderRadius: '0.3rem',
+              fontSize: '0.6875rem',
               color: 'var(--danger)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '0.5rem',
+              gap: '0.35rem',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <AlertCircle size={14} style={{ flexShrink: 0 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <AlertCircle size={12} style={{ flexShrink: 0 }} />
               <span style={{ fontWeight: 600 }}>Day Session Closed</span>
             </div>
             {onOpenDay && (
@@ -440,7 +436,7 @@ export const POSCart: React.FC<POSCartProps> = ({
                   textDecoration: 'underline',
                   cursor: 'pointer',
                   fontWeight: 700,
-                  fontSize: '0.75rem',
+                  fontSize: '0.6875rem',
                   padding: 0,
                 }}
               >
@@ -451,13 +447,14 @@ export const POSCart: React.FC<POSCartProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '0.375rem' }}>
+        <div style={{ display: 'flex', gap: '0.3rem' }}>
           <Button
             variant="outline"
             onClick={onClearCart}
             disabled={cart.length === 0}
-            icon={<Trash2 size={13} />}
+            icon={<Trash2 size={12} />}
             title="Clear Cart"
+            style={{ padding: '0.45rem 0.6rem' }}
           />
 
           {!isDayOpen ? (
@@ -466,15 +463,15 @@ export const POSCart: React.FC<POSCartProps> = ({
               onClick={onOpenDay || (() => {})}
               style={{
                 flex: 1,
-                padding: '0.625rem',
-                fontSize: '0.8125rem',
+                padding: '0.45rem',
+                fontSize: '0.78125rem',
                 fontWeight: 800,
                 backgroundColor: 'rgba(239, 68, 68, 0.2)',
                 color: 'var(--danger)',
                 border: '1px solid var(--danger)',
               }}
             >
-              🔒 Day Closed (Open Day to Sale)
+              🔒 Open Day to Sale
             </Button>
           ) : (
             <Button
@@ -483,8 +480,8 @@ export const POSCart: React.FC<POSCartProps> = ({
               disabled={cart.length === 0}
               style={{
                 flex: 1,
-                padding: '0.625rem',
-                fontSize: '0.9375rem',
+                padding: '0.45rem',
+                fontSize: '0.875rem',
                 fontWeight: 800,
                 background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
                 boxShadow: cart.length > 0 ? '0 4px 14px rgba(6, 182, 212, 0.4)' : 'none',

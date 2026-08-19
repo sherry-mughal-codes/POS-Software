@@ -59,28 +59,27 @@ export const SalesReportPage: React.FC = () => {
   }, [fetchReport]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Financial Analytics</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Comprehensive Sales Analytics Report
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Sales Analytics Report
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Consolidated matrix analyzing gross revenue, discounts, customer returns, net sales, and tender collections.
-          </p>
         </div>
 
-        <Button variant="outline" icon={<RefreshCw size={14} />} onClick={fetchReport}>
+        <Button
+          variant="outline"
+          icon={<RefreshCw size={13} />}
+          style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+          onClick={fetchReport}
+        >
           Refresh Report
         </Button>
       </div>
 
       {/* Filter Card */}
-      <Card title="Sales Report Filters" subtitle="Filter across date ranges, customer accounts, and payment tenders" icon={<Filter size={20} />}>
+      <Card title="Report Filters" icon={<Filter size={15} />}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>

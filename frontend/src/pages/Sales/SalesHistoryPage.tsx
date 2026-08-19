@@ -127,28 +127,27 @@ export const SalesHistoryPage: React.FC = () => {
     : 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Sales Ledger</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Sales Receipts & Customer Returns
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Sales & Receipts
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Audit log of all counter POS sales invoices, receipts, payments, and return processing.
-          </p>
         </div>
 
-        <Button variant="outline" icon={<RefreshCw size={14} />} onClick={fetchSales}>
+        <Button
+          variant="outline"
+          icon={<RefreshCw size={13} />}
+          style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+          onClick={fetchSales}
+        >
           Refresh Sales
         </Button>
       </div>
 
       {/* Filter Bar */}
-      <Card title="Sales Search & Filters" subtitle="Filter sales by invoice number, customer, dates, or payment methods" icon={<Filter size={20} />}>
+      <Card title="Sales Search & Filters" icon={<Filter size={15} />}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>

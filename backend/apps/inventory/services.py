@@ -150,11 +150,14 @@ class InventoryService:
                 else:
                     status = "IN_STOCK"
 
+            img_url = p.image_url or (p.image.url if p.image else "")
             summary_list.append({
                 "product_id": p.id,
                 "product_name": p.name,
                 "sku": p.sku,
                 "barcode": p.barcode or "",
+                "image_url": img_url,
+                "image": img_url,
                 "category_id": p.category.id if p.category else None,
                 "category_name": p.category.name if p.category else "Uncategorized",
                 "unit_name": p.unit.name if p.unit else "",

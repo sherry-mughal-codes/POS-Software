@@ -159,25 +159,25 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
       {/* Adjustments Table */}
       <Card title="Posted Stock Adjustments" subtitle="Immutable adjustment records with mandatory reasons and cost impact" icon={<SlidersHorizontal size={20} />}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Adjustment #</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Date</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Type</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Reason</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Products Affected</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Total Quantity</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Cost Impact</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Recorded By</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Action</th>
+              <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Adj. Number</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Date</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Type</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Reason</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Affected Product</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Qty</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Cost Impact</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Auditor</th>
+                <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {adjustments.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    No stock adjustments recorded yet.
+                  <td colSpan={9} style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                    No stock adjustment vouchers recorded yet.
                   </td>
                 </tr>
               ) : (
@@ -188,18 +188,18 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      <code style={{ fontWeight: 700, color: 'var(--primary-400)' }}>{adj.adjustment_number}</code>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
+                      <code style={{ fontWeight: 700, color: 'var(--primary-400)', fontSize: '0.75rem' }}>{adj.adjustment_number}</code>
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                        <Calendar size={13} />
+                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Calendar size={11} />
                         <span>{adj.date}</span>
                       </div>
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
                       {adj.adjustment_type === 'IN' ? (
                         <Badge variant="success">Increase (+)</Badge>
                       ) : (
@@ -207,23 +207,23 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                       )}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.8125rem' }}>
                         {adj.reason_display || adj.reason}
                       </span>
                       {adj.notes && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                           {adj.notes}
                         </div>
                       )}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
                       {adj.items && adj.items.length > 0 ? (
                         <div>
-                          <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{adj.items[0].product_name}</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.8125rem' }}>{adj.items[0].product_name}</div>
                           {adj.items.length > 1 && (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
                               +{adj.items.length - 1} more items
                             </span>
                           )}
@@ -233,26 +233,26 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                       )}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
                       {adj.adjustment_type === 'IN' ? `+${adj.total_quantity}` : `-${adj.total_quantity}`}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.78125rem' }}>
                       Rs. {formatMoney(adj.total_cost_impact)}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                        <User size={13} />
+                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <User size={11} />
                         <span>{adj.created_by_name}</span>
                       </div>
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
                       <Button
                         variant="outline"
-                        icon={<Eye size={13} />}
-                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                        icon={<Eye size={11} />}
+                        style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
                         onClick={() => setSelectedAdjustmentDetail(adj)}
                       >
                         Details

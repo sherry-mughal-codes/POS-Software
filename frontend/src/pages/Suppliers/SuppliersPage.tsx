@@ -94,59 +94,63 @@ export const SuppliersPage: React.FC = () => {
   const taxRegisteredCount = suppliers.filter((s) => s.tax_id).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <Badge variant="success" pulse>Supplier Master</Badge>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-            Suppliers & Vendor Directory
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Suppliers & Vendors
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            Single source of truth for merchandise distributors, purchase order attribution, and accounts payable.
-          </p>
         </div>
 
-        <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenAdd}>
+        <Button
+          variant="primary"
+          icon={<Plus size={14} />}
+          style={{
+            background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+            fontWeight: 700,
+            padding: '0.25rem 0.55rem',
+            fontSize: '0.75rem',
+          }}
+          onClick={handleOpenAdd}
+        >
           Register Supplier
         </Button>
       </div>
 
       {/* Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Suppliers</span>
-            <Truck size={18} style={{ color: 'var(--primary-400)' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Suppliers</span>
+            <Truck size={15} style={{ color: 'var(--primary-400)' }} />
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
             {totalCount}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Active vendors & distributors</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Active vendors & distributors</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Active Suppliers</span>
-            <CheckCircle2 size={18} style={{ color: 'var(--success)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Active Suppliers</span>
+            <CheckCircle2 size={15} style={{ color: 'var(--success)' }} />
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
             {activeCount}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Eligible for Purchase Orders</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Eligible for Purchase Orders</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Tax / NTN Registered</span>
-            <FileText size={18} style={{ color: '#a5b4fc' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Tax / NTN Registered</span>
+            <FileText size={15} style={{ color: '#a5b4fc' }} />
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#a5b4fc', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#a5b4fc', fontFamily: 'var(--font-mono)' }}>
             {taxRegisteredCount}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>NTN / STRN on file</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>NTN / STRN on file</div>
         </div>
       </div>
 
@@ -202,17 +206,17 @@ export const SuppliersPage: React.FC = () => {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Supplier ID</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Company & Representative</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Contact Info</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Address / Warehouse</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Tax / NTN</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Payable Balance</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Supplier ID</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Company & Representative</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Contact Info</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Address / Warehouse</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Tax / NTN</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Payable Balance</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -223,57 +227,58 @@ export const SuppliersPage: React.FC = () => {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '0.875rem 1rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
                       <code style={{
                         fontFamily: 'var(--font-mono)',
                         fontWeight: 700,
+                        fontSize: '0.75rem',
                         color: 'var(--primary-400)',
                         backgroundColor: 'var(--bg-app)',
-                        padding: '0.2rem 0.5rem',
+                        padding: '0.15rem 0.4rem',
                         borderRadius: '0.25rem',
                       }}>
                         {supp.supplier_id}
                       </code>
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Building size={14} style={{ color: 'var(--primary-400)' }} />
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem' }}>
+                        <Building size={13} style={{ color: 'var(--primary-400)' }} />
                         <span>{supp.company_name || supp.name}</span>
                       </div>
                       {supp.company_name && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                           Contact: {supp.name}
                         </div>
                       )}
                       {supp.notes && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', marginTop: '0.2rem' }}>
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.1rem' }}>
                           <em>{supp.notes}</em>
                         </div>
                       )}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
                       {supp.phone ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--text-main)' }}>
-                          <Phone size={13} style={{ color: 'var(--primary-400)' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: 'var(--text-main)' }}>
+                          <Phone size={11} style={{ color: 'var(--primary-400)' }} />
                           <span>{supp.phone}</span>
                         </div>
                       ) : (
-                        <span style={{ color: 'var(--text-subtle)', fontSize: '0.75rem' }}>No phone</span>
+                        <span style={{ color: 'var(--text-subtle)', fontSize: '0.6875rem' }}>No phone</span>
                       )}
                       {supp.email && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                          <Mail size={12} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                          <Mail size={11} />
                           <span>{supp.email}</span>
                         </div>
                       )}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                       {supp.address ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                          <MapPin size={13} style={{ color: 'var(--text-subtle)', flexShrink: 0 }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                          <MapPin size={11} style={{ color: 'var(--text-subtle)', flexShrink: 0 }} />
                           <span>{supp.address}</span>
                         </div>
                       ) : (
@@ -281,46 +286,46 @@ export const SuppliersPage: React.FC = () => {
                       )}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
                       {supp.tax_id ? (
                         <Badge variant="phase">{supp.tax_id}</Badge>
                       ) : (
-                        <span style={{ color: 'var(--text-subtle)', fontSize: '0.75rem' }}>Unregistered</span>
+                        <span style={{ color: 'var(--text-subtle)', fontSize: '0.6875rem' }}>Unregistered</span>
                       )}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
                       {(supp.outstanding_payable || 0) > 0 ? (
-                        <span style={{ color: 'var(--warning)' }}>
+                        <span style={{ color: 'var(--warning)', fontSize: '0.85rem' }}>
                           Rs. {((supp.outstanding_payable || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                       ) : (
-                        <span style={{ color: 'var(--success)' }}>Rs. 0.00</span>
+                        <span style={{ color: 'var(--success)', fontSize: '0.78125rem' }}>Rs. 0.00</span>
                       )}
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
                       <Badge variant={supp.is_active ? 'success' : 'danger'}>
                         {supp.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
 
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
                         <Button
                           variant="outline"
-                          icon={<Edit2 size={13} />}
-                          style={{ padding: '0.3rem 0.625rem', fontSize: '0.75rem' }}
+                          icon={<Edit2 size={11} />}
+                          style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
                           onClick={() => handleOpenEdit(supp)}
                         >
                           Edit
                         </Button>
                         <Button
                           variant="outline"
-                          icon={<Power size={13} />}
+                          icon={<Power size={11} />}
                           title={supp.is_active ? 'Deactivate supplier' : 'Reactivate supplier'}
                           style={{
-                            padding: '0.3rem 0.5rem',
+                            padding: '0.2rem 0.4rem',
                             color: supp.is_active ? 'var(--warning)' : 'var(--success)',
                             borderColor: supp.is_active ? 'var(--warning-border)' : 'var(--success-border)',
                           }}
