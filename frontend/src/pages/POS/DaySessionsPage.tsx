@@ -234,38 +234,6 @@ export const DaySessionsPage: React.FC = () => {
             Day Closing & X/Z Reports
           </h2>
         </div>
-
-        <div style={{ display: 'flex', gap: '0.4rem' }}>
-          {currentSession?.status === 'OPEN' ? (
-            <>
-              <Button
-                variant="outline"
-                icon={<FileText size={14} />}
-                style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-                onClick={() => setIsXReportModalOpen(true)}
-              >
-                View X-Report
-              </Button>
-              <Button
-                variant="primary"
-                icon={<Lock size={14} />}
-                onClick={handleOpenCloseDayModal}
-                style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)', fontWeight: 700, padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-              >
-                Close Day (Z-Report)
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="primary"
-              icon={<Plus size={14} />}
-              onClick={handleOpenDayModal}
-              style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)', fontWeight: 700, padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-            >
-              Open Business Day
-            </Button>
-          )}
-        </div>
       </div>
 
       {/* ACTIVE SESSION HERO CARD */}
@@ -294,7 +262,7 @@ export const DaySessionsPage: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Opening Cash</div>
                 <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
@@ -307,6 +275,25 @@ export const DaySessionsPage: React.FC = () => {
                 <div style={{ fontSize: '1.125rem', fontWeight: 900, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                   Rs. {formatMoney(liveXReport.cash_drawer.expected_cash)}
                 </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.4rem', marginLeft: '0.5rem' }}>
+                <Button
+                  variant="outline"
+                  icon={<FileText size={14} />}
+                  style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+                  onClick={() => setIsXReportModalOpen(true)}
+                >
+                  View X-Report
+                </Button>
+                <Button
+                  variant="primary"
+                  icon={<Lock size={14} />}
+                  onClick={handleOpenCloseDayModal}
+                  style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)', fontWeight: 700, padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+                >
+                  Close Day (Z-Report)
+                </Button>
               </div>
             </div>
           </div>

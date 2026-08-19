@@ -162,52 +162,52 @@ export const SalesReportPage: React.FC = () => {
         <LoadingSpinner label="Generating comprehensive sales report..." />
       ) : report ? (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Gross Sales</span>
-                <TrendingUp size={18} style={{ color: 'var(--primary-400)' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem' }}>
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Gross Sales</span>
+                <TrendingUp size={15} style={{ color: 'var(--primary-400)' }} />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                 Rs. {formatMoney(report.summary.gross_sales)}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                 {report.summary.total_invoices} Invoices Issued
               </div>
             </div>
 
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Discounts & Returns</span>
-                <RotateCcw size={18} style={{ color: 'var(--danger)' }} />
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Discounts & Returns</span>
+                <RotateCcw size={15} style={{ color: 'var(--danger)' }} />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                 -Rs. {formatMoney(report.summary.total_discounts + report.summary.total_returns)}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                 Disc: Rs. {formatMoney(report.summary.total_discounts)} | Ret: Rs. {formatMoney(report.summary.total_returns)}
               </div>
             </div>
 
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Net Realized Revenue</span>
-                <DollarSign size={18} style={{ color: 'var(--success)' }} />
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Net Revenue</span>
+                <DollarSign size={15} style={{ color: 'var(--success)' }} />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
                 Rs. {formatMoney(report.summary.net_sales)}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                 Gross - Discounts - Returns
               </div>
             </div>
 
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Cash vs Card vs Credit</span>
-                <Banknote size={18} style={{ color: 'var(--primary-400)' }} />
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Payment Breakdown</span>
+                <Banknote size={15} style={{ color: 'var(--primary-400)' }} />
               </div>
-              <div style={{ fontSize: '0.9375rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
                 <div>Cash: <span style={{ color: 'var(--success)' }}>Rs. {formatMoney(report.summary.cash_sales)}</span></div>
                 <div>Card: <span style={{ color: 'var(--primary-400)' }}>Rs. {formatMoney(report.summary.card_sales)}</span></div>
                 <div>Credit: <span style={{ color: 'var(--warning)' }}>Rs. {formatMoney(report.summary.credit_sales)}</span></div>

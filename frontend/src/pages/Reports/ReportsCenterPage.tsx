@@ -261,31 +261,31 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
       {/* TAB 1: Financial Profit & Loss Statement */}
       {activeTab === 'financial_pnl' && dashboardData && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-            <Card>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Net Sales Revenue</div>
-              <div style={{ fontSize: '1.375rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-main)', marginTop: '0.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem' }}>
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Net Sales Revenue</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-main)', marginTop: '0.15rem' }}>
                 Rs. {formatMoney(dashboardData.profit_overview.net_sales)}
               </div>
-            </Card>
-            <Card>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Cost of Goods Sold (COGS)</div>
-              <div style={{ fontSize: '1.375rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--warning)', marginTop: '0.25rem' }}>
+            </div>
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>COGS</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--warning)', marginTop: '0.15rem' }}>
                 Rs. {formatMoney(dashboardData.profit_overview.cogs)}
               </div>
-            </Card>
-            <Card>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Gross Profit (Margin: {dashboardData.profit_overview.gross_margin_percentage}%)</div>
-              <div style={{ fontSize: '1.375rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--success)', marginTop: '0.25rem' }}>
+            </div>
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Gross Profit ({dashboardData.profit_overview.gross_margin_percentage}%)</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--success)', marginTop: '0.15rem' }}>
                 Rs. {formatMoney(dashboardData.profit_overview.gross_profit)}
               </div>
-            </Card>
-            <Card>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Net Business Profit (Margin: {dashboardData.profit_overview.net_margin_percentage}%)</div>
-              <div style={{ fontSize: '1.375rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: dashboardData.profit_overview.net_profit >= 0 ? 'var(--success)' : 'var(--danger)', marginTop: '0.25rem' }}>
+            </div>
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Net Profit ({dashboardData.profit_overview.net_margin_percentage}%)</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: dashboardData.profit_overview.net_profit >= 0 ? 'var(--success)' : 'var(--danger)', marginTop: '0.15rem' }}>
                 Rs. {formatMoney(dashboardData.profit_overview.net_profit)}
               </div>
-            </Card>
+            </div>
           </div>
 
           <Card title="Official Statement of Profit and Loss (P&L)" subtitle={`Accrual accounting statement for ${dashboardData.period_label}`}>

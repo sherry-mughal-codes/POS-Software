@@ -362,49 +362,49 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Metrics Banner */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Accounts Payable</span>
-            <DollarSign size={18} style={{ color: 'var(--warning)' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Accounts Payable</span>
+            <DollarSign size={15} style={{ color: 'var(--warning)' }} />
           </div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
             Rs. {formatMoney(totalOutstanding)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Net owed across all vendors</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Net owed across vendors</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Lifetime Purchases</span>
-            <Building size={18} style={{ color: 'var(--primary-400)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Lifetime Purchases</span>
+            <Building size={15} style={{ color: 'var(--primary-400)' }} />
           </div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
             Rs. {formatMoney(totalPurchasedAll)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Total inventory billed</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Total inventory billed</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Disbursed Paid</span>
-            <ArrowUpRight size={18} style={{ color: 'var(--success)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Disbursed Paid</span>
+            <ArrowUpRight size={15} style={{ color: 'var(--success)' }} />
           </div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
             Rs. {formatMoney(totalPaidAll)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Cash & bank settlements</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Cash & bank settlements</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Returns Deductions</span>
-            <TrendingDown size={18} style={{ color: 'var(--info)' }} />
+        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Returns Deductions</span>
+            <TrendingDown size={15} style={{ color: 'var(--info)' }} />
           </div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--info)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--info)', fontFamily: 'var(--font-mono)' }}>
             Rs. {formatMoney(totalReturnsAll)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Vendor debit notes</div>
+          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Vendor debit notes</div>
         </div>
       </div>
 
@@ -844,30 +844,30 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
             ) : reportData ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {/* Summary Matrix Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                  <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Vendors Audited</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>{reportData.summary.total_suppliers}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.625rem' }}>
+                  <div style={{ padding: '0.625rem 0.875rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Vendors Audited</div>
+                    <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.15rem' }}>{reportData.summary.total_suppliers}</div>
                   </div>
 
-                  <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Period Purchases</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(reportData.summary.total_purchases)}</div>
+                  <div style={{ padding: '0.625rem 0.875rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Period Purchases</div>
+                    <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)', marginTop: '0.15rem' }}>Rs. {formatMoney(reportData.summary.total_purchases)}</div>
                   </div>
 
-                  <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Period Payments</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(reportData.summary.total_payments)}</div>
+                  <div style={{ padding: '0.625rem 0.875rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Period Payments</div>
+                    <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)', marginTop: '0.15rem' }}>Rs. {formatMoney(reportData.summary.total_payments)}</div>
                   </div>
 
-                  <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Period Returns</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--info)', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(reportData.summary.total_returns)}</div>
+                  <div style={{ padding: '0.625rem 0.875rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Period Returns</div>
+                    <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--info)', fontFamily: 'var(--font-mono)', marginTop: '0.15rem' }}>Rs. {formatMoney(reportData.summary.total_returns)}</div>
                   </div>
 
-                  <div style={{ padding: '1rem', backgroundColor: 'rgba(245, 158, 11, 0.08)', borderRadius: '0.5rem', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 600 }}>Closing Payables</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(reportData.summary.total_outstanding_payables)}</div>
+                  <div style={{ padding: '0.625rem 0.875rem', backgroundColor: 'rgba(245, 158, 11, 0.08)', borderRadius: '0.5rem', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--warning)', fontWeight: 600, textTransform: 'uppercase' }}>Closing Payables</div>
+                    <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)', marginTop: '0.15rem' }}>Rs. {formatMoney(reportData.summary.total_outstanding_payables)}</div>
                   </div>
                 </div>
 
@@ -926,19 +926,19 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
         {selectedSupplierForPay && (
           <form onSubmit={handleRecordPayment} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Vendor Balance Hero */}
-            <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', padding: '1rem', borderRadius: '0.5rem' }}>
+            <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', padding: '0.625rem 0.875rem', borderRadius: '0.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 600, textTransform: 'uppercase' }}>Vendor</div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--warning)', fontWeight: 600, textTransform: 'uppercase' }}>Vendor</div>
+                  <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-main)' }}>
                     {selectedSupplierForPay.company_name || selectedSupplierForPay.name}
                   </div>
-                  <code style={{ fontSize: '0.75rem', color: 'var(--primary-400)' }}>{selectedSupplierForPay.supplier_id}</code>
+                  <code style={{ fontSize: '0.6875rem', color: 'var(--primary-400)' }}>{selectedSupplierForPay.supplier_id}</code>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Current Outstanding</div>
-                  <div style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Current Outstanding</div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(statements[selectedSupplierForPay.id]?.summary?.closing_payable ?? (selectedSupplierForPay.outstanding_payable ?? 0))}
                   </div>
                 </div>
@@ -1178,22 +1178,22 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
             ) : activeStatement ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {/* Statement Header Card */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '0.625rem 0.875rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                    <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-main)' }}>
                       {activeStatement.company_name || activeStatement.supplier_name}
                     </h3>
-                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                       Vendor Code: <code style={{ color: 'var(--primary-400)' }}>{selectedSupplierForStatement.supplier_id}</code>
                     </div>
                     {selectedSupplierForStatement.phone && (
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>Phone: {selectedSupplierForStatement.phone}</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>Phone: {selectedSupplierForStatement.phone}</div>
                     )}
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Closing Outstanding Payable</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: activeStatement.summary.closing_payable > 0 ? 'var(--warning)' : 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Closing Outstanding Payable</div>
+                    <div style={{ fontSize: '1.125rem', fontWeight: 800, color: activeStatement.summary.closing_payable > 0 ? 'var(--warning)' : 'var(--success)', fontFamily: 'var(--font-mono)' }}>
                       Rs. {formatMoney(activeStatement.summary.closing_payable)}
                     </div>
                   </div>

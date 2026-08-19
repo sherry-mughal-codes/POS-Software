@@ -174,47 +174,57 @@ class DashboardService:
         today_orders_count = today_sales_qs.count()
 
         # -------------------------------------------------------------
-        # 4. COGS & PROFIT ANALYSIS
+        # 4. COGS & PROFIT ANALYSIS (Aligned with General Ledger)
         # -------------------------------------------------------------
-        # COGS from completed sale items in range minus returned item costs
+        from apps.accounting.services import AccountingService
+        from apps.sales.models import SalesReturnItem
+
         items_base = SaleItem.objects.filter(
             sale__status=SaleStatus.COMPLETED,
             sale__created_at__range=(start_dt, end_dt)
         )
-        if cashier_id:
-            items_base = items_base.filter(sale__created_by_id=cashier_id)
-
-        # Exact COGS recognized per sold product line item
-        gross_cogs = items_base.aggregate(
-            t=Coalesce(Sum(F("quantity") * F("unit_cost")), Value(Decimal("0.00")), output_field=DecimalField())
-        )["t"] or Decimal("0.00")
-
-        # Returned items COGS (cost reversal)
-        from apps.sales.models import SalesReturnItem
-        ret_items_base = SalesReturnItem.objects.filter(
-            return_order__created_at__range=(start_dt, end_dt)
-        )
-        if cashier_id:
-            ret_items_base = ret_items_base.filter(return_order__created_by_id=cashier_id)
-        returned_cogs = ret_items_base.aggregate(
-            t=Coalesce(Sum(F("quantity") * F("unit_cost")), Value(Decimal("0.00")), output_field=DecimalField())
-        )["t"] or Decimal("0.00")
-
-        total_cogs = max(Decimal("0.00"), gross_cogs - returned_cogs)
-        gross_profit = net_sales - total_cogs
-        gross_margin_pct = round((float(gross_profit) / float(net_sales) * 100), 2) if net_sales > Decimal("0.00") else 0.0
-
-        # Operating Expenses in period
         expenses_qs = Expense.objects.filter(
             status=ExpenseStatus.SUBMITTED,
             date__range=(start_d, end_d)
         )
-        total_expenses = expenses_qs.aggregate(
-            t=Coalesce(Sum("amount"), Value(Decimal("0.00")), output_field=DecimalField())
-        )["t"] or Decimal("0.00")
+        if cashier_id:
+            items_base = items_base.filter(sale__created_by_id=cashier_id)
+            expenses_qs = expenses_qs.filter(created_by_id=cashier_id)
 
-        net_profit = gross_profit - total_expenses
-        net_margin_pct = round((float(net_profit) / float(net_sales) * 100), 2) if net_sales > Decimal("0.00") else 0.0
+        if not cashier_id:
+            # Full Company GL Income Statement Alignment
+            inc_res = AccountingService.get_income_statement(start_date=start_d, end_date=end_d)
+            cogs_row = next((r for r in inc_res["expenses"]["rows"] if r.get("code") == "5010"), None)
+            total_cogs = Decimal(str(cogs_row["amount"])) if cogs_row else Decimal("0.00")
+            total_expenses = max(Decimal("0.00"), Decimal(str(inc_res["expenses"]["total"])) - total_cogs)
+            gross_profit = net_sales - total_cogs
+            gross_margin_pct = round((float(gross_profit) / float(net_sales) * 100), 2) if net_sales > Decimal("0.00") else 0.0
+            net_profit = Decimal(str(inc_res["net_profit"]))
+            net_margin_pct = round((float(net_profit) / float(net_sales) * 100), 2) if net_sales > Decimal("0.00") else 0.0
+        else:
+            # Cashier-specific subledger breakdown
+            gross_cogs = items_base.aggregate(
+                t=Coalesce(Sum(F("quantity") * F("unit_cost")), Value(Decimal("0.00")), output_field=DecimalField())
+            )["t"] or Decimal("0.00")
+
+            ret_items_base = SalesReturnItem.objects.filter(
+                return_order__created_at__range=(start_dt, end_dt),
+                return_order__created_by_id=cashier_id
+            )
+            returned_cogs = ret_items_base.aggregate(
+                t=Coalesce(Sum(F("quantity") * F("unit_cost")), Value(Decimal("0.00")), output_field=DecimalField())
+            )["t"] or Decimal("0.00")
+
+            total_cogs = max(Decimal("0.00"), gross_cogs - returned_cogs)
+            gross_profit = net_sales - total_cogs
+            gross_margin_pct = round((float(gross_profit) / float(net_sales) * 100), 2) if net_sales > Decimal("0.00") else 0.0
+
+            total_expenses = expenses_qs.aggregate(
+                t=Coalesce(Sum("amount"), Value(Decimal("0.00")), output_field=DecimalField())
+            )["t"] or Decimal("0.00")
+
+            net_profit = gross_profit - total_expenses
+            net_margin_pct = round((float(net_profit) / float(net_sales) * 100), 2) if net_sales > Decimal("0.00") else 0.0
 
         # -------------------------------------------------------------
         # 5. CASH & BANK LIQUIDITY POSITION (Chart of Accounts)
