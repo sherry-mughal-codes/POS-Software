@@ -100,17 +100,53 @@ class ProductSerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             user = request.user if request and request.user.is_authenticated else None
             from apps.inventory.models import StockMovement, MovementType
+            from apps.accounting.models import Account, ReferenceType
+            from apps.accounting.services import AccountingService
+            from django.utils import timezone
+
+            opn_qty = Decimal(str(opening_stock))
             StockMovement.objects.create(
                 product=product,
                 movement_type=MovementType.OPENING_STOCK,
-                quantity=Decimal(str(opening_stock)),
+                quantity=opn_qty,
                 unit_cost=product.purchase_price,
-                balance_after=Decimal(str(opening_stock)),
+                balance_after=opn_qty,
                 reference_type="OPENING_BALANCE",
                 reference_id=f"OPN-{product.sku}",
                 notes=f"Initial Opening Stock for {product.name}",
                 created_by=user,
             )
+
+            valuation = opn_qty * product.purchase_price
+            if valuation > Decimal("0.00"):
+                try:
+                    inv_acc = Account.objects.get(code="1040")
+                    equity_acc = Account.objects.get(code="3010")
+                    AccountingService.create_journal_entry(
+                        entry_date=timezone.now().date(),
+                        reference_type=ReferenceType.OPENING_BALANCE,
+                        reference_id=f"OPN-{product.sku}",
+                        lines=[
+                            {
+                                "account": inv_acc,
+                                "debit": valuation,
+                                "credit": Decimal("0.00"),
+                                "description": f"Opening inventory asset for {product.name} ({opn_qty} @ Rs. {product.purchase_price:.2f})",
+                            },
+                            {
+                                "account": equity_acc,
+                                "debit": Decimal("0.00"),
+                                "credit": valuation,
+                                "description": f"Opening capital equity from product inventory ({product.name})",
+                            },
+                        ],
+                        narration=f"Opening Stock Setup: {product.name} ({opn_qty} units @ Rs. {product.purchase_price:.2f})",
+                        created_by=user,
+                    )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Could not auto-post opening stock GL entry for {product.sku}: {e}")
+
         return product
 
     def validate_barcode(self, value):

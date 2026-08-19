@@ -1,21 +1,42 @@
 import React, { useState } from 'react';
-import { BookOpen, Search, RotateCcw, Clock, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  BookOpen,
+  Search,
+  RotateCcw,
+  Clock,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Trash2,
+  AlertCircle,
+  Sparkles,
+} from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
-import { JournalEntry } from '../../types/accounting';
+import { Account, JournalEntry, JournalPurposeType } from '../../types/accounting';
 import { accountingService } from '../../services/accountingService';
 
 interface JournalEntriesTabProps {
   entries: JournalEntry[];
+  accounts?: Account[];
   loading: boolean;
   onRefresh: () => void;
 }
 
+interface JournalLineFormItem {
+  accountId: number;
+  debit: string;
+  credit: string;
+  description: string;
+}
+
 export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
   entries,
+  accounts = [],
   onRefresh,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +45,180 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
   const [reversalReason, setReversalReason] = useState('');
   const [isReversing, setIsReversing] = useState(false);
   const [reversalError, setReversalError] = useState<string | null>(null);
+
+  // New Journal Entry Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const [purpose, setPurpose] = useState<JournalPurposeType>('OPENING_BALANCE');
+  const [entryDate, setEntryDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [referenceId, setReferenceId] = useState('');
+  const [narration, setNarration] = useState('');
+  const [lines, setLines] = useState<JournalLineFormItem[]>([
+    { accountId: 0, debit: '', credit: '', description: '' },
+    { accountId: 0, debit: '', credit: '', description: '' },
+  ]);
+
+  const activeAccounts = accounts.filter((a) => a.is_active);
+
+  const handleOpenCreateModal = () => {
+    setPurpose('OPENING_BALANCE');
+    setEntryDate(new Date().toISOString().split('T')[0]);
+    setReferenceId('');
+    setNarration('Initial account opening balance setup');
+    setCreateError(null);
+
+    const cashOrBank = activeAccounts.find((a) => a.code === '1010' || a.code === '1020') || activeAccounts[0];
+    const equityAcc = activeAccounts.find((a) => a.code === '3010' || a.account_type === 'EQUITY') || activeAccounts[1] || activeAccounts[0];
+
+    setLines([
+      { accountId: cashOrBank ? cashOrBank.id : 0, debit: '', credit: '', description: 'Opening balance' },
+      { accountId: equityAcc ? equityAcc.id : 0, debit: '', credit: '', description: 'Balancing equity/capital' },
+    ]);
+    setIsCreateModalOpen(true);
+  };
+
+  const handlePurposeChange = (newPurpose: JournalPurposeType) => {
+    setPurpose(newPurpose);
+    if (newPurpose === 'OPENING_BALANCE') {
+      if (!narration || narration.startsWith('Manual')) {
+        setNarration('Initial account opening balance setup');
+      }
+    } else if (newPurpose === 'TRANSFER') {
+      setNarration('Account fund transfer between cash and bank');
+    } else if (newPurpose === 'EXPENSE') {
+      setNarration('Operational expense accrual / adjustment');
+    } else if (newPurpose === 'STOCK_ADJUSTMENT') {
+      setNarration('Inventory valuation physical audit adjustment');
+    } else if (newPurpose === 'REVERSAL') {
+      setNarration('Correction & rectification counter-entry');
+    } else {
+      if (!narration || narration.includes('opening balance')) {
+        setNarration('General manual journal voucher entry');
+      }
+    }
+  };
+
+  const handleAddLine = () => {
+    setLines([...lines, { accountId: 0, debit: '', credit: '', description: '' }]);
+  };
+
+  const handleRemoveLine = (index: number) => {
+    if (lines.length <= 2) return;
+    setLines(lines.filter((_, i) => i !== index));
+  };
+
+  const handleLineChange = (index: number, field: keyof JournalLineFormItem, value: any) => {
+    const newLines = [...lines];
+    newLines[index] = { ...newLines[index], [field]: value };
+
+    // Mutually exclusive debit / credit input per line
+    if (field === 'debit' && value !== '') {
+      newLines[index].credit = '';
+    } else if (field === 'credit' && value !== '') {
+      newLines[index].debit = '';
+    }
+
+    setLines(newLines);
+  };
+
+  const totalDebit = lines.reduce((sum, l) => sum + (parseFloat(l.debit) || 0), 0);
+  const totalCredit = lines.reduce((sum, l) => sum + (parseFloat(l.credit) || 0), 0);
+  const difference = Math.abs(totalDebit - totalCredit);
+  const isBalanced = totalDebit > 0 && Math.abs(totalDebit - totalCredit) < 0.005;
+
+  const handleAutoBalance = () => {
+    if (totalDebit === totalCredit) return;
+
+    if (totalDebit > totalCredit) {
+      const diff = (totalDebit - totalCredit).toFixed(2);
+      // find first line with 0 debit/credit or update the last line
+      const lastLineIndex = lines.length - 1;
+      const updated = [...lines];
+      if (updated[lastLineIndex].debit === '' && updated[lastLineIndex].credit === '') {
+        updated[lastLineIndex].credit = diff;
+      } else {
+        const equity = activeAccounts.find((a) => a.code === '3010' || a.account_type === 'EQUITY');
+        updated.push({
+          accountId: equity ? equity.id : 0,
+          debit: '',
+          credit: diff,
+          description: 'Balancing credit line',
+        });
+      }
+      setLines(updated);
+    } else {
+      const diff = (totalCredit - totalDebit).toFixed(2);
+      const updated = [...lines];
+      const lastLineIndex = lines.length - 1;
+      if (updated[lastLineIndex].debit === '' && updated[lastLineIndex].credit === '') {
+        updated[lastLineIndex].debit = diff;
+      } else {
+        const cash = activeAccounts.find((a) => a.code === '1010' || a.code === '1020');
+        updated.push({
+          accountId: cash ? cash.id : 0,
+          debit: diff,
+          credit: '',
+          description: 'Balancing debit line',
+        });
+      }
+      setLines(updated);
+    }
+  };
+
+  const handleCreateJournalEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError(null);
+
+    if (!narration.trim()) {
+      setCreateError('Please enter a description / narration for this journal entry.');
+      return;
+    }
+
+    if (!isBalanced) {
+      setCreateError(`Journal entry is not balanced. Total Debits (Rs. ${totalDebit.toFixed(2)}) must exactly equal Total Credits (Rs. ${totalCredit.toFixed(2)}). Difference: Rs. ${difference.toFixed(2)}`);
+      return;
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.accountId) {
+        setCreateError(`Please select an account for line #${i + 1}.`);
+        return;
+      }
+      const dr = parseFloat(line.debit) || 0;
+      const cr = parseFloat(line.credit) || 0;
+      if (dr === 0 && cr === 0) {
+        setCreateError(`Line #${i + 1} must have either a debit or credit amount.`);
+        return;
+      }
+    }
+
+    setIsCreating(true);
+    try {
+      await accountingService.createJournalEntry({
+        entry_date: entryDate,
+        purpose: purpose,
+        reference_type: purpose,
+        reference_id: referenceId.trim() || undefined,
+        narration: narration.trim(),
+        lines: lines.map((l) => ({
+          account: l.accountId,
+          debit: parseFloat(l.debit) || 0,
+          credit: parseFloat(l.credit) || 0,
+          description: l.description.trim() || undefined,
+        })),
+      });
+
+      setIsCreateModalOpen(false);
+      onRefresh();
+    } catch (err: any) {
+      setCreateError(err?.response?.data?.detail || err?.response?.data?.lines || err?.message || 'Failed to create journal entry.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const filteredEntries = entries.filter((e) => {
     const q = searchQuery.toLowerCase();
@@ -78,9 +273,9 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Search Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {/* Top Search & Actions Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ width: '320px' }}>
           <Input
             placeholder="Search entry #, reference, or account..."
@@ -89,6 +284,15 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
             icon={<Search size={14} />}
           />
         </div>
+
+        <Button
+          variant="primary"
+          icon={<Plus size={14} />}
+          onClick={handleOpenCreateModal}
+          style={{ padding: '0.45rem 0.875rem', fontSize: '0.8125rem', fontWeight: 700 }}
+        >
+          New Journal Entry
+        </Button>
       </div>
 
       {/* Entries List Card */}
@@ -291,6 +495,378 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
             <Button type="submit" variant="primary" loading={isReversing}>
               Confirm Reversal
             </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* New Journal Entry Modal */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => !isCreating && setIsCreateModalOpen(false)}
+        title="Create General Journal Entry"
+        subtitle="Post a double-entry transaction to general ledger with automatic balancing validation."
+        maxWidth="820px"
+      >
+        {createError && (
+          <div
+            style={{
+              padding: '0.625rem 0.875rem',
+              borderRadius: '0.375rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid var(--danger)',
+              color: 'var(--danger)',
+              fontSize: '0.78125rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}
+          >
+            <AlertCircle size={15} style={{ flexShrink: 0 }} />
+            <span>{createError}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleCreateJournalEntry} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Top Form Grid: Purpose / Reference Type, Date, Reference # */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+            {/* Purpose Selector */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                Entry Purpose / Type *
+              </label>
+              <select
+                value={purpose}
+                onChange={(e) => handlePurposeChange(e.target.value as JournalPurposeType)}
+                style={{
+                  padding: '0.45rem 0.6rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  outline: 'none',
+                }}
+              >
+                <option value="OPENING_BALANCE">🏛️ Opening Balance / Initial Capital</option>
+                <option value="MANUAL">📝 General Manual Journal Voucher</option>
+                <option value="TRANSFER">🔄 Account Fund Transfer (Cash / Bank)</option>
+                <option value="EXPENSE">💼 Expense Accrual / Prepayment</option>
+                <option value="STOCK_ADJUSTMENT">📦 Stock & Asset Value Adjustment</option>
+                <option value="REVERSAL">⚖️ Correction / Rectification Entry</option>
+              </select>
+            </div>
+
+            {/* Entry Date */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                Posting Date *
+              </label>
+              <input
+                type="date"
+                value={entryDate}
+                onChange={(e) => setEntryDate(e.target.value)}
+                required
+                style={{
+                  padding: '0.45rem 0.6rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            {/* Reference Document / Voucher # */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                Voucher / Document Ref #
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. OB-2026-001 or JV-101"
+                value={referenceId}
+                onChange={(e) => setReferenceId(e.target.value)}
+                style={{
+                  padding: '0.45rem 0.6rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Description / Narration */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              Narration / Description *
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Setting up initial cash drawer & bank opening balances"
+              value={narration}
+              onChange={(e) => setNarration(e.target.value)}
+              required
+              style={{
+                padding: '0.45rem 0.6rem',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                color: 'var(--text-main)',
+                fontSize: '0.8125rem',
+                outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Dynamic Debit / Credit Table */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                Journal Line Items (Debit & Credit Accounts) *
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {!isBalanced && totalDebit > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleAutoBalance}
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      borderRadius: '0.25rem',
+                      color: 'var(--primary-400)',
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                      padding: '0.2rem 0.5rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    <Sparkles size={11} />
+                    Auto-Balance Line
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleAddLine}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.25rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    padding: '0.2rem 0.5rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                >
+                  <Plus size={11} />
+                  Add Row
+                </button>
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.375rem', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78125rem', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
+                    <th style={{ padding: '0.45rem 0.6rem', width: '38%' }}>Account</th>
+                    <th style={{ padding: '0.45rem 0.6rem', width: '20%', textAlign: 'right' }}>Debit (Rs.)</th>
+                    <th style={{ padding: '0.45rem 0.6rem', width: '20%', textAlign: 'right' }}>Credit (Rs.)</th>
+                    <th style={{ padding: '0.45rem 0.6rem', width: '18%' }}>Line Memo</th>
+                    <th style={{ padding: '0.45rem 0.4rem', width: '4%', textAlign: 'center' }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lines.map((line, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                      {/* Account Selector */}
+                      <td style={{ padding: '0.35rem 0.5rem' }}>
+                        <select
+                          value={line.accountId}
+                          onChange={(e) => handleLineChange(idx, 'accountId', parseInt(e.target.value))}
+                          style={{
+                            width: '100%',
+                            padding: '0.3rem 0.45rem',
+                            backgroundColor: 'var(--bg-input)',
+                            border: '1px solid var(--border-medium)',
+                            borderRadius: '0.25rem',
+                            color: 'var(--text-main)',
+                            fontSize: '0.75rem',
+                            outline: 'none',
+                          }}
+                        >
+                          <option value={0}>-- Select Account --</option>
+                          {activeAccounts.map((acc) => (
+                            <option key={acc.id} value={acc.id}>
+                              [{acc.code}] {acc.name} ({acc.account_type})
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* Debit Input */}
+                      <td style={{ padding: '0.35rem 0.5rem' }}>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={line.debit}
+                          onChange={(e) => handleLineChange(idx, 'debit', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.3rem 0.45rem',
+                            backgroundColor: 'var(--bg-input)',
+                            border: '1px solid var(--border-medium)',
+                            borderRadius: '0.25rem',
+                            color: line.debit ? 'var(--primary-400)' : 'var(--text-main)',
+                            fontFamily: 'var(--font-mono)',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            textAlign: 'right',
+                            outline: 'none',
+                          }}
+                        />
+                      </td>
+
+                      {/* Credit Input */}
+                      <td style={{ padding: '0.35rem 0.5rem' }}>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={line.credit}
+                          onChange={(e) => handleLineChange(idx, 'credit', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.3rem 0.45rem',
+                            backgroundColor: 'var(--bg-input)',
+                            border: '1px solid var(--border-medium)',
+                            borderRadius: '0.25rem',
+                            color: line.credit ? 'var(--warning)' : 'var(--text-main)',
+                            fontFamily: 'var(--font-mono)',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            textAlign: 'right',
+                            outline: 'none',
+                          }}
+                        />
+                      </td>
+
+                      {/* Description */}
+                      <td style={{ padding: '0.35rem 0.5rem' }}>
+                        <input
+                          type="text"
+                          placeholder="Memo (opt.)"
+                          value={line.description}
+                          onChange={(e) => handleLineChange(idx, 'description', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.3rem 0.45rem',
+                            backgroundColor: 'var(--bg-input)',
+                            border: '1px solid var(--border-medium)',
+                            borderRadius: '0.25rem',
+                            color: 'var(--text-muted)',
+                            fontSize: '0.71875rem',
+                            outline: 'none',
+                          }}
+                        />
+                      </td>
+
+                      {/* Remove Button */}
+                      <td style={{ padding: '0.35rem 0.4rem', textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLine(idx)}
+                          disabled={lines.length <= 2}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: lines.length <= 2 ? 'var(--text-subtle)' : 'var(--danger)',
+                            cursor: lines.length <= 2 ? 'not-allowed' : 'pointer',
+                            padding: '0.2rem',
+                            borderRadius: '0.2rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            opacity: lines.length <= 2 ? 0.3 : 1,
+                          }}
+                          title={lines.length <= 2 ? 'Minimum 2 rows required' : 'Remove line'}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+
+                {/* Table Summary Footer */}
+                <tfoot>
+                  <tr style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', borderTop: '1px solid var(--border-medium)', fontWeight: 800 }}>
+                    <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', color: 'var(--text-muted)' }}>
+                      Totals:
+                    </td>
+                    <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--primary-400)' }}>
+                      Rs. {totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--warning)' }}>
+                      Rs. {totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td colSpan={2} style={{ padding: '0.45rem 0.6rem', textAlign: 'right' }}>
+                      {isBalanced ? (
+                        <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--success)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <CheckCircle2 size={12} />
+                          Balanced (0.00)
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--danger)' }}>
+                          Diff: Rs. {difference.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* Modal Actions */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: '0.75rem', color: isBalanced ? 'var(--success)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              {isBalanced ? (
+                <>
+                  <CheckCircle2 size={14} color="var(--success)" />
+                  <span>Double-entry balanced. Ready for posting.</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle size={14} color="var(--warning)" />
+                  <span>Debits must equal Credits to post.</span>
+                </>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)} disabled={isCreating}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={isCreating} disabled={!isBalanced}>
+                Post Journal Entry
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>

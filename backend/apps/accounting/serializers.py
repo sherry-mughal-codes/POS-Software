@@ -118,6 +118,44 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
         ]
 
 
+class JournalItemCreateSerializer(serializers.Serializer):
+    account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
+    debit = serializers.DecimalField(max_digits=14, decimal_places=2, required=False, default=0)
+    credit = serializers.DecimalField(max_digits=14, decimal_places=2, required=False, default=0)
+    description = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class JournalEntryCreateSerializer(serializers.Serializer):
+    entry_date = serializers.DateField(required=False)
+    reference_type = serializers.CharField(required=False, default="MANUAL")
+    purpose = serializers.CharField(required=False, default="")
+    reference_id = serializers.CharField(required=False, allow_blank=True, default="")
+    narration = serializers.CharField(required=True)
+    lines = JournalItemCreateSerializer(many=True, required=True)
+
+    def validate(self, attrs):
+        from decimal import Decimal
+        lines = attrs.get("lines", [])
+        if len(lines) < 2:
+            raise serializers.ValidationError({"lines": "A journal entry must contain at least two line items (Debit and Credit)."})
+
+        total_debit = sum(Decimal(str(l.get("debit", 0) or 0)) for l in lines)
+        total_credit = sum(Decimal(str(l.get("credit", 0) or 0)) for l in lines)
+
+        if total_debit <= Decimal("0.00"):
+            raise serializers.ValidationError({"lines": "Total debited amount must be greater than zero."})
+
+        if total_debit != total_credit:
+            raise serializers.ValidationError({
+                "lines": f"Journal entry is out of balance. Total Debits (Rs. {total_debit:.2f}) must equal Total Credits (Rs. {total_credit:.2f}). Difference: Rs. {abs(total_debit - total_credit):.2f}"
+            })
+
+        if attrs.get("purpose") and not attrs.get("reference_type"):
+            attrs["reference_type"] = attrs["purpose"]
+
+        return attrs
+
+
 class TransactionSimulationSerializer(serializers.Serializer):
     """
     Serializer for testing automatic accounting postings for various business scenarios.

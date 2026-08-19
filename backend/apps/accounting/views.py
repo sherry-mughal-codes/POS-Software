@@ -14,6 +14,7 @@ from apps.accounting.models import Account, JournalEntry, PaymentMethod, Journal
 from apps.accounting.serializers import (
     AccountSerializer,
     JournalEntrySerializer,
+    JournalEntryCreateSerializer,
     PaymentMethodSerializer,
     TransactionSimulationSerializer,
 )
@@ -64,14 +65,70 @@ class AccountViewSet(viewsets.ModelViewSet):
         ledger_data = AccountingService.get_account_ledger(pk, start_date, end_date)
         return Response(ledger_data)
 
+    @action(detail=True, methods=["post"], url_path="set-opening-balance", permission_classes=[IsAdminOrManager])
+    def set_opening_balance(self, request, pk=None):
+        """
+        Sets or adjusts the account opening balance against Owner's Capital / Equity (3010).
+        Automatically creates balanced double-entry.
+        """
+        from apps.accounting.models import ReferenceType
+        from django.utils import timezone
+        account = self.get_object()
+        amount_raw = request.data.get("amount", "0.00")
+        try:
+            amount = Decimal(str(amount_raw))
+        except Exception:
+            return Response({"detail": "Invalid amount specified."}, status=status.HTTP_400_BAD_REQUEST)
 
-class JournalEntryViewSet(viewsets.ReadOnlyModelViewSet):
+        if amount <= Decimal("0.00"):
+            return Response({"detail": "Opening balance amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
+
+        date_val = request.data.get("date") or timezone.now().date()
+        narration = request.data.get("narration") or f"Opening balance setup for [{account.code}] {account.name}"
+
+        equity_acc = Account.objects.get(code="3010")
+
+        # If Asset or Expense account (Normal Debit balance)
+        if account.normal_balance == "DEBIT":
+            lines = [
+                {"account": account, "debit": amount, "credit": Decimal("0.00"), "description": f"Opening balance for {account.name}"},
+                {"account": equity_acc, "debit": Decimal("0.00"), "credit": amount, "description": f"Opening capital equity from [{account.code}] {account.name}"},
+            ]
+        else:
+            lines = [
+                {"account": equity_acc, "debit": amount, "credit": Decimal("0.00"), "description": f"Opening capital equity offset for [{account.code}] {account.name}"},
+                {"account": account, "debit": Decimal("0.00"), "credit": amount, "description": f"Opening balance for {account.name}"},
+            ]
+
+        je = AccountingService.create_journal_entry(
+            entry_date=date_val,
+            reference_type=ReferenceType.OPENING_BALANCE,
+            reference_id=f"OB-{account.code}",
+            lines=lines,
+            narration=narration,
+            created_by=request.user,
+        )
+
+        return Response({
+            "message": f"Opening balance of Rs. {amount:,.2f} recorded for {account.name}.",
+            "journal_entry": JournalEntrySerializer(je).data,
+            "new_balance": float(account.get_current_balance()),
+            "equity_balance": float(equity_acc.get_current_balance()),
+        })
+
+
+class JournalEntryViewSet(viewsets.ModelViewSet):
     """
-    Immutable Journal Entries transaction viewer with reversal action.
+    Journal Entries general ledger transaction manager with manual creation and reversal.
     """
     queryset = JournalEntry.objects.all().select_related("created_by").prefetch_related("lines__account")
     serializer_class = JournalEntrySerializer
     permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ["create", "reverse", "destroy", "update", "partial_update"]:
+            return [IsAdminOrManager()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -92,6 +149,35 @@ class JournalEntryViewSet(viewsets.ReadOnlyModelViewSet):
         if end_date:
             qs = qs.filter(entry_date__lte=end_date)
         return qs
+
+    def create(self, request, *args, **kwargs):
+        serializer = JournalEntryCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        lines_data = []
+        for line in data["lines"]:
+            lines_data.append({
+                "account": line["account"],
+                "debit": line.get("debit", Decimal("0.00")),
+                "credit": line.get("credit", Decimal("0.00")),
+                "description": line.get("description", ""),
+            })
+
+        ref_type = data.get("reference_type") or data.get("purpose") or "MANUAL"
+
+        try:
+            entry = AccountingService.create_journal_entry(
+                entry_date=data.get("entry_date"),
+                reference_type=ref_type,
+                reference_id=data.get("reference_id") or "",
+                lines=lines_data,
+                narration=data["narration"],
+                created_by=request.user,
+            )
+            return Response(JournalEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
+        except Exception as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrManager])
     def reverse(self, request, pk=None):

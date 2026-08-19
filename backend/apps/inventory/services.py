@@ -394,7 +394,9 @@ class InventoryService:
 
             for m in period_movements:
                 q = m.quantity
-                if m.movement_type == MovementType.PURCHASE:
+                if m.movement_type == MovementType.OPENING_STOCK:
+                    opening_stock += q
+                elif m.movement_type == MovementType.PURCHASE:
                     purchased += q
                 elif m.movement_type == MovementType.PURCHASE_RETURN:
                     p_return += abs(q)
@@ -402,7 +404,7 @@ class InventoryService:
                     sold += abs(q)
                 elif m.movement_type == MovementType.SALE_RETURN:
                     s_return += q
-                elif m.movement_type in [MovementType.ADJUSTMENT_IN, MovementType.OPENING_STOCK]:
+                elif m.movement_type == MovementType.ADJUSTMENT_IN:
                     adj_in += q
                 elif m.movement_type == MovementType.ADJUSTMENT_OUT:
                     adj_out += abs(q)

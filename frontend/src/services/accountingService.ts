@@ -26,6 +26,17 @@ export const accountingService = {
     return response.data;
   },
 
+  async setAccountOpeningBalance(
+    id: number,
+    data: { amount: number; date?: string; narration?: string }
+  ): Promise<{ message: string; new_balance: number; equity_balance: number }> {
+    const response = await apiClient.post<{ message: string; new_balance: number; equity_balance: number }>(
+      `/accounting/accounts/${id}/set-opening-balance/`,
+      data
+    );
+    return response.data;
+  },
+
   async getAccountLedger(id: number, startDate?: string, endDate?: string): Promise<AccountLedgerResponse> {
     const response = await apiClient.get<AccountLedgerResponse>(`/accounting/accounts/${id}/ledger/`, {
       params: { start_date: startDate, end_date: endDate },
@@ -46,6 +57,11 @@ export const accountingService = {
 
   async getJournalEntry(id: number): Promise<JournalEntry> {
     const response = await apiClient.get<JournalEntry>(`/accounting/journal-entries/${id}/`);
+    return response.data;
+  },
+
+  async createJournalEntry(payload: import('../types/accounting').JournalEntryCreatePayload): Promise<JournalEntry> {
+    const response = await apiClient.post<JournalEntry>('/accounting/journal-entries/', payload);
     return response.data;
   },
 

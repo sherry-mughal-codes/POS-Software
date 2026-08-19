@@ -146,3 +146,27 @@ export interface SimulationPayload {
   customer_or_supplier_name?: string;
   narration?: string;
 }
+
+export interface JournalItemCreatePayload {
+  account: number;
+  debit: number;
+  credit: number;
+  description?: string;
+}
+
+export type JournalPurposeType =
+  | 'OPENING_BALANCE'
+  | 'MANUAL'
+  | 'TRANSFER'
+  | 'EXPENSE'
+  | 'STOCK_ADJUSTMENT'
+  | 'REVERSAL';
+
+export interface JournalEntryCreatePayload {
+  entry_date?: string;
+  reference_type?: string;
+  purpose?: string;
+  reference_id?: string;
+  narration: string;
+  lines: JournalItemCreatePayload[];
+}

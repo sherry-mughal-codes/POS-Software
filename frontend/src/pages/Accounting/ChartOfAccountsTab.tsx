@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, FolderTree, CheckCircle2, XCircle } from 'lucide-react';
+import { Plus, Search, FolderTree, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
@@ -25,6 +25,14 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Opening Balance Modal State
+  const [openingModalAccount, setOpeningModalAccount] = useState<Account | null>(null);
+  const [openingAmount, setOpeningAmount] = useState('');
+  const [openingDate, setOpeningDate] = useState(new Date().toISOString().split('T')[0]);
+  const [openingNarration, setOpeningNarration] = useState('');
+  const [openingSaving, setOpeningSaving] = useState(false);
+  const [openingError, setOpeningError] = useState<string | null>(null);
 
   // Form State
   const [newCode, setNewCode] = useState('');
@@ -79,6 +87,41 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
     }
   };
 
+  const handleOpenOpeningModal = (acc: Account) => {
+    setOpeningModalAccount(acc);
+    setOpeningAmount('');
+    setOpeningDate(new Date().toISOString().split('T')[0]);
+    setOpeningNarration(`Initial opening balance setup for [${acc.code}] ${acc.name}`);
+    setOpeningError(null);
+  };
+
+  const handleSaveOpeningBalance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!openingModalAccount) return;
+
+    const amt = parseFloat(openingAmount);
+    if (!amt || amt <= 0) {
+      setOpeningError('Please enter a valid opening balance amount greater than zero.');
+      return;
+    }
+
+    setOpeningSaving(true);
+    setOpeningError(null);
+    try {
+      await accountingService.setAccountOpeningBalance(openingModalAccount.id, {
+        amount: amt,
+        date: openingDate,
+        narration: openingNarration,
+      });
+      setOpeningModalAccount(null);
+      onRefresh();
+    } catch (err: any) {
+      setOpeningError(err?.response?.data?.detail || err?.message || 'Failed to save opening balance.');
+    } finally {
+      setOpeningSaving(false);
+    }
+  };
+
   const filteredAccounts = accounts.filter((acc) => {
     const matchesType = selectedType === 'ALL' || acc.account_type === selectedType;
     const matchesSearch =
@@ -103,6 +146,32 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
         return 'info';
     }
   };
+
+  const totalIncome = accounts
+    .filter((a) => a.account_type === 'INCOME')
+    .reduce((sum, a) => {
+      // If contra-income account (e.g. 4020 Sales Returns with normal balance DEBIT), subtract it
+      if (a.normal_balance === 'DEBIT') {
+        return sum - a.current_balance;
+      }
+      return sum + a.current_balance;
+    }, 0);
+
+  const totalExpenses = accounts
+    .filter((a) => a.account_type === 'EXPENSE')
+    .reduce((sum, a) => {
+      // If contra-expense account (normal balance CREDIT), subtract it
+      if (a.normal_balance === 'CREDIT') {
+        return sum - a.current_balance;
+      }
+      return sum + a.current_balance;
+    }, 0);
+
+  const netOperatingProfit = totalIncome - totalExpenses;
+  const baseEquityTotal = accounts
+    .filter((a) => a.account_type === 'EQUITY')
+    .reduce((sum, a) => sum + a.current_balance, 0);
+  const realTimeTotalEquity = baseEquityTotal + netOperatingProfit;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -131,15 +200,16 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <div style={{ width: '220px' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ width: '260px' }}>
             <Input
-              placeholder="Search code or account..."
+              placeholder="Search code or name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               icon={<Search size={14} />}
             />
           </div>
+
           <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenModal}>
             Add Account
           </Button>
@@ -149,54 +219,43 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
       {/* Accounts Table Card */}
       <Card
         title="Chart of Accounts Hierarchy"
-        subtitle={`${filteredAccounts.length} accounts configured`}
+        subtitle={`${filteredAccounts.length} active ledger accounts`}
         icon={<FolderTree size={20} />}
       >
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-subtle)' }}>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Code</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Account Name</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Type</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Normal Balance</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Normal Bal</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Current Balance</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Active</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredAccounts.map((acc) => {
-                const isHeader = !acc.parent;
+                const isChild = !!acc.parent;
                 return (
                   <tr
                     key={acc.id}
                     style={{
                       borderBottom: '1px solid var(--border-subtle)',
-                      backgroundColor: isHeader ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+                      backgroundColor: isChild ? 'rgba(255, 255, 255, 0.01)' : 'transparent',
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.04)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isHeader ? 'rgba(255, 255, 255, 0.02)' : 'transparent'}
                   >
                     {/* Code */}
-                    <td style={{ padding: '1rem' }}>
-                      <code style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: 700,
-                        color: isHeader ? 'var(--primary-400)' : 'var(--text-main)',
-                        backgroundColor: 'var(--bg-app)',
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: '0.25rem',
-                      }}>
-                        {acc.code}
-                      </code>
+                    <td style={{ padding: '1rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--primary-400)' }}>
+                      {acc.code}
                     </td>
 
-                    {/* Name with indentation for children */}
-                    <td style={{ padding: '1rem', paddingLeft: acc.parent ? '2.25rem' : '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {acc.parent && <span style={{ color: 'var(--text-subtle)' }}>└─</span>}
-                        <strong style={{ color: isHeader ? 'var(--text-main)' : 'var(--text-muted)', fontWeight: isHeader ? 700 : 500 }}>
+                    {/* Name */}
+                    <td style={{ padding: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: isChild ? '1.5rem' : '0' }}>
+                        {isChild && <span style={{ color: 'var(--text-subtle)' }}>└─</span>}
+                        <strong style={{ color: 'var(--text-main)', fontWeight: isChild ? 500 : 700 }}>
                           {acc.name}
                         </strong>
                         {acc.is_system && (
@@ -241,26 +300,85 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
 
                     {/* Actions */}
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <Button
-                        variant="outline"
-                        style={{ padding: '0.3rem 0.625rem', fontSize: '0.75rem' }}
-                        onClick={() => onSelectAccountForLedger(acc.id)}
-                      >
-                        View Ledger
-                      </Button>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                        {acc.code !== '3010' && (
+                          <Button
+                            variant="outline"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem', borderColor: 'rgba(56, 189, 248, 0.4)', color: 'var(--primary-400)' }}
+                            onClick={() => handleOpenOpeningModal(acc)}
+                          >
+                            Set Opening Bal
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
+                          onClick={() => onSelectAccountForLedger(acc.id)}
+                        >
+                          View Ledger
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 );
               })}
+
+              {/* Dynamic Real-time Retained Earnings Row when viewing Equity or All */}
+              {(selectedType === 'EQUITY' || (selectedType === 'ALL' && netOperatingProfit !== 0)) && (
+                <tr
+                  style={{
+                    borderBottom: '1px solid var(--border-subtle)',
+                    backgroundColor: 'rgba(165, 180, 252, 0.05)',
+                  }}
+                >
+                  <td style={{ padding: '1rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#a5b4fc' }}>
+                    3999
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <strong style={{ color: '#a5b4fc' }}>
+                        Current Period Retained Earnings (Live Net Profit / Loss)
+                      </strong>
+                      <Badge variant={netOperatingProfit >= 0 ? 'success' : 'danger'}>
+                        Live Operating {netOperatingProfit >= 0 ? 'Profit' : 'Loss'}
+                      </Badge>
+                    </div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                      Auto-calculated from Sales Revenue (4000s) minus Operating Expenses & COGS (5000s)
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    <Badge variant="phase">EQUITY</Badge>
+                  </td>
+                  <td style={{ padding: '1rem', color: 'var(--text-subtle)', fontSize: '0.8125rem' }}>
+                    CREDIT
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right' }}>
+                    <span style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 800,
+                      color: netOperatingProfit >= 0 ? 'var(--success)' : 'var(--danger)',
+                    }}>
+                      Rs. {netOperatingProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <CheckCircle2 size={16} style={{ color: 'var(--success)', margin: '0 auto' }} />
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-subtle)', fontSize: '0.75rem' }}>
+                    [Dynamic]
+                  </td>
+                </tr>
+              )}
             </tbody>
             {selectedType !== 'ALL' && (
               <tfoot>
                 <tr style={{ borderTop: '2px solid var(--border-medium)', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
                   <td colSpan={4} style={{ padding: '1rem', color: 'var(--text-main)', textAlign: 'right' }}>
-                    Net {accountTypes.find((t) => t.key === selectedType)?.label} Total:
+                    {selectedType === 'EQUITY' ? "Total Real-Time Owner's Equity (Capital + Net Profit):" : `Net ${accountTypes.find((t) => t.key === selectedType)?.label} Total:`}
                   </td>
-                  <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '1rem', color: 'var(--primary-400)' }}>
-                    Rs. {filteredAccounts.reduce((sum, a) => sum + a.current_balance, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '1rem', color: selectedType === 'EQUITY' ? '#a5b4fc' : 'var(--primary-400)' }}>
+                    Rs. {(selectedType === 'EQUITY' ? realTimeTotalEquity : filteredAccounts.reduce((sum, a) => sum + a.current_balance, 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td colSpan={2} />
                 </tr>
@@ -369,6 +487,100 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
             </Button>
             <Button type="submit" variant="primary" loading={saving}>
               Create Account
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Set Opening Balance Modal */}
+      <Modal
+        isOpen={!!openingModalAccount}
+        onClose={() => !openingSaving && setOpeningModalAccount(null)}
+        title={`Set Opening Balance: [${openingModalAccount?.code}] ${openingModalAccount?.name}`}
+        subtitle="Post opening funds. System will automatically credit/debit Owner's Capital (3010) to maintain balanced equity."
+      >
+        {openingError && (
+          <div style={{
+            padding: '0.625rem 0.875rem',
+            borderRadius: '0.375rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid var(--danger)',
+            color: 'var(--danger)',
+            fontSize: '0.78125rem',
+            marginBottom: '1rem',
+          }}>
+            {openingError}
+          </div>
+        )}
+
+        <div style={{
+          padding: '0.75rem 1rem',
+          borderRadius: '0.5rem',
+          backgroundColor: 'rgba(56, 189, 248, 0.08)',
+          border: '1px solid rgba(56, 189, 248, 0.2)',
+          fontSize: '0.78125rem',
+          color: 'var(--text-muted)',
+          marginBottom: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        }}>
+          <Sparkles size={16} style={{ color: 'var(--primary-400)', flexShrink: 0 }} />
+          <span>
+            <strong>Automatic Equity Balancing:</strong> When you set this opening balance, Account <strong>3010 (Owner's Capital / Equity)</strong> will automatically update by the exact same amount.
+          </span>
+        </div>
+
+        <form onSubmit={handleSaveOpeningBalance} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem' }}>
+            <Input
+              label="Opening Balance Amount (Rs.) *"
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="e.g. 50000.00"
+              value={openingAmount}
+              onChange={(e) => setOpeningAmount(e.target.value)}
+              required
+              autoFocus
+            />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                Effective Date *
+              </label>
+              <input
+                type="date"
+                value={openingDate}
+                onChange={(e) => setOpeningDate(e.target.value)}
+                required
+                style={{
+                  padding: '0.55rem 0.75rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
+          </div>
+
+          <Input
+            label="Narration / Description *"
+            placeholder="e.g. Initial cash in drawer on system setup"
+            value={openingNarration}
+            onChange={(e) => setOpeningNarration(e.target.value)}
+            required
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+            <Button type="button" variant="outline" onClick={() => setOpeningModalAccount(null)} disabled={openingSaving}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" loading={openingSaving}>
+              Post Opening Balance
             </Button>
           </div>
         </form>

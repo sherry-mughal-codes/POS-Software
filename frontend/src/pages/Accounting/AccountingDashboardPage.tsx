@@ -219,6 +219,7 @@ export const AccountingDashboardPage: React.FC = () => {
           {activeTab === 'JOURNAL' && (
             <JournalEntriesTab
               entries={entries}
+              accounts={accounts}
               loading={loading}
               onRefresh={fetchAccountingData}
             />

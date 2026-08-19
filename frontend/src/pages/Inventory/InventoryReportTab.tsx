@@ -197,7 +197,7 @@ export const InventoryReportTab: React.FC = () => {
         <LoadingSpinner label="Generating Inventory Master Report..." />
       ) : report ? (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem' }}>
             <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                 <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Products</span>
@@ -207,6 +207,17 @@ export const InventoryReportTab: React.FC = () => {
                 {report.summary.total_products}
               </div>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>In report scope</div>
+            </div>
+
+            <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Opening Stock</span>
+                <Package size={15} style={{ color: '#38bdf8' }} />
+              </div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+                +{report.summary.total_opening_stock.toLocaleString()} units
+              </div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Initial & brought forward</div>
             </div>
 
             <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
