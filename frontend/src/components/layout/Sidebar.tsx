@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -19,6 +19,7 @@ import {
   Lock,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -29,6 +30,13 @@ export interface NavItem {
   requiredPermission?: string;
   requiredRole?: string;
   disabled?: boolean;
+}
+
+export interface NavGroup {
+  id: string;
+  title: string;
+  icon: React.ReactNode;
+  items: NavItem[];
 }
 
 interface SidebarProps {
@@ -46,25 +54,104 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { hasPermission, hasRole } = useAuth();
 
-  const navItems: NavItem[] = [
-    { id: 'dashboard', name: 'Business Dashboard', icon: <LayoutDashboard size={18} /> },
-    { id: 'reports', name: 'Reports Center', icon: <BarChart3 size={18} /> },
-    { id: 'register', name: 'POS Register Terminal', icon: <ShoppingCart size={18} /> },
-    { id: 'sales', name: 'Sales & Receipts', icon: <Receipt size={18} /> },
-    { id: 'products', name: 'Product Catalog', icon: <Package size={18} /> },
-    { id: 'inventory', name: 'Inventory & Stock Control', icon: <Boxes size={18} /> },
-    { id: 'purchases', name: 'Purchasing & Payables', icon: <ShoppingBag size={18} /> },
-    { id: 'customers', name: 'Customers & Receivables', icon: <UserCheck size={18} /> },
-    { id: 'suppliers', name: 'Suppliers & Vendors', icon: <Truck size={18} /> },
-    { id: 'accounting', name: 'Double Entry Ledger', icon: <BookOpen size={18} /> },
-    { id: 'expenses', name: 'Expenses & Transfers', icon: <DollarSign size={18} /> },
-    { id: 'employees', name: 'Employees & Payroll', icon: <UserCheck size={18} /> },
-    { id: 'day-sessions', name: 'Day Closing & X/Z Reports', icon: <Lock size={18} /> },
-    { id: 'users', name: 'User Management', icon: <Users size={18} />, requiredPermission: 'manage_users' },
-    { id: 'roles', name: 'Roles & Permissions', icon: <ShieldCheck size={18} />, requiredPermission: 'manage_roles' },
-    { id: 'audit-logs', name: 'Security Audit Logs', icon: <History size={18} />, requiredPermission: 'view_audit_logs' },
-    { id: 'settings', name: 'System Settings', icon: <Settings size={18} /> },
+  // Persisted collapsible state for each group
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('apexpos_sidebar_groups');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleGroup = (groupId: string) => {
+    setCollapsedGroups((prev) => {
+      const next = { ...prev, [groupId]: !prev[groupId] };
+      localStorage.setItem('apexpos_sidebar_groups', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // Structured Module Groups
+  const navGroups: NavGroup[] = [
+    {
+      id: 'dashboard-reports',
+      title: 'Dashboard & Reports',
+      icon: <LayoutDashboard size={18} />,
+      items: [
+        { id: 'dashboard', name: 'Business Dashboard', icon: <LayoutDashboard size={16} /> },
+        { id: 'reports', name: 'Reports Center', icon: <BarChart3 size={16} /> },
+      ],
+    },
+    {
+      id: 'pos-sales',
+      title: 'POS and Sales',
+      icon: <ShoppingCart size={18} />,
+      items: [
+        { id: 'register', name: 'POS Register Terminal', icon: <ShoppingCart size={16} /> },
+        { id: 'sales', name: 'Sales & Receipts', icon: <Receipt size={16} /> },
+        { id: 'customers', name: 'Customers & Receivables', icon: <UserCheck size={16} /> },
+        { id: 'day-sessions', name: 'Day Closing & X/Z Reports', icon: <Lock size={16} /> },
+      ],
+    },
+    {
+      id: 'purchases-payables',
+      title: 'Purchases & Payables',
+      icon: <ShoppingBag size={18} />,
+      items: [
+        { id: 'purchases', name: 'Purchasing & Invoices', icon: <ShoppingBag size={16} /> },
+        { id: 'suppliers', name: 'Suppliers & Payables', icon: <Truck size={16} /> },
+      ],
+    },
+    {
+      id: 'inventory-stock',
+      title: 'Inventory & Stock',
+      icon: <Package size={18} />,
+      items: [
+        { id: 'products', name: 'Product Catalog', icon: <Package size={16} /> },
+        { id: 'inventory', name: 'Inventory & Stock Control', icon: <Boxes size={16} /> },
+      ],
+    },
+    {
+      id: 'expense-ledger',
+      title: 'Expense & Ledger',
+      icon: <BookOpen size={18} />,
+      items: [
+        { id: 'expenses', name: 'Expense & Transfers', icon: <DollarSign size={16} /> },
+        { id: 'accounting', name: 'Double Entry Ledger', icon: <BookOpen size={16} /> },
+      ],
+    },
+    {
+      id: 'employee-payroll',
+      title: 'Employees & Payroll',
+      icon: <Users size={18} />,
+      items: [
+        { id: 'employees', name: 'Employees & Payroll', icon: <Users size={16} /> },
+      ],
+    },
+    {
+      id: 'admin-security',
+      title: 'Admin & System',
+      icon: <Settings size={18} />,
+      items: [
+        { id: 'settings', name: 'System Settings', icon: <Settings size={16} /> },
+        { id: 'audit-logs', name: 'Security Audit Log', icon: <History size={16} />, requiredPermission: 'view_audit_logs' },
+        { id: 'users', name: 'User Management', icon: <Users size={16} />, requiredPermission: 'manage_users' },
+        { id: 'roles', name: 'Roles & Permissions', icon: <ShieldCheck size={16} />, requiredPermission: 'manage_roles' },
+      ],
+    },
   ];
+
+  // Auto-expand group containing the active tab
+  useEffect(() => {
+    navGroups.forEach((group) => {
+      if (group.items.some((item) => item.id === currentTab)) {
+        if (collapsedGroups[group.id]) {
+          setCollapsedGroups((prev) => ({ ...prev, [group.id]: false }));
+        }
+      }
+    });
+  }, [currentTab]);
 
   return (
     <aside
@@ -76,27 +163,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
         flexDirection: 'column',
         height: '100vh',
         flexShrink: 0,
-        transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
         zIndex: 20,
+        userSelect: 'none',
       }}
     >
       {/* Brand Header */}
       <div
         style={{
-          padding: isCollapsed ? '1rem 0.5rem' : '1.25rem 1.25rem',
+          padding: isCollapsed ? '1rem 0.5rem' : '1.125rem 1.25rem',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: isCollapsed ? 'center' : 'space-between',
-          gap: '0.5rem',
+          gap: '0.75rem',
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          minHeight: 'var(--header-height)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, overflow: 'hidden' }}>
           <div
             style={{
-              width: '2.25rem',
-              height: '2.25rem',
+              width: '2.35rem',
+              height: '2.35rem',
               borderRadius: '0.625rem',
               background: 'linear-gradient(135deg, #06b6d4 0%, #6366f1 100%)',
               display: 'flex',
@@ -107,15 +197,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
               flexShrink: 0,
             }}
           >
-            <Layers size={18} />
+            <Layers size={19} />
           </div>
           {!isCollapsed && (
-            <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-              <h1 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
                 Apex<span className="text-gradient">POS</span>
-              </h1>
-              <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
-                Financial Core
+              </div>
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  color: 'var(--text-subtle)',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Enterprise Suite
               </span>
             </div>
           )}
@@ -136,6 +235,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             outline: 'none',
+            flexShrink: 0,
+            transition: 'all 0.15s ease',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = 'var(--text-main)';
@@ -150,83 +251,237 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Navigation Links */}
+      {/* Navigation Groups List */}
       <nav
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: isCollapsed ? '0.75rem 0.375rem' : '1rem 0.75rem',
+          padding: isCollapsed ? '0.75rem 0.375rem' : '0.875rem 0.75rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.25rem',
+          gap: '0.5rem',
         }}
       >
-        {!isCollapsed && (
-          <div style={{ padding: '0.25rem 0.75rem', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Modules & Operations
-          </div>
-        )}
+        {navGroups.map((group) => {
+          const isGroupCollapsed = !!collapsedGroups[group.id];
+          const hasActiveChild = group.items.some((item) => item.id === currentTab);
 
-        {navItems.map((item) => {
-          const isSelected = currentTab === item.id;
+          // In collapsed sidebar mode (icon-only mode)
+          if (isCollapsed) {
+            return (
+              <div key={group.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                <div
+                  style={{
+                    height: '1px',
+                    backgroundColor: 'var(--border-subtle)',
+                    margin: '0.25rem 0.5rem',
+                    opacity: 0.5,
+                  }}
+                />
+                {group.items.map((item) => {
+                  const isSelected = currentTab === item.id;
+                  let isPermitted = true;
+                  if (item.requiredPermission && !hasPermission(item.requiredPermission)) isPermitted = false;
+                  if (item.requiredRole && !hasRole(item.requiredRole)) isPermitted = false;
+                  const isLocked = !isPermitted;
+                  const isDisabled = item.disabled || isLocked;
 
-          let isPermitted = true;
-          if (item.requiredPermission && !hasPermission(item.requiredPermission)) {
-            isPermitted = false;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => !isDisabled && onSelectTab(item.id)}
+                      disabled={isDisabled}
+                      title={item.name}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '100%',
+                        height: '2.5rem',
+                        borderRadius: '0.5rem',
+                        border: 'none',
+                        background: isSelected ? 'rgba(56, 189, 248, 0.18)' : 'transparent',
+                        color: isSelected ? 'var(--primary-400)' : isLocked ? 'var(--text-subtle)' : 'var(--text-muted)',
+                        cursor: isDisabled ? 'not-allowed' : 'pointer',
+                        outline: 'none',
+                        opacity: isLocked ? 0.35 : 1,
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isDisabled && !isSelected) {
+                          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                          e.currentTarget.style.color = 'var(--text-main)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isDisabled && !isSelected) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-muted)';
+                        }
+                      }}
+                    >
+                      {item.icon}
+                    </button>
+                  );
+                })}
+              </div>
+            );
           }
-          if (item.requiredRole && !hasRole(item.requiredRole)) {
-            isPermitted = false;
-          }
 
-          const isLocked = !isPermitted;
-          const isDisabled = item.disabled || isLocked;
-
+          // Full Expanded Sidebar Mode with Collapsible Groups
           return (
-            <button
-              key={item.id}
-              onClick={() => !isDisabled && onSelectTab(item.id)}
-              disabled={isDisabled}
-              title={isCollapsed ? item.name : undefined}
+            <div
+              key={group.id}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: isCollapsed ? 'center' : 'space-between',
-                width: '100%',
-                padding: isCollapsed ? '0.625rem 0' : '0.625rem 0.75rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
-                color: isSelected ? 'var(--primary-400)' : isLocked ? 'var(--text-subtle)' : item.disabled ? 'var(--text-subtle)' : 'var(--text-muted)',
-                cursor: isDisabled ? 'not-allowed' : 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.15s ease',
-                outline: 'none',
-                opacity: isLocked ? 0.45 : item.disabled ? 0.65 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (!isDisabled && !isSelected) {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-                  e.currentTarget.style.color = 'var(--text-main)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isDisabled && !isSelected) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }
+                borderRadius: '0.625rem',
+                backgroundColor: hasActiveChild ? 'rgba(56, 189, 248, 0.03)' : 'transparent',
+                border: hasActiveChild ? '1px solid rgba(56, 189, 248, 0.15)' : '1px solid rgba(255, 255, 255, 0.03)',
+                padding: '0.25rem',
+                transition: 'all 0.2s ease',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: isCollapsed ? 0 : '0.625rem' }}>
-                <span style={{ color: isSelected ? 'var(--primary-400)' : 'inherit', display: 'flex' }}>{item.icon}</span>
-                {!isCollapsed && <span style={{ fontSize: '0.875rem', fontWeight: isSelected ? 600 : 500, whiteSpace: 'nowrap' }}>{item.name}</span>}
-              </div>
+              {/* Group Heading Header Button */}
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  padding: '0.5rem 0.625rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  color: hasActiveChild ? 'var(--primary-400)' : 'var(--text-main)',
+                  outline: 'none',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', minWidth: 0 }}>
+                  <span style={{ display: 'flex', color: hasActiveChild ? 'var(--primary-400)' : 'var(--text-muted)' }}>
+                    {group.icon}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {group.title}
+                  </span>
+                </div>
 
-              {!isCollapsed && isLocked && (
-                <span title="Access Restricted by Role" style={{ color: 'var(--text-subtle)', display: 'flex', alignItems: 'center' }}>
-                  <Lock size={13} />
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', marginLeft: '0.25rem', flexShrink: 0 }}>
+                  <ChevronDown
+                    size={14}
+                    style={{
+                      transform: isGroupCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      color: hasActiveChild ? 'var(--primary-400)' : 'var(--text-subtle)',
+                    }}
+                  />
+                </div>
+              </button>
+
+              {/* Sub-Modules List */}
+              {!isGroupCollapsed && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.25rem',
+                    padding: '0.375rem 0 0.25rem 0.625rem',
+                  }}
+                >
+                  {group.items.map((item) => {
+                    const isSelected = currentTab === item.id;
+                    let isPermitted = true;
+                    if (item.requiredPermission && !hasPermission(item.requiredPermission)) {
+                      isPermitted = false;
+                    }
+                    if (item.requiredRole && !hasRole(item.requiredRole)) {
+                      isPermitted = false;
+                    }
+
+                    const isLocked = !isPermitted;
+                    const isDisabled = item.disabled || isLocked;
+
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => !isDisabled && onSelectTab(item.id)}
+                        disabled={isDisabled}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                          minHeight: '2.25rem',
+                          padding: '0.45rem 0.625rem 0.45rem 0.75rem',
+                          borderRadius: '0.375rem',
+                          border: 'none',
+                          background: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                          color: isSelected ? 'var(--primary-400)' : isLocked ? 'var(--text-subtle)' : 'var(--text-muted)',
+                          cursor: isDisabled ? 'not-allowed' : 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s ease',
+                          outline: 'none',
+                          opacity: isLocked ? 0.4 : item.disabled ? 0.6 : 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isDisabled && !isSelected) {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                            e.currentTarget.style.color = 'var(--text-main)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isDisabled && !isSelected) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-muted)';
+                          }
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, overflow: 'hidden' }}>
+                          <span style={{ color: isSelected ? 'var(--primary-400)' : 'inherit', display: 'flex', flexShrink: 0 }}>
+                            {item.icon}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.8125rem',
+                              fontWeight: isSelected ? 700 : 500,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {item.name}
+                          </span>
+                        </div>
+
+                        {isLocked && (
+                          <span title="Access Restricted by Role" style={{ color: 'var(--text-subtle)', display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: '0.25rem' }}>
+                            <Lock size={12} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </nav>
@@ -235,14 +490,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {!isCollapsed && (
         <div
           style={{
-            padding: '0.875rem 1rem',
+            padding: '0.875rem 1.125rem',
             borderTop: '1px solid var(--border-subtle)',
-            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            backgroundColor: 'rgba(0, 0, 0, 0.25)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              <strong>ApexPOS</strong> Enterprise
+              <strong style={{ color: 'var(--text-main)' }}>ApexPOS</strong> Enterprise
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--success)' }}>
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />

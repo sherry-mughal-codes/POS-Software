@@ -33,76 +33,56 @@ const formatMoney = (val: number | string | undefined | null): string => {
 };
 
 /**
- * Calculates the 5 closest smart cash payment bill amounts (rounded up)
- * based on standard currency notes (e.g. 50, 100, 500, 1000, 5000)
+ * Calculates human-realistic smart cash payment amounts.
+ * Uses each official currency note level (10, 20, 50, 100, 500, 1000, 5000)
+ * to round up progressively across all price ranges.
  */
 const getSmartCashSuggestions = (total: number): number[] => {
-  if (total <= 0) return [100, 500, 1000, 2000, 5000];
+  if (total <= 0) return [50, 100, 500, 1000, 5000];
 
   const suggestions: Set<number> = new Set();
 
-  if (total < 100) {
-    const ceil20 = Math.ceil(total / 20) * 20;
-    if (ceil20 > total) suggestions.add(ceil20);
-    const ceil50 = Math.ceil(total / 50) * 50;
-    if (ceil50 > total) suggestions.add(ceil50);
-    const ceil100 = Math.ceil(total / 100) * 100;
-    if (ceil100 > total) suggestions.add(ceil100);
-    suggestions.add(200);
-    suggestions.add(500);
-    suggestions.add(1000);
-  } else if (total < 500) {
-    const ceil50 = Math.ceil(total / 50) * 50;
-    if (ceil50 > total) suggestions.add(ceil50);
-    const ceil100 = Math.ceil(total / 100) * 100;
-    if (ceil100 > total) suggestions.add(ceil100);
-    const ceil200 = Math.ceil(total / 200) * 200;
-    if (ceil200 > total) suggestions.add(ceil200);
-    suggestions.add(500);
-    suggestions.add(1000);
-    suggestions.add(2000);
-  } else if (total < 1000) {
-    const ceil100 = Math.ceil(total / 100) * 100;
-    if (ceil100 > total) suggestions.add(ceil100);
-    const ceil500 = Math.ceil(total / 500) * 500;
-    if (ceil500 > total) suggestions.add(ceil500);
-    suggestions.add(1000);
-    suggestions.add(1500);
-    suggestions.add(2000);
-    suggestions.add(5000);
-  } else if (total < 5000) {
-    const ceil500 = Math.ceil(total / 500) * 500;
-    if (ceil500 > total) suggestions.add(ceil500);
-    const ceil1000 = Math.ceil(total / 1000) * 1000;
-    if (ceil1000 > total) suggestions.add(ceil1000);
-    const next1000 = Math.ceil((total + 1000) / 1000) * 1000;
-    if (next1000 > total) suggestions.add(next1000);
-    const ceil5000 = Math.ceil(total / 5000) * 5000;
-    if (ceil5000 > total) suggestions.add(ceil5000);
-    suggestions.add(5000);
-    suggestions.add(10000);
-  } else {
-    // total >= 5000 (e.g. 6167 -> 6500, 7000, 8000, 10000, 15000)
-    const ceil500 = Math.ceil(total / 500) * 500;
-    if (ceil500 > total) suggestions.add(ceil500);
-    const ceil1000 = Math.ceil(total / 1000) * 1000;
-    if (ceil1000 > total) suggestions.add(ceil1000);
-    const next1000 = Math.ceil((total + 1000) / 1000) * 1000;
-    if (next1000 > total) suggestions.add(next1000);
-    const ceil5000 = Math.ceil(total / 5000) * 5000;
-    if (ceil5000 > total) suggestions.add(ceil5000);
-    const next5000 = Math.ceil((total + 5000) / 5000) * 5000;
-    if (next5000 > total) suggestions.add(next5000);
-    const ceil10k = Math.ceil(total / 10000) * 10000;
-    if (ceil10k > total) suggestions.add(ceil10k);
-    suggestions.add(Math.ceil((total + 10000) / 10000) * 10000);
+  // 1. Next 10 note round (e.g. 6167 -> 6170, 133 -> 140, 125 -> 130)
+  const ceil10 = Math.ceil(total / 10) * 10;
+  if (ceil10 > total) suggestions.add(ceil10);
+
+  // 2. Next 20 note round (e.g. 125 -> 140)
+  const ceil20 = Math.ceil(total / 20) * 20;
+  if (ceil20 > total && ceil20 < Math.ceil(total / 50) * 50) suggestions.add(ceil20);
+
+  // 3. Next 50 note round (e.g. 1320 -> 1350, 220 -> 250, 133 -> 150)
+  const ceil50 = Math.ceil(total / 50) * 50;
+  if (ceil50 > total) suggestions.add(ceil50);
+
+  // 4. Next 100 note round (e.g. 6167 -> 6200, 1320 -> 1400, 220 -> 300, 133 -> 200)
+  const ceil100 = Math.ceil(total / 100) * 100;
+  if (ceil100 > total) suggestions.add(ceil100);
+
+  // 5. Next 500 note round (e.g. 6167 -> 6500, 1320 -> 1500, 220 -> 500)
+  const ceil500 = Math.ceil(total / 500) * 500;
+  if (ceil500 > total) suggestions.add(ceil500);
+
+  // 6. Next 1000 note round (e.g. 6167 -> 7000, 1320 -> 2000, 600 -> 1000)
+  const ceil1000 = Math.ceil(total / 1000) * 1000;
+  if (ceil1000 > total) suggestions.add(ceil1000);
+
+  // 7. Next 5000 note round (e.g. 6167 -> 10000, 1320 -> 5000, 600 -> 5000)
+  const ceil5000 = Math.ceil(total / 5000) * 5000;
+  if (ceil5000 > total) suggestions.add(ceil5000);
+
+  // 8. Higher single standard banknotes (> total)
+  const standardBanknotes = [50, 100, 500, 1000, 5000];
+  for (const note of standardBanknotes) {
+    if (note > total) {
+      suggestions.add(note);
+    }
   }
 
   const sorted = Array.from(suggestions)
     .filter((amt) => amt > total)
     .sort((a, b) => a - b);
 
-  return sorted.slice(0, 5);
+  return sorted.slice(0, 6);
 };
 
 export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
