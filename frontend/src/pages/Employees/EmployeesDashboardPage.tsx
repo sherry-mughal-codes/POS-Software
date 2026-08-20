@@ -178,10 +178,11 @@ export const EmployeesDashboardPage: React.FC = () => {
   useEffect(() => {
     accountingService.getAccounts().then((accs) => {
       if (accs) {
+        const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
         const cashBank = accs.filter(
-          (a) => a.account_type === 'ASSET' && (a.code.startsWith('1010') || a.code.startsWith('1020') || a.code.startsWith('1025'))
+          (a) => a.account_type === 'ASSET' && isLeaf(a) && (a.code.startsWith('101') || a.code.startsWith('102') || a.parent_code === '1010' || a.parent_code === '1020')
         );
-        setPaymentAccounts(cashBank.length > 0 ? cashBank : accs.filter((a) => a.account_type === 'ASSET'));
+        setPaymentAccounts(cashBank.length > 0 ? cashBank : accs.filter((a) => a.account_type === 'ASSET' && isLeaf(a)));
       }
     });
   }, []);
@@ -1759,11 +1760,17 @@ export const EmployeesDashboardPage: React.FC = () => {
                 required
                 style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
               >
-                {paymentAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    [{a.code}] {a.name}
-                  </option>
-                ))}
+                {paymentAccounts
+                  .filter((a) =>
+                    disburseMethod === 'CASH'
+                      ? a.code.startsWith('101') || a.parent_code === '1010'
+                      : a.code.startsWith('102') || a.parent_code === '1020'
+                  )
+                  .map((a) => (
+                    <option key={a.id} value={a.id}>
+                      [{a.code}] {a.name}
+                    </option>
+                  ))}
               </select>
             </div>
 

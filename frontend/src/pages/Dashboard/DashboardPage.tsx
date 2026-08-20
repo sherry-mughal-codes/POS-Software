@@ -112,7 +112,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   // SVG Chart Computations
   const trendData = data?.sales_trend || [];
   const maxTrendVal = Math.max(...trendData.map((d) => Math.max(d.gross_sales, d.net_sales)), 1000);
-  const chartHeight = 110;
+  const chartHeight = 65;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -455,7 +455,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         {/* Sales & Orders Trend Chart */}
         <Card
           title="Sales & Revenue Trend"
-          subtitle={`Daily revenue for ${data?.period_label || 'Period'}`}
+          subtitle={period === 'this_year' ? `Monthly revenue for ${data?.period_label || 'This Year'}` : `Revenue for ${data?.period_label || 'Period'}`}
           icon={<BarChart3 size={16} />}
           action={
             hoveredTrendPoint && (
@@ -465,15 +465,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
             )
           }
         >
-          <div style={{ position: 'relative', marginTop: '0.25rem', height: `${chartHeight + 32}px` }}>
+          <div style={{ position: 'relative', marginTop: '0.25rem' }}>
             {trendData.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
                 No sales recorded in the selected period.
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.2rem', height: `${chartHeight}px`, paddingTop: '0.5rem', borderBottom: '1px solid var(--border-medium)' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.25rem', height: `${chartHeight}px`, paddingTop: '0.25rem', borderBottom: '1px solid var(--border-medium)', overflowX: 'hidden' }}>
                 {trendData.map((d, idx) => {
-                  const barHeight = Math.max(4, Math.round((d.net_sales / maxTrendVal) * (chartHeight - 15)));
+                  const barHeight = Math.max(3, Math.round((d.net_sales / maxTrendVal) * (chartHeight - 14)));
                   const isHovered = hoveredTrendPoint?.date === d.date;
 
                   return (
@@ -490,12 +490,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         height: '100%',
                         cursor: 'pointer',
                         position: 'relative',
+                        minWidth: 0,
                       }}
                     >
                       <div
                         style={{
                           width: '100%',
-                          maxWidth: '20px',
+                          maxWidth: '24px',
                           height: `${barHeight}px`,
                           backgroundColor: isHovered ? 'var(--primary-400)' : d.net_sales > 0 ? 'rgba(99, 102, 241, 0.75)' : 'rgba(255, 255, 255, 0.05)',
                           borderRadius: '0.2rem 0.2rem 0 0',
@@ -503,8 +504,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                           boxShadow: isHovered ? '0 0 10px rgba(99, 102, 241, 0.6)' : 'none',
                         }}
                       />
-                      <span style={{ fontSize: '0.625rem', color: 'var(--text-subtle)', marginTop: '0.25rem', whiteSpace: 'nowrap', transform: trendData.length > 15 ? 'rotate(-45deg)' : 'none' }}>
-                        {trendData.length > 20 && idx % 3 !== 0 ? '' : d.label}
+                      <span style={{
+                        fontSize: '0.59375rem',
+                        color: isHovered ? 'var(--primary-400)' : 'var(--text-subtle)',
+                        marginTop: '0.2rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: '100%',
+                      }}>
+                        {trendData.length > 20 && idx % 2 !== 0 ? '' : d.label}
                       </span>
                     </div>
                   );
@@ -513,8 +522,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
             )}
 
             {/* Subtitle breakdown summary */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', fontSize: '0.71875rem', color: 'var(--text-muted)' }}>
-              <div style={{ display: 'flex', gap: '0.875rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.4rem', fontSize: '0.71875rem', color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <span>Gross: <strong style={{ color: 'var(--text-main)' }}>Rs. {formatMoney(data?.sales_summary?.gross_sales)}</strong></span>
                 <span>Returns: <strong style={{ color: 'var(--danger)' }}>-Rs. {formatMoney(data?.sales_summary?.sales_returns)}</strong></span>
                 <span>Net: <strong style={{ color: 'var(--success)' }}>Rs. {formatMoney(data?.sales_summary?.net_sales)}</strong></span>

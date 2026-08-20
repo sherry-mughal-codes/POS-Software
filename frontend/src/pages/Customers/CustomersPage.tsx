@@ -102,10 +102,11 @@ export const CustomersPage: React.FC = () => {
   useEffect(() => {
     accountingService.getAccounts().then((accs) => {
       if (accs) {
+        const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
         const cashBank = accs.filter(
-          (a) => a.account_type === 'ASSET' && (a.code.startsWith('1010') || a.code.startsWith('1020') || a.code.startsWith('1025'))
+          (a) => a.account_type === 'ASSET' && isLeaf(a) && (a.code.startsWith('101') || a.code.startsWith('102') || a.parent_code === '1010' || a.parent_code === '1020')
         );
-        setPaymentAccounts(cashBank.length > 0 ? cashBank : accs.filter((a) => a.account_type === 'ASSET'));
+        setPaymentAccounts(cashBank.length > 0 ? cashBank : accs.filter((a) => a.account_type === 'ASSET' && isLeaf(a)));
       }
     });
   }, []);

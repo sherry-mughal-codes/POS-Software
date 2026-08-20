@@ -12,6 +12,8 @@ import { Modal } from '../../../components/common/Modal';
 import { Button } from '../../../components/common/Button';
 import { PaymentMethodType } from '../../../types/sales';
 import { Customer } from '../../../types/contact';
+import { Account } from '../../../types/accounting';
+import { accountingService } from '../../../services/accountingService';
 
 interface POSCheckoutModalProps {
   isOpen: boolean;
@@ -20,8 +22,9 @@ interface POSCheckoutModalProps {
   customer: Customer;
   onConfirmCheckout: (payload: {
     payment_method: PaymentMethodType;
+    payment_account?: number;
     paid_amount: number;
-    payments_breakdown?: { payment_method: PaymentMethodType; amount: number }[];
+    payments_breakdown?: { payment_method: PaymentMethodType; payment_account?: number; amount: number }[];
     notes?: string;
   }) => Promise<void>;
   loading: boolean;
@@ -98,6 +101,11 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
+  // Accounts state
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedCashAccountId, setSelectedCashAccountId] = useState<number | undefined>();
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState<number | undefined>();
+
   // Split payment fields
   const [splitCash, setSplitCash] = useState<string>('');
   const [splitCard, setSplitCard] = useState<string>('');
@@ -112,8 +120,54 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
       setSplitCash(grandTotal.toString());
       setSplitCard('0');
       setSplitCredit('0');
+
+      accountingService.getAccounts({ is_active: true }).then((accs) => {
+        setAccounts(accs);
+        const cParent = accs.find((a) => a.code === '1010');
+        const bParent = accs.find((a) => a.code === '1020');
+
+        // Strictly children of Cash Accounts parent (1010)
+        const cashAccs = accs.filter(
+          (a) =>
+            a.is_active &&
+            !a.is_header &&
+            (a.parent_code === '1010' || (cParent && a.parent === cParent.id))
+        );
+
+        // Strictly children of Bank & Digital Accounts parent (1020)
+        const bankAccs = accs.filter(
+          (a) =>
+            a.is_active &&
+            !a.is_header &&
+            (a.parent_code === '1020' || (bParent && a.parent === bParent.id))
+        );
+
+        if (cashAccs.length > 0) setSelectedCashAccountId(cashAccs[0].id);
+        if (bankAccs.length > 0) setSelectedBankAccountId(bankAccs[0].id);
+      }).catch(console.error);
     }
   }, [isOpen, grandTotal]);
+
+  const cashParent = accounts.find((a) => a.code === '1010');
+  const bankParent = accounts.find((a) => a.code === '1020');
+
+  const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
+
+  // Strictly children of Cash Accounts parent (1010)
+  const cashAccounts = accounts.filter(
+    (a) =>
+      a.is_active &&
+      isLeaf(a) &&
+      (a.parent_code === '1010' || (cashParent && a.parent === cashParent.id))
+  );
+
+  // Strictly children of Bank & Digital Accounts parent (1020)
+  const bankAccounts = accounts.filter(
+    (a) =>
+      a.is_active &&
+      isLeaf(a) &&
+      (a.parent_code === '1020' || (bankParent && a.parent === bankParent.id))
+  );
 
   const tenderedNumber = parseFloat(cashTendered) || 0;
   const changeDue = Math.max(0, tenderedNumber - grandTotal);
@@ -154,12 +208,14 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
         }
         await onConfirmCheckout({
           payment_method: 'CASH',
+          payment_account: selectedCashAccountId,
           paid_amount: tenderedNumber,
           notes,
         });
       } else if (paymentMethod === 'CARD') {
         await onConfirmCheckout({
           payment_method: 'CARD',
+          payment_account: selectedBankAccountId,
           paid_amount: grandTotal,
           notes,
         });
@@ -189,9 +245,9 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
           return;
         }
 
-        const breakdown: { payment_method: PaymentMethodType; amount: number }[] = [];
-        if (cVal > 0) breakdown.push({ payment_method: 'CASH', amount: cVal });
-        if (cardVal > 0) breakdown.push({ payment_method: 'CARD', amount: cardVal });
+        const breakdown: { payment_method: PaymentMethodType; payment_account?: number; amount: number }[] = [];
+        if (cVal > 0) breakdown.push({ payment_method: 'CASH', payment_account: selectedCashAccountId, amount: cVal });
+        if (cardVal > 0) breakdown.push({ payment_method: 'CARD', payment_account: selectedBankAccountId, amount: cardVal });
         if (credVal > 0) breakdown.push({ payment_method: 'CREDIT', amount: credVal });
 
         await onConfirmCheckout({
@@ -465,6 +521,98 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
                 Rs. {formatMoney(tenderedNumber >= grandTotal ? changeDue : remainingDue)}
               </span>
             </div>
+
+            {/* Cash Drawer Account Selection */}
+            {cashAccounts.length > 0 && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Deposit Into Cash Drawer Account
+                </label>
+                <select
+                  value={selectedCashAccountId || ''}
+                  onChange={(e) => setSelectedCashAccountId(Number(e.target.value))}
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                  }}
+                >
+                  {cashAccounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {formatMoney(acc.current_balance)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CARD / Bank / Digital Payment Body */}
+        {paymentMethod === 'CARD' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            <div
+              style={{
+                padding: '0.875rem 1rem',
+                backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                borderRadius: '0.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <CreditCard size={20} style={{ color: 'var(--primary-400)' }} />
+                <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  Bank / Card / Online Receipt:
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 900,
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--primary-400)',
+                }}
+              >
+                Rs. {formatMoney(grandTotal)}
+              </span>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                Receiving Bank / Digital Account (JazzCash, EasyPaisa, Meezan, HBL) *
+              </label>
+              <select
+                value={selectedBankAccountId || ''}
+                onChange={(e) => setSelectedBankAccountId(Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 0.75rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.5rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  outline: 'none',
+                }}
+              >
+                {bankAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    [{acc.code}] {acc.name} (Bal: Rs. {formatMoney(acc.current_balance)})
+                  </option>
+                ))}
+              </select>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.25rem' }}>
+                Selected account will be automatically debited in the General Ledger upon checkout.
+              </div>
+            </div>
           </div>
         )}
 
@@ -536,6 +684,62 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
                 />
               </div>
             </div>
+
+            {parseFloat(splitCard) > 0 && bankAccounts.length > 0 && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Receiving Bank / Digital Account for Card portion *
+                </label>
+                <select
+                  value={selectedBankAccountId || ''}
+                  onChange={(e) => setSelectedBankAccountId(Number(e.target.value))}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.375rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                  }}
+                >
+                  {bankAccounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {formatMoney(acc.current_balance)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {parseFloat(splitCash) > 0 && cashAccounts.length > 0 && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Deposit Cash portion into *
+                </label>
+                <select
+                  value={selectedCashAccountId || ''}
+                  onChange={(e) => setSelectedCashAccountId(Number(e.target.value))}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.375rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                  }}
+                >
+                  {cashAccounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {formatMoney(acc.current_balance)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
 

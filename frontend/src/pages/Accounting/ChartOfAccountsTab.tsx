@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, FolderTree, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { Plus, Search, CheckCircle2, XCircle, Sparkles, Trash2 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
@@ -122,6 +122,39 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
     }
   };
 
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const handleDeleteAccount = async (acc: Account) => {
+    if (acc.is_system) {
+      alert(`System account [${acc.code}] ${acc.name} cannot be deleted.`);
+      return;
+    }
+    const confirmed = window.confirm(`Are you sure you want to delete account [${acc.code}] ${acc.name}? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(acc.id);
+      await accountingService.deleteAccount(acc.id);
+      onRefresh();
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || err?.message || 'Failed to delete account. Note: Accounts with existing journal entries cannot be deleted.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const getAccountNestingLevel = (acc: Account, allAccs: Account[]): number => {
+    let level = 0;
+    let currentParentId = acc.parent;
+    while (currentParentId) {
+      level += 1;
+      const parentAcc = allAccs.find((a) => a.id === currentParentId);
+      currentParentId = parentAcc ? parentAcc.parent : null;
+      if (level > 4) break;
+    }
+    return level;
+  };
+
   const filteredAccounts = accounts.filter((acc) => {
     const matchesType = selectedType === 'ALL' || acc.account_type === selectedType;
     const matchesSearch =
@@ -148,7 +181,7 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
   };
 
   const totalIncome = accounts
-    .filter((a) => a.account_type === 'INCOME')
+    .filter((a) => a.account_type === 'INCOME' && !a.is_header)
     .reduce((sum, a) => {
       // If contra-income account (e.g. 4020 Sales Returns with normal balance DEBIT), subtract it
       if (a.normal_balance === 'DEBIT') {
@@ -158,7 +191,7 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
     }, 0);
 
   const totalExpenses = accounts
-    .filter((a) => a.account_type === 'EXPENSE')
+    .filter((a) => a.account_type === 'EXPENSE' && !a.is_header)
     .reduce((sum, a) => {
       // If contra-expense account (normal balance CREDIT), subtract it
       if (a.normal_balance === 'CREDIT') {
@@ -169,7 +202,7 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
 
   const netOperatingProfit = totalIncome - totalExpenses;
   const baseEquityTotal = accounts
-    .filter((a) => a.account_type === 'EQUITY')
+    .filter((a) => a.account_type === 'EQUITY' && !a.is_header)
     .reduce((sum, a) => sum + a.current_balance, 0);
   const realTimeTotalEquity = baseEquityTotal + netOperatingProfit;
 
@@ -187,10 +220,9 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                 borderRadius: '0.5rem',
                 fontSize: '0.8125rem',
                 fontWeight: 600,
-                border: '1px solid',
-                borderColor: selectedType === t.key ? 'var(--primary-400)' : 'var(--border-subtle)',
-                backgroundColor: selectedType === t.key ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-elevated)',
-                color: selectedType === t.key ? 'var(--primary-400)' : 'var(--text-muted)',
+                border: 'none',
+                backgroundColor: selectedType === t.key ? 'var(--primary-400)' : 'var(--bg-card)',
+                color: selectedType === t.key ? '#000' : 'var(--text-main)',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
@@ -200,64 +232,92 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <div style={{ width: '260px' }}>
-            <Input
-              placeholder="Search code or name..."
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <div style={{ position: 'relative', width: '220px' }}>
+            <Search
+              size={16}
+              style={{
+                position: 'absolute',
+                left: '0.75rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-subtle)',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Search accounts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search size={14} />}
+              style={{
+                width: '100%',
+                padding: '0.5rem 0.75rem 0.5rem 2.25rem',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.5rem',
+                color: 'var(--text-main)',
+                fontSize: '0.8125rem',
+                outline: 'none',
+              }}
             />
           </div>
 
-          <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenModal}>
+          <Button
+            variant="primary"
+            icon={<Plus size={16} />}
+            onClick={handleOpenModal}
+          >
             Add Account
           </Button>
         </div>
       </div>
 
-      {/* Accounts Table Card */}
-      <Card
-        title="Chart of Accounts Hierarchy"
-        subtitle={`${filteredAccounts.length} active ledger accounts`}
-        icon={<FolderTree size={20} />}
-      >
+      {/* Accounts Ledger Table */}
+      <Card>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-subtle)' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Code</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Account Name</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Type</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Normal Bal</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Current Balance</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Active</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+              <tr style={{ borderBottom: '2px solid var(--border-medium)', color: 'var(--text-muted)' }}>
+                <th style={{ padding: '0.75rem 1rem', width: '100px' }}>Code</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Account Name</th>
+                <th style={{ padding: '0.75rem 1rem', width: '130px' }}>Type</th>
+                <th style={{ padding: '0.75rem 1rem', width: '110px' }}>Nature</th>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'right', width: '160px' }}>Authoritative Balance</th>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'center', width: '90px' }}>Status</th>
+                <th style={{ padding: '0.75rem 1rem', textAlign: 'right', width: '220px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredAccounts.map((acc) => {
-                const isChild = !!acc.parent;
+                const nestingLevel = getAccountNestingLevel(acc, accounts);
+                const isHeader = !!acc.is_header || (acc.children_count && acc.children_count > 0);
+                const indentRem = nestingLevel * 1.5;
                 return (
                   <tr
                     key={acc.id}
                     style={{
                       borderBottom: '1px solid var(--border-subtle)',
-                      backgroundColor: isChild ? 'rgba(255, 255, 255, 0.01)' : 'transparent',
+                      backgroundColor: isHeader ? 'rgba(168, 85, 247, 0.03)' : nestingLevel > 0 ? 'rgba(255, 255, 255, 0.01)' : 'transparent',
                     }}
                   >
                     {/* Code */}
-                    <td style={{ padding: '1rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--primary-400)' }}>
+                    <td style={{ padding: '1rem', fontFamily: 'var(--font-mono)', fontWeight: isHeader ? 800 : 700, color: isHeader ? '#c084fc' : 'var(--primary-400)' }}>
                       {acc.code}
                     </td>
 
                     {/* Name */}
                     <td style={{ padding: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: isChild ? '1.5rem' : '0' }}>
-                        {isChild && <span style={{ color: 'var(--text-subtle)' }}>└─</span>}
-                        <strong style={{ color: 'var(--text-main)', fontWeight: isChild ? 500 : 700 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: `${indentRem}rem` }}>
+                        {nestingLevel === 1 && <span style={{ color: 'var(--text-subtle)' }}>└─</span>}
+                        {nestingLevel >= 2 && <span style={{ color: 'var(--primary-400)', opacity: 0.7 }}>└──</span>}
+                        <strong style={{ color: isHeader ? 'var(--primary-400)' : 'var(--text-main)', fontWeight: isHeader ? 800 : nestingLevel > 0 ? 500 : 700 }}>
                           {acc.name}
                         </strong>
+                        {isHeader && (
+                          <span style={{ fontSize: '0.6875rem', padding: '0.1rem 0.4rem', borderRadius: '4px', backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)', fontWeight: 700 }}>
+                            Parent Group
+                          </span>
+                        )}
                         {acc.is_system && (
                           <span title="System Protected Account" style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
                             [System]
@@ -282,7 +342,7 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
                       <span style={{
                         fontFamily: 'var(--font-mono)',
-                        fontWeight: 700,
+                        fontWeight: isHeader ? 800 : 700,
                         color: acc.current_balance > 0 ? 'var(--success)' : acc.current_balance < 0 ? 'var(--danger)' : 'var(--text-subtle)',
                       }}>
                         Rs. {acc.current_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -300,23 +360,42 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
 
                     {/* Actions */}
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
-                        {acc.code !== '3010' && (
-                          <Button
-                            variant="outline"
-                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem', borderColor: 'rgba(56, 189, 248, 0.4)', color: 'var(--primary-400)' }}
-                            onClick={() => handleOpenOpeningModal(acc)}
-                          >
-                            Set Opening Bal
-                          </Button>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {isHeader ? (
+                          <span style={{ fontSize: '0.71875rem', color: 'var(--text-subtle)', fontStyle: 'italic' }}>
+                            Organization Header
+                          </span>
+                        ) : (
+                          <>
+                            {acc.code !== '3010' && (
+                              <Button
+                                variant="outline"
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem', borderColor: 'rgba(56, 189, 248, 0.4)', color: 'var(--primary-400)' }}
+                                onClick={() => handleOpenOpeningModal(acc)}
+                              >
+                                Set Opening Bal
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
+                              onClick={() => onSelectAccountForLedger(acc.id)}
+                            >
+                              View Ledger
+                            </Button>
+                            {!acc.is_system && (
+                              <Button
+                                variant="outline"
+                                title="Delete Account"
+                                style={{ padding: '0.25rem 0.45rem', fontSize: '0.71875rem', borderColor: 'rgba(239, 68, 68, 0.35)', color: 'var(--danger)' }}
+                                onClick={() => handleDeleteAccount(acc)}
+                                disabled={deletingId === acc.id}
+                              >
+                                <Trash2 size={13} />
+                              </Button>
+                            )}
+                          </>
                         )}
-                        <Button
-                          variant="outline"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
-                          onClick={() => onSelectAccountForLedger(acc.id)}
-                        >
-                          View Ledger
-                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -378,7 +457,7 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                     {selectedType === 'EQUITY' ? "Total Real-Time Owner's Equity (Capital + Net Profit):" : `Net ${accountTypes.find((t) => t.key === selectedType)?.label} Total:`}
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '1rem', color: selectedType === 'EQUITY' ? '#a5b4fc' : 'var(--primary-400)' }}>
-                    Rs. {(selectedType === 'EQUITY' ? realTimeTotalEquity : filteredAccounts.reduce((sum, a) => sum + a.current_balance, 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    Rs. {(selectedType === 'EQUITY' ? realTimeTotalEquity : filteredAccounts.filter((a) => !a.is_header).reduce((sum, a) => sum + a.current_balance, 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td colSpan={2} />
                 </tr>
@@ -465,11 +544,13 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                 }}
               >
                 <option value="">None (Top-Level Header)</option>
-                {accounts.filter((a) => a.account_type === newType).map((a) => (
-                  <option key={a.id} value={a.id}>
-                    [{a.code}] {a.name}
-                  </option>
-                ))}
+                {accounts
+                  .filter((a) => a.account_type === newType)
+                  .map((a) => (
+                    <option key={a.id} value={a.id}>
+                      [{a.code}] {a.name} {a.is_header ? '— (Parent Group)' : ''}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>

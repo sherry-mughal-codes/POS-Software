@@ -72,6 +72,7 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
                 customer_id=data["customer"],
                 items_data=data["items"],
                 payment_method=data.get("payment_method", "CASH"),
+                payment_account_id=data.get("payment_account"),
                 discount_amount=data.get("discount_amount", 0),
                 tax_amount=data.get("tax_amount", 0),
                 paid_amount=data.get("paid_amount"),

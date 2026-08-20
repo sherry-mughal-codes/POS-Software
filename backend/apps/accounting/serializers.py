@@ -18,6 +18,8 @@ class AccountSerializer(serializers.ModelSerializer):
     current_balance = serializers.SerializerMethodField()
     normal_balance = serializers.CharField(read_only=True)
     children_count = serializers.SerializerMethodField()
+    is_header = serializers.BooleanField(read_only=True)
+    is_leaf = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Account
@@ -31,6 +33,8 @@ class AccountSerializer(serializers.ModelSerializer):
             "parent_name",
             "is_active",
             "is_system",
+            "is_header",
+            "is_leaf",
             "description",
             "normal_balance",
             "current_balance",

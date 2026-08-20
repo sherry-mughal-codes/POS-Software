@@ -55,6 +55,11 @@ class Account(models.Model):
         return self.children.exists()
 
     @property
+    def is_leaf(self):
+        """Leaf posting account if it has NO sub-accounts."""
+        return not self.children.exists()
+
+    @property
     def normal_balance(self):
         """Returns 'DEBIT' or 'CREDIT' based on account type and contra nature."""
         # Contra-income accounts (like 4020 Sales Returns & Allowances) have a normal DEBIT balance
@@ -67,9 +72,48 @@ class Account(models.Model):
     def get_current_balance(self):
         """
         Calculates authoritative balance dynamically from posted journal items.
+        If account has children (header/parent organization account), aggregates balances from all child sub-accounts recursively.
+        For top-level Equity (3000), includes live net operating profit (Income - Expenses) so Total Equity is always real-time.
         Asset/Expense = Sum(Debit) - Sum(Credit)
         Liability/Equity/Income = Sum(Credit) - Sum(Debit)
         """
+        if self.children.exists():
+            child_total = Decimal("0.00")
+            for child in self.children.filter(is_active=True):
+                # For income children, if normal_balance is DEBIT (e.g. 4020 Sales Returns), subtract from parent revenue
+                if self.account_type == AccountType.INCOME and child.normal_balance == "DEBIT":
+                    child_total -= child.get_current_balance()
+                # For expense children, if normal_balance is CREDIT (contra-expense), subtract from parent expense
+                elif self.account_type == AccountType.EXPENSE and child.normal_balance == "CREDIT":
+                    child_total -= child.get_current_balance()
+                else:
+                    child_total += child.get_current_balance()
+
+            if self.code == "3000" or (self.account_type == AccountType.EQUITY and not self.parent):
+                # Include real-time net operating profit (4000s - 5000s)
+                rev_totals = JournalItem.objects.filter(
+                    account__account_type=AccountType.INCOME,
+                    journal_entry__status=JournalEntryStatus.POSTED,
+                ).aggregate(
+                    total_cr=models.Sum("credit"),
+                    total_dr=models.Sum("debit"),
+                )
+                net_revenue = (rev_totals["total_cr"] or Decimal("0.00")) - (rev_totals["total_dr"] or Decimal("0.00"))
+
+                exp_totals = JournalItem.objects.filter(
+                    account__account_type=AccountType.EXPENSE,
+                    journal_entry__status=JournalEntryStatus.POSTED,
+                ).aggregate(
+                    total_dr=models.Sum("debit"),
+                    total_cr=models.Sum("credit"),
+                )
+                net_expenses = (exp_totals["total_dr"] or Decimal("0.00")) - (exp_totals["total_cr"] or Decimal("0.00"))
+
+                live_profit = net_revenue - net_expenses
+                return child_total + live_profit
+
+            return child_total
+
         totals = self.journal_items.filter(
             journal_entry__status=JournalEntryStatus.POSTED
         ).aggregate(

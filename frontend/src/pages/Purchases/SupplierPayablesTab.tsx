@@ -103,7 +103,10 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       ]);
 
       setSuppliers(suppList || []);
-      const validAccs = (accs || []).filter((a) => ['1010', '1020', '1030'].includes(a.code) || a.account_type === 'ASSET');
+      const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
+      const validAccs = (accs || []).filter(
+        (a) => a.account_type === 'ASSET' && isLeaf(a) && (a.code.startsWith('101') || a.code.startsWith('102') || a.parent_code === '1010' || a.parent_code === '1020')
+      );
       setPaymentAccounts(validAccs);
       if (validAccs.length > 0 && !selectedAccountId) {
         setSelectedAccountId(validAccs[0].id.toString());

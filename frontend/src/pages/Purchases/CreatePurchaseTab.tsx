@@ -5,7 +5,7 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Supplier } from '../../types/contact';
 import { Product } from '../../types/product';
-import { PaymentMethod } from '../../types/accounting';
+import { PaymentMethod, Account } from '../../types/accounting';
 import { contactService } from '../../services/contactService';
 import { productService } from '../../services/productService';
 import { accountingService } from '../../services/accountingService';
@@ -30,6 +30,7 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
 
   // Form State
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
@@ -42,6 +43,7 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
   const [taxAmount, setTaxAmount] = useState<number>(0);
   const [paidAmount, setPaidAmount] = useState<number>(0);
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>('');
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
 
   // UI state
@@ -52,10 +54,6 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Invoice file size exceeds 10MB limit.');
-      return;
-    }
     setSupplierInvoiceFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
@@ -69,12 +67,19 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
       contactService.getSuppliers({ is_active: true }),
       productService.getProducts({ is_active: true }),
       accountingService.getPaymentMethods(),
-    ]).then(([supps, prods, pms]) => {
+      accountingService.getAccounts(),
+    ]).then(([supps, prods, pms, accs]) => {
       setSuppliers(supps || []);
       setProducts(prods || []);
       setPaymentMethods(pms || []);
+      const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
+      const leafCashBankAccounts = (accs || []).filter(
+        (a: Account) => a.account_type === 'ASSET' && isLeaf(a) && (a.code.startsWith('101') || a.code.startsWith('102') || a.parent_code === '1010' || a.parent_code === '1020')
+      );
+      setAccounts(leafCashBankAccounts);
       if (supps && supps.length > 0) setSelectedSupplierId(supps[0].id.toString());
       if (pms && pms.length > 0) setSelectedPaymentMethodId(pms[0].id.toString());
+      if (leafCashBankAccounts.length > 0) setSelectedAccountId(leafCashBankAccounts[0].id.toString());
     }).catch((err) => {
       setError(err?.message || 'Failed to load suppliers and products.');
     });
@@ -150,6 +155,7 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
       tax_amount: taxAmount,
       paid_amount: paidAmount,
       payment_method: selectedPaymentMethodId ? parseInt(selectedPaymentMethodId) : null,
+      payment_account: selectedAccountId ? parseInt(selectedAccountId) : undefined,
       supplier_invoice_number: supplierInvoiceNumber.trim() || undefined,
       supplier_invoice_file: supplierInvoiceFile || undefined,
       notes,
@@ -463,6 +469,34 @@ export const CreatePurchaseTab: React.FC<{ onSuccess: () => void }> = ({ onSucce
                 100% Credit
               </Button>
             </div>
+
+            {paidAmount > 0 && accounts.length > 0 && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                  Paid From Account (Cash / Bank)
+                </label>
+                <select
+                  value={selectedAccountId}
+                  onChange={(e) => setSelectedAccountId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    padding: '0.625rem',
+                    color: 'var(--text-main)',
+                    outline: 'none',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      [{acc.code}] {acc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <Input

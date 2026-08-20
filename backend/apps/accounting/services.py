@@ -89,6 +89,12 @@ class AccountingService:
             if isinstance(account, int):
                 account = Account.objects.get(pk=account)
 
+            # Safeguard: If an organizational parent header is passed, resolve to its active posting leaf child
+            if account.children.exists() or getattr(account, "is_header", False):
+                leaf_child = account.children.filter(is_active=True).first()
+                if leaf_child:
+                    account = leaf_child
+
             dr = Decimal(str(line.get("debit", 0)))
             cr = Decimal(str(line.get("credit", 0)))
             desc = line.get("description", "")

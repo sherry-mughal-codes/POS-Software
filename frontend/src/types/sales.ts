@@ -37,6 +37,7 @@ export interface SalePayment {
   id: number;
   payment_method: PaymentMethodType;
   payment_method_display: string;
+  payment_account?: number;
   amount: number;
   notes?: string;
   created_at: string;
@@ -81,6 +82,9 @@ export interface Sale {
   status_display: string;
   payment_method: PaymentMethodType;
   payment_method_display: string;
+  payment_account?: number;
+  payment_account_name?: string;
+  payment_account_code?: string;
   payment_status?: 'PAID' | 'PARTIAL' | 'UNPAID';
   payment_status_display?: string;
   subtotal: number;
@@ -110,11 +114,13 @@ export interface SaleCheckoutPayload {
     discount?: number;
   }[];
   payment_method: PaymentMethodType;
+  payment_account?: number;
   discount_amount?: number;
   tax_amount?: number;
   paid_amount?: number;
   payments_breakdown?: {
     payment_method: PaymentMethodType;
+    payment_account?: number;
     amount: number;
     notes?: string;
   }[];

@@ -10,6 +10,8 @@ export interface Account {
   parent_name?: string | null;
   is_active: boolean;
   is_system: boolean;
+  is_header?: boolean;
+  is_leaf?: boolean;
   description?: string | null;
   normal_balance: 'DEBIT' | 'CREDIT';
   current_balance: number;

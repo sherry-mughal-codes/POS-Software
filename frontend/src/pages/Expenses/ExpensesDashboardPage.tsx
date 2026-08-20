@@ -5,7 +5,6 @@ import {
   RefreshCw,
   Search,
   Filter,
-  ArrowRightLeft,
   BarChart3,
   Receipt,
   CheckCircle,
@@ -21,7 +20,7 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import { Expense, AccountTransfer, ComprehensiveExpenseReport } from '../../types/expense';
+import { Expense, ComprehensiveExpenseReport } from '../../types/expense';
 import { Account } from '../../types/accounting';
 import { expenseService } from '../../services/expenseService';
 import { accountingService } from '../../services/accountingService';
@@ -32,7 +31,7 @@ const formatMoney = (val: number | string | undefined | null): string => {
 };
 
 export const ExpensesDashboardPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'expenses' | 'transfers' | 'reports'>('expenses');
+  const [activeTab, setActiveTab] = useState<'expenses' | 'reports'>('expenses');
 
   // Accounts master data
   const [expenseAccounts, setExpenseAccounts] = useState<Account[]>([]);
@@ -47,10 +46,6 @@ export const ExpensesDashboardPage: React.FC = () => {
   const [expensePaymentFilter, setExpensePaymentFilter] = useState('');
   const [expenseDateFrom, setExpenseDateFrom] = useState('');
   const [expenseDateTo, setExpenseDateTo] = useState('');
-
-  // Transfers Tab State
-  const [transfers, setTransfers] = useState<AccountTransfer[]>([]);
-  const [transfersLoading, setTransfersLoading] = useState(false);
 
   // Reports Tab State
   const [reportData, setReportData] = useState<ComprehensiveExpenseReport | null>(null);
@@ -74,21 +69,8 @@ export const ExpensesDashboardPage: React.FC = () => {
   const [expenseSubmitting, setExpenseSubmitting] = useState(false);
   const [expenseError, setExpenseError] = useState<string | null>(null);
 
-  // Transfer Modal
-  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
-  const [transferFormData, setTransferFormData] = useState({
-    from_account: 0,
-    to_account: 0,
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    reference: '',
-    notes: '',
-  });
-  const [transferSubmitting, setTransferSubmitting] = useState(false);
-  const [transferError, setTransferError] = useState<string | null>(null);
-
   // Cancel Modal
-  const [cancelTarget, setCancelTarget] = useState<{ type: 'expense' | 'transfer'; item: Expense | AccountTransfer } | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Expense | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -97,10 +79,13 @@ export const ExpensesDashboardPage: React.FC = () => {
   useEffect(() => {
     accountingService.getAccounts().then((accounts) => {
       if (accounts) {
-        const expList = accounts.filter((a) => a.account_type === 'EXPENSE');
-        const payList = accounts.filter((a) => a.account_type === 'ASSET' && (a.code.startsWith('1010') || a.code.startsWith('1020') || a.code.startsWith('1025')));
+        const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
+        const expList = accounts.filter((a) => a.account_type === 'EXPENSE' && isLeaf(a));
+        const payList = accounts.filter(
+          (a) => a.account_type === 'ASSET' && isLeaf(a) && (a.code.startsWith('101') || a.code.startsWith('102') || a.parent_code === '1010' || a.parent_code === '1020')
+        );
         setExpenseAccounts(expList);
-        setPaymentAccounts(payList.length > 0 ? payList : accounts.filter((a) => a.account_type === 'ASSET'));
+        setPaymentAccounts(payList.length > 0 ? payList : accounts.filter((a) => a.account_type === 'ASSET' && isLeaf(a)));
       }
     });
   }, []);
@@ -123,17 +108,6 @@ export const ExpensesDashboardPage: React.FC = () => {
     }
   }, [expenseSearch, expenseStatusFilter, expenseAccountFilter, expensePaymentFilter, expenseDateFrom, expenseDateTo]);
 
-  // Fetch Transfers
-  const fetchTransfers = useCallback(async () => {
-    setTransfersLoading(true);
-    try {
-      const data = await expenseService.getTransfers();
-      setTransfers(data || []);
-    } finally {
-      setTransfersLoading(false);
-    }
-  }, []);
-
   // Fetch Report
   const fetchReport = useCallback(async () => {
     setReportLoading(true);
@@ -150,9 +124,8 @@ export const ExpensesDashboardPage: React.FC = () => {
 
   useEffect(() => {
     if (activeTab === 'expenses') fetchExpenses();
-    else if (activeTab === 'transfers') fetchTransfers();
     else if (activeTab === 'reports') fetchReport();
-  }, [activeTab, fetchExpenses, fetchTransfers, fetchReport]);
+  }, [activeTab, fetchExpenses, fetchReport]);
 
   // Handlers for Expense Form
   const handleOpenCreateExpense = () => {
@@ -233,46 +206,9 @@ export const ExpensesDashboardPage: React.FC = () => {
     }
   };
 
-  // Handlers for Transfer Form
-  const handleOpenCreateTransfer = () => {
-    setTransferFormData({
-      from_account: paymentAccounts[0]?.id || 0,
-      to_account: paymentAccounts[1]?.id || paymentAccounts[0]?.id || 0,
-      amount: '',
-      date: new Date().toISOString().split('T')[0],
-      reference: '',
-      notes: '',
-    });
-    setTransferError(null);
-    setIsTransferModalOpen(true);
-  };
-
-  const handleSaveTransfer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTransferError(null);
-    setTransferSubmitting(true);
-
-    try {
-      await expenseService.createTransfer({
-        from_account: transferFormData.from_account,
-        to_account: transferFormData.to_account,
-        amount: parseFloat(transferFormData.amount),
-        date: transferFormData.date,
-        reference: transferFormData.reference,
-        notes: transferFormData.notes,
-      });
-      setIsTransferModalOpen(false);
-      fetchTransfers();
-    } catch (err: any) {
-      setTransferError(err?.response?.data?.detail || err?.message || 'Failed to execute transfer.');
-    } finally {
-      setTransferSubmitting(false);
-    }
-  };
-
   // Handlers for Cancellation
-  const handleOpenCancelModal = (type: 'expense' | 'transfer', item: Expense | AccountTransfer) => {
-    setCancelTarget({ type, item });
+  const handleOpenCancelModal = (item: Expense) => {
+    setCancelTarget(item);
     setCancelReason('');
     setCancelError(null);
   };
@@ -284,18 +220,13 @@ export const ExpensesDashboardPage: React.FC = () => {
     setCancelError(null);
 
     try {
-      if (cancelTarget.type === 'expense') {
-        await expenseService.cancelExpense(cancelTarget.item.id, cancelReason);
-        fetchExpenses();
-      } else {
-        await expenseService.cancelTransfer(cancelTarget.item.id, cancelReason);
-        fetchTransfers();
-      }
+      await expenseService.cancelExpense(cancelTarget.id, cancelReason);
+      fetchExpenses();
       setCancelTarget(null);
     } catch (err: any) {
       setCancelError(err?.response?.data?.detail || err?.message || 'Failed to cancel transaction.');
     } finally {
-setCancelSubmitting(false);
+      setCancelSubmitting(false);
     }
   };
 
@@ -305,20 +236,11 @@ setCancelSubmitting(false);
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-            Expense & Transfers
+            Expense Management
           </h2>
         </div>
 
         <div style={{ display: 'flex', gap: '0.4rem' }}>
-          <Button
-            variant="outline"
-            icon={<ArrowRightLeft size={14} />}
-            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-            onClick={handleOpenCreateTransfer}
-          >
-            Transfer Cash/Bank
-          </Button>
-
           <Button
             variant="primary"
             icon={<Plus size={14} />}
@@ -355,26 +277,6 @@ setCancelSubmitting(false);
         >
           <Receipt size={14} />
           <span>Expense Logs ({expenses.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('transfers')}
-          style={{
-            padding: '0.35rem 0.75rem',
-            borderRadius: '0.375rem',
-            border: 'none',
-            backgroundColor: activeTab === 'transfers' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-            color: activeTab === 'transfers' ? 'var(--primary-400)' : 'var(--text-muted)',
-            fontWeight: 700,
-            fontSize: '0.78125rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.375rem',
-          }}
-        >
-          <ArrowRightLeft size={14} />
-          <span>Internal Transfers</span>
         </button>
 
         <button
@@ -598,7 +500,7 @@ setCancelSubmitting(false);
                                 <Button
                                   variant="outline"
                                   icon={<RotateCcw size={12} />}
-                                  onClick={() => handleOpenCancelModal('expense', exp)}
+                                  onClick={() => handleOpenCancelModal(exp)}
                                   title="Cancel Expense & Reverse Ledger"
                                 >
                                   Cancel
@@ -617,128 +519,7 @@ setCancelSubmitting(false);
         </div>
       )}
 
-      {/* TAB 2: CASH/BANK TRANSFERS */}
-      {activeTab === 'transfers' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div
-            style={{
-              padding: '1rem 1.25rem',
-              backgroundColor: 'rgba(56, 189, 248, 0.08)',
-              border: '1px solid rgba(56, 189, 248, 0.25)',
-              borderRadius: '0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-            }}
-          >
-            <ArrowRightLeft size={28} style={{ color: 'var(--primary-400)', flexShrink: 0 }} />
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.9375rem' }}>
-                Internal Cash & Bank Balance Transfers
-              </div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>
-                Transfers move liquid funds between internal accounts (e.g. Cash in Hand &rarr; Bank Account). They update financial asset balances without creating expense deductions.
-              </div>
-            </div>
-          </div>
-
-          <Card title={`Transfer History (${transfers.length})`} subtitle="Internal money movements between store drawers and bank accounts" icon={<ArrowRightLeft size={18} />}>
-            {transfersLoading ? (
-              <LoadingSpinner label="Loading transfers..." />
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Transfer #</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Date</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>From (Source)</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>To (Destination)</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Amount (Rs.)</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Reference</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Status</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Created By</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transfers.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                          No account transfers recorded yet. Click "Transfer Cash/Bank" to create one.
-                        </td>
-                      </tr>
-                    ) : (
-                      transfers.map((trf) => (
-                        <tr
-                          key={trf.id}
-                          style={{ borderBottom: '1px solid var(--border-subtle)' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <td style={{ padding: '0.625rem 0.75rem' }}>
-                            <code style={{ fontWeight: 800, color: 'var(--primary-400)' }}>{trf.transfer_number}</code>
-                            {trf.journal_entry_number && (
-                              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>GL: {trf.journal_entry_number}</div>
-                            )}
-                          </td>
-
-                          <td style={{ padding: '0.625rem 0.75rem', color: 'var(--text-muted)' }}>
-                            {trf.date}
-                          </td>
-
-                          <td style={{ padding: '0.625rem 0.75rem' }}>
-                            <Badge variant="warning">{trf.from_account_name}</Badge>
-                          </td>
-
-                          <td style={{ padding: '0.625rem 0.75rem' }}>
-                            <Badge variant="success">{trf.to_account_name}</Badge>
-                          </td>
-
-                          <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--primary-400)', fontSize: '0.875rem' }}>
-                            Rs. {formatMoney(trf.amount)}
-                          </td>
-
-                          <td style={{ padding: '0.625rem 0.75rem', color: 'var(--text-muted)' }}>
-                            {trf.reference || '-'}
-                          </td>
-
-                          <td style={{ padding: '0.625rem 0.75rem' }}>
-                            {trf.status === 'SUBMITTED' ? (
-                              <Badge variant="success">Completed</Badge>
-                            ) : (
-                              <Badge variant="danger">Cancelled</Badge>
-                            )}
-                          </td>
-
-                          <td style={{ padding: '0.625rem 0.75rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                            {trf.created_by_name}
-                          </td>
-
-                          <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
-                            {trf.status === 'SUBMITTED' && (
-                              <Button
-                                variant="outline"
-                                icon={<RotateCcw size={12} />}
-                                onClick={() => handleOpenCancelModal('transfer', trf)}
-                                title="Cancel Transfer & Reverse Ledger"
-                              >
-                                Cancel
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
-        </div>
-      )}
-
-      {/* TAB 3: EXPENSE ANALYTICS & REPORT */}
+      {/* TAB 2: EXPENSE ANALYTICS & REPORT */}
       {activeTab === 'reports' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Date Filter Bar */}
@@ -1010,133 +791,12 @@ setCancelSubmitting(false);
         </form>
       </Modal>
 
-      {/* CREATE ACCOUNT TRANSFER MODAL */}
-      <Modal
-        isOpen={isTransferModalOpen}
-        onClose={() => setIsTransferModalOpen(false)}
-        title="Internal Cash / Bank Account Transfer"
-        maxWidth="540px"
-      >
-        <form onSubmit={handleSaveTransfer} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {transferError && (
-            <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--danger)', borderRadius: '0.5rem', color: 'var(--danger)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <AlertTriangle size={16} />
-              <span>{transferError}</span>
-            </div>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                From (Source Account) *
-              </label>
-              <select
-                value={transferFormData.from_account}
-                onChange={(e) => setTransferFormData({ ...transferFormData, from_account: parseInt(e.target.value) })}
-                required
-                style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-              >
-                {paymentAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    [{a.code}] {a.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                To (Destination Account) *
-              </label>
-              <select
-                value={transferFormData.to_account}
-                onChange={(e) => setTransferFormData({ ...transferFormData, to_account: parseInt(e.target.value) })}
-                required
-                style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-              >
-                {paymentAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    [{a.code}] {a.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Transfer Amount (Rs.) *
-              </label>
-              <input
-                type="number"
-                step="any"
-                min="0.01"
-                placeholder="0.00"
-                value={transferFormData.amount}
-                onChange={(e) => setTransferFormData({ ...transferFormData, amount: e.target.value })}
-                required
-                style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.875rem', fontWeight: 700, fontFamily: 'var(--font-mono)', outline: 'none' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Date *
-              </label>
-              <input
-                type="date"
-                value={transferFormData.date}
-                onChange={(e) => setTransferFormData({ ...transferFormData, date: e.target.value })}
-                required
-                style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              Reference / Bank Slip # (Optional)
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. DEP-9912 or Bank Slip Ref"
-              value={transferFormData.reference}
-              onChange={(e) => setTransferFormData({ ...transferFormData, reference: e.target.value })}
-              style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              Notes (Optional)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="e.g. Excess cash deposit to bank account..."
-              value={transferFormData.notes}
-              onChange={(e) => setTransferFormData({ ...transferFormData, notes: e.target.value })}
-              style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-            <Button variant="outline" onClick={() => setIsTransferModalOpen(false)} disabled={transferSubmitting}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit" loading={transferSubmitting} icon={<CheckCircle size={15} />}>
-              Execute Transfer
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
       {/* CANCEL CONFIRMATION MODAL */}
       {cancelTarget && (
         <Modal
           isOpen={!!cancelTarget}
           onClose={() => setCancelTarget(null)}
-          title={`Cancel ${cancelTarget.type === 'expense' ? 'Expense' : 'Transfer'} Transaction`}
+          title="Cancel Expense Transaction"
           maxWidth="460px"
         >
           <form onSubmit={handleConfirmCancel} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1148,11 +808,7 @@ setCancelSubmitting(false);
             )}
 
             <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-              Are you sure you want to cancel <strong>
-                {cancelTarget.type === 'expense'
-                  ? (cancelTarget.item as Expense).expense_number
-                  : (cancelTarget.item as AccountTransfer).transfer_number}
-              </strong> for <strong>Rs. {formatMoney(cancelTarget.item.amount)}</strong>?
+              Are you sure you want to cancel <strong>{cancelTarget.expense_number}</strong> for <strong>Rs. {formatMoney(cancelTarget.amount)}</strong>?
               <div style={{ marginTop: '0.5rem', color: 'var(--warning)', fontWeight: 600 }}>
                 This will automatically post a counter-reversal journal entry in the General Ledger.
               </div>

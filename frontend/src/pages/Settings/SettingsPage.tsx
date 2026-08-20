@@ -18,7 +18,9 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useSettings } from '../../context/SettingsContext';
-import { settingsService, SystemSettingsPayload } from '../../services/settingsService';
+import { settingsService } from '../../services/settingsService';
+import { Account } from '../../types/accounting';
+import { accountingService } from '../../services/accountingService';
 
 type SettingsTab = 'store' | 'pos' | 'inventory' | 'accounting' | 'system';
 
@@ -58,12 +60,18 @@ export const SettingsPage: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
 
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
   const fetchSettings = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res: SystemSettingsPayload = await settingsService.getSettings();
+      const [res, accs] = await Promise.all([
+        settingsService.getSettings(),
+        accountingService.getAccounts({ is_active: true }),
+      ]);
       setFormData(res.settings || {});
+      setAccounts(accs || []);
     } catch (err: any) {
       console.error('Failed to load system settings:', err);
       setError(err?.message || 'Failed to load system configuration');
@@ -75,6 +83,8 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  const leafAccounts = accounts.filter((a) => !a.is_header && a.is_active);
 
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -578,83 +588,198 @@ export const SettingsPage: React.FC = () => {
 
         {/* TAB 4: Accounting GL Mapping */}
         {activeTab === 'accounting' && (
-          <Card title="Chart of Accounts General Ledger Defaults" subtitle="Core accounts used for automatic double-entry journal postings">
+          <Card
+            title="Chart of Accounts General Ledger Defaults"
+            subtitle="Select the active transacting accounts (with an active ledger) used for automatic double-entry journal postings"
+          >
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+              {/* Cash Account */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                  Cash in Hand Account Code (Asset)
+                  Default Cash Drawer Account (Asset)
                 </label>
-                <Input
+                <select
                   value={formData.default_cash_account || '1010'}
                   onChange={(e) => handleChange('default_cash_account', e.target.value)}
-                  placeholder="1010"
-                />
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                  }}
+                >
+                  {leafAccounts.filter((a) => a.account_type === 'ASSET').map((acc) => (
+                    <option key={acc.id} value={acc.code}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {acc.current_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* Bank Account */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                  Bank Account Code (Asset)
+                  Default Bank / Digital Account (Asset)
                 </label>
-                <Input
+                <select
                   value={formData.default_bank_account || '1020'}
                   onChange={(e) => handleChange('default_bank_account', e.target.value)}
-                  placeholder="1020"
-                />
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                  }}
+                >
+                  {leafAccounts.filter((a) => a.account_type === 'ASSET').map((acc) => (
+                    <option key={acc.id} value={acc.code}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {acc.current_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* Sales Revenue */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                  Sales Revenue Account Code (Income)
+                  Sales Revenue Account (Income)
                 </label>
-                <Input
+                <select
                   value={formData.default_sales_account || '4010'}
                   onChange={(e) => handleChange('default_sales_account', e.target.value)}
-                  placeholder="4010"
-                />
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                  }}
+                >
+                  {leafAccounts.filter((a) => a.account_type === 'INCOME').map((acc) => (
+                    <option key={acc.id} value={acc.code}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {acc.current_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* Inventory Asset */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                  Inventory Asset Account Code (Asset)
+                  Inventory Valuation Asset Account (Asset)
                 </label>
-                <Input
+                <select
                   value={formData.default_inventory_account || '1040'}
                   onChange={(e) => handleChange('default_inventory_account', e.target.value)}
-                  placeholder="1040"
-                />
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                  }}
+                >
+                  {leafAccounts.filter((a) => a.account_type === 'ASSET').map((acc) => (
+                    <option key={acc.id} value={acc.code}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {acc.current_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* COGS */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                  Cost of Goods Sold (COGS) Account Code (Expense)
+                  Cost of Goods Sold (COGS) Account (Expense)
                 </label>
-                <Input
+                <select
                   value={formData.default_cogs_account || '5010'}
                   onChange={(e) => handleChange('default_cogs_account', e.target.value)}
-                  placeholder="5010"
-                />
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                  }}
+                >
+                  {leafAccounts.filter((a) => a.account_type === 'EXPENSE').map((acc) => (
+                    <option key={acc.id} value={acc.code}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {acc.current_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* Accounts Payable */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                  Accounts Payable Code (Liability)
+                  Accounts Payable (Suppliers) (Liability)
                 </label>
-                <Input
+                <select
                   value={formData.default_ap_account || '2010'}
                   onChange={(e) => handleChange('default_ap_account', e.target.value)}
-                  placeholder="2010"
-                />
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                  }}
+                >
+                  {leafAccounts.filter((a) => a.account_type === 'LIABILITY').map((acc) => (
+                    <option key={acc.id} value={acc.code}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {acc.current_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* Accounts Receivable */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                  Accounts Receivable Code (Asset)
+                  Accounts Receivable (Customers) (Asset)
                 </label>
-                <Input
+                <select
                   value={formData.default_ar_account || '1030'}
                   onChange={(e) => handleChange('default_ar_account', e.target.value)}
-                  placeholder="1030"
-                />
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                  }}
+                >
+                  {leafAccounts.filter((a) => a.account_type === 'ASSET').map((acc) => (
+                    <option key={acc.id} value={acc.code}>
+                      [{acc.code}] {acc.name} (Bal: Rs. {acc.current_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </Card>

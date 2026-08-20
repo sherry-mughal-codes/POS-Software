@@ -86,6 +86,7 @@ class SalesService:
         customer_id: int,
         items_data: List[Dict[str, Any]],
         payment_method: str = PaymentMethodType.CASH,
+        payment_account_id: Optional[int] = None,
         discount_amount: Decimal = Decimal("0.00"),
         tax_amount: Decimal = Decimal("0.00"),
         paid_amount: Optional[Decimal] = None,
@@ -104,6 +105,7 @@ class SalesService:
         6. Generates balanced General Ledger Journal Entries (Revenue & COGS).
         """
         # Validate that an active business day session is open
+        from apps.sales.services import DaySessionService
         active_session = DaySessionService.get_active_session()
         if not active_session:
             raise ValidationError(
@@ -111,42 +113,45 @@ class SalesService:
             )
 
         if not items_data:
-            raise ValidationError("At least one product item is required to complete a sale.")
+            raise ValidationError("Sale must contain at least one line item.")
 
-        customer = Customer.objects.get(pk=customer_id)
-        if sale_date is None:
+        customer = Customer.objects.filter(pk=customer_id, is_active=True).first()
+        if not customer:
+            raise ValidationError(f"Customer with ID {customer_id} does not exist or is inactive.")
+
+        if not sale_date:
             sale_date = timezone.now().date()
 
-        # 1. Process and lock cart items
+        payment_account = None
+        if payment_account_id:
+            payment_account = Account.objects.filter(pk=payment_account_id).first()
+
+        # 1. Validate items, stock availability, and compute subtotal
         subtotal = Decimal("0.00")
         total_cogs = Decimal("0.00")
         validated_items = []
 
         for row in items_data:
-            prod_id = row.get("product") or row.get("product_id")
-            # Row-level lock on product
-            prod = Product.objects.select_for_update().get(pk=prod_id)
-            if not prod.is_active:
-                raise ValidationError(f"Product '{prod.name}' is currently inactive.")
-
-            qty = Decimal(str(row.get("quantity", 1)))
+            prod_id = row.get("product")
+            qty = Decimal(str(row.get("quantity", 0)))
             if qty <= Decimal("0.00"):
-                raise ValidationError(f"Quantity for '{prod.name}' must be greater than zero.")
+                raise ValidationError("Item quantity must be greater than zero.")
 
-            # Stock check
-            if prod.maintain_stock:
-                current_stock = InventoryService.get_product_stock(prod.id)
-                if current_stock < qty:
-                    raise ValidationError(
-                        f"Insufficient stock for '{prod.name}'. Available on-hand: {current_stock} {prod.unit.short_code if prod.unit else ''}, Requested: {qty}"
-                    )
-                unit_cost = Decimal(str(StockMovement.get_weighted_average_cost(prod.id)))
-                total_cogs += (qty * unit_cost)
-            else:
-                current_stock = Decimal("0.00")
-                unit_cost = Decimal(str(prod.purchase_price or "0.00"))
+            # Select for update to prevent race conditions during concurrent POS checkouts
+            prod = Product.objects.select_for_update().filter(pk=prod_id, is_active=True).first()
+            if not prod:
+                raise ValidationError(f"Product ID {prod_id} is inactive or does not exist.")
 
-            # Price and cost snapshot
+            current_stock = prod.get_current_stock()
+            if prod.maintain_stock and current_stock < qty:
+                raise ValidationError(
+                    f"Insufficient stock for '{prod.name}' (SKU: {prod.sku}). Available: {current_stock}, Requested: {qty}"
+                )
+
+            unit_cost = prod.cost_price or Decimal("0.00")
+            line_cogs = qty * unit_cost
+            total_cogs += line_cogs
+
             unit_price = Decimal(str(row.get("unit_price", prod.selling_price)))
             line_disc = Decimal(str(row.get("discount", 0)))
 
@@ -209,6 +214,7 @@ class SalesService:
             change_amount=change_amount,
             due_amount=due_amount,
             payment_method=payment_method,
+            payment_account=payment_account,
             notes=notes,
             created_by=created_by,
         )
@@ -244,10 +250,13 @@ class SalesService:
         if payments_breakdown:
             for p in payments_breakdown:
                 p_amt = Decimal(str(p.get("amount", 0)))
+                p_acc_id = p.get("payment_account")
+                p_acc = Account.objects.filter(pk=p_acc_id).first() if p_acc_id else None
                 if p_amt > Decimal("0.00"):
                     SalePayment.objects.create(
                         sale=sale,
                         payment_method=p.get("payment_method", PaymentMethodType.CASH),
+                        payment_account=p_acc,
                         amount=p_amt,
                         notes=p.get("notes", ""),
                     )
@@ -257,6 +266,7 @@ class SalesService:
                 SalePayment.objects.create(
                     sale=sale,
                     payment_method=payment_method if payment_method != PaymentMethodType.CREDIT else PaymentMethodType.CASH,
+                    payment_account=payment_account,
                     amount=effective_paid,
                 )
             if due_amount > Decimal("0.00"):
@@ -283,8 +293,8 @@ class SalesService:
         1. Sales Revenue & Receivables / Cash Journal Entry
         2. COGS & Merchandise Inventory Journal Entry
         """
-        cash_acc = Account.objects.filter(code="1010").first() or Account.objects.get(code="1010")
-        bank_acc = Account.objects.filter(code="1020").first() or Account.objects.get(code="1020")
+        cash_acc = sale.payment_account or Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
+        bank_acc = sale.payment_account or Account.objects.filter(code="1021").first() or Account.objects.filter(parent__code="1020").first() or Account.objects.filter(code="1020").first()
         ar_acc = Account.objects.filter(code="1030").first() or Account.objects.get(code="1030")
         inventory_acc = Account.objects.filter(code="1040").first() or Account.objects.get(code="1040")
         sales_rev_acc = Account.objects.filter(code="4010").first() or Account.objects.get(code="4010")
@@ -297,18 +307,38 @@ class SalesService:
         # Effective cash/bank received (capped at grand total for ledger balancing)
         effective_received = min(sale.paid_amount, sale.grand_total)
 
-        if sale.payment_method == PaymentMethodType.CARD:
-            received_acc = bank_acc
+        if sale.payment_method == PaymentMethodType.SPLIT and sale.payments.exists():
+            for sp in sale.payments.all():
+                if sp.payment_method == PaymentMethodType.CREDIT:
+                    continue
+                if sp.amount > Decimal("0.00"):
+                    if sp.payment_account:
+                        acc = sp.payment_account
+                    elif sp.payment_method == PaymentMethodType.CARD:
+                        acc = bank_acc
+                    else:
+                        acc = cash_acc
+                    revenue_lines.append({
+                        "account": acc,
+                        "debit": sp.amount,
+                        "credit": Decimal("0.00"),
+                        "description": f"Payment received ({acc.name}) for {sale.invoice_number}",
+                    })
         else:
-            received_acc = cash_acc
+            if sale.payment_account:
+                received_acc = sale.payment_account
+            elif sale.payment_method == PaymentMethodType.CARD:
+                received_acc = bank_acc
+            else:
+                received_acc = cash_acc
 
-        if effective_received > Decimal("0.00"):
-            revenue_lines.append({
-                "account": received_acc,
-                "debit": effective_received,
-                "credit": Decimal("0.00"),
-                "description": f"Payment received for {sale.invoice_number}",
-            })
+            if effective_received > Decimal("0.00"):
+                revenue_lines.append({
+                    "account": received_acc,
+                    "debit": effective_received,
+                    "credit": Decimal("0.00"),
+                    "description": f"Payment received ({received_acc.name}) for {sale.invoice_number}",
+                })
 
         if sale.due_amount > Decimal("0.00"):
             revenue_lines.append({
@@ -507,7 +537,7 @@ class SalesService:
         1. DR Sales Returns (4020) / CR Cash or Accounts Receivable (1010/1030)
         2. DR Merchandise Inventory (1040) / CR COGS (5010)
         """
-        cash_acc = Account.objects.filter(code="1010").first() or Account.objects.get(code="1010")
+        cash_acc = Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
         ar_acc = Account.objects.filter(code="1030").first() or Account.objects.get(code="1030")
         inventory_acc = Account.objects.filter(code="1040").first() or Account.objects.get(code="1040")
         sales_ret_acc = Account.objects.filter(code="4020").first() or Account.objects.get(code="4010")
@@ -517,6 +547,8 @@ class SalesService:
         orig_sale = sales_return.original_sale
         if orig_sale.payment_method == PaymentMethodType.CREDIT or orig_sale.due_amount > Decimal("0.00"):
             refund_credit_acc = ar_acc
+        elif orig_sale.payment_account:
+            refund_credit_acc = orig_sale.payment_account
         else:
             refund_credit_acc = cash_acc
 

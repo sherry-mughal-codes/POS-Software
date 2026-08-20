@@ -60,7 +60,8 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
     { accountId: 0, debit: '', credit: '', description: '' },
   ]);
 
-  const activeAccounts = accounts.filter((a) => a.is_active);
+  const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
+  const activeAccounts = accounts.filter((a) => a.is_active && isLeaf(a));
 
   const handleOpenCreateModal = () => {
     setPurpose('OPENING_BALANCE');
@@ -69,7 +70,7 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
     setNarration('Initial account opening balance setup');
     setCreateError(null);
 
-    const cashOrBank = activeAccounts.find((a) => a.code === '1010' || a.code === '1020') || activeAccounts[0];
+    const cashOrBank = activeAccounts.find((a) => a.code === '1011' || a.code === '1021' || a.parent_code === '1010' || a.parent_code === '1020') || activeAccounts[0];
     const equityAcc = activeAccounts.find((a) => a.code === '3010' || a.account_type === 'EQUITY') || activeAccounts[1] || activeAccounts[0];
 
     setLines([

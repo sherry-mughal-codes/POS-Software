@@ -157,10 +157,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'expense-ledger',
-      title: 'Expense & Ledger',
+      title: 'Expense & Accounting',
       icon: <BookOpen size={18} />,
       items: [
-        { id: 'expenses', name: 'Expense & Transfers', icon: <DollarSign size={16} /> },
+        { id: 'expenses', name: 'Expense Management', icon: <DollarSign size={16} /> },
         { id: 'accounting', name: 'Double Entry Ledger', icon: <BookOpen size={16} /> },
       ],
     },

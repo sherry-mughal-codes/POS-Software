@@ -125,6 +125,8 @@ class SaleSerializer(serializers.ModelSerializer):
     customer_is_walkin = serializers.BooleanField(source="customer.is_walkin", read_only=True)
     cashier_name = serializers.SerializerMethodField()
     payment_method_display = serializers.CharField(source="get_payment_method_display", read_only=True)
+    payment_account_name = serializers.CharField(source="payment_account.name", read_only=True, default="")
+    payment_account_code = serializers.CharField(source="payment_account.code", read_only=True, default="")
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     payment_status = serializers.SerializerMethodField()
     payment_status_display = serializers.SerializerMethodField()
@@ -153,6 +155,9 @@ class SaleSerializer(serializers.ModelSerializer):
             "status_display",
             "payment_method",
             "payment_method_display",
+            "payment_account",
+            "payment_account_name",
+            "payment_account_code",
             "payment_status",
             "payment_status_display",
             "subtotal",
@@ -209,6 +214,7 @@ class SaleCheckoutItemSerializer(serializers.Serializer):
 
 class SalePaymentItemSerializer(serializers.Serializer):
     payment_method = serializers.ChoiceField(choices=PaymentMethodType.choices, required=True)
+    payment_account = serializers.IntegerField(required=False, allow_null=True)
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=True)
     notes = serializers.CharField(required=False, allow_blank=True, default="")
 
@@ -217,6 +223,7 @@ class SaleCheckoutSerializer(serializers.Serializer):
     customer = serializers.IntegerField(required=True)
     items = SaleCheckoutItemSerializer(many=True, required=True)
     payment_method = serializers.ChoiceField(choices=PaymentMethodType.choices, default=PaymentMethodType.CASH)
+    payment_account = serializers.IntegerField(required=False, allow_null=True)
     discount_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("0.00"))
     tax_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("0.00"))
     paid_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)

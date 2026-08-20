@@ -243,8 +243,9 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
   // Complete checkout
   const handleConfirmCheckout = async (payload: {
     payment_method: PaymentMethodType;
+    payment_account?: number;
     paid_amount: number;
-    payments_breakdown?: { payment_method: PaymentMethodType; amount: number }[];
+    payments_breakdown?: { payment_method: PaymentMethodType; payment_account?: number; amount: number }[];
     notes?: string;
   }) => {
     setCheckoutLoading(true);
@@ -258,6 +259,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
           discount: c.discount,
         })),
         payment_method: payload.payment_method,
+        payment_account: payload.payment_account,
         discount_amount: overallDiscount,
         paid_amount: payload.paid_amount,
         payments_breakdown: payload.payments_breakdown,

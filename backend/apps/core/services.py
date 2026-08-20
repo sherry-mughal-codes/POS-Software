@@ -339,48 +339,98 @@ class DashboardService:
         low_stock_items.sort(key=lambda x: x["current_stock"])
 
         # -------------------------------------------------------------
-        # 9. SALES TREND TIME SERIES (Daily intervals)
+        # 9. SALES TREND TIME SERIES (Daily or Monthly intervals)
         # -------------------------------------------------------------
         sales_trend = []
         days_diff = (end_d - start_d).days + 1
 
-        # Group by day
-        for i in range(days_diff):
-            cur_date = start_d + timedelta(days=i)
-            day_s_dt = timezone.make_aware(datetime.combine(cur_date, time.min))
-            day_e_dt = timezone.make_aware(datetime.combine(cur_date, time.max))
+        if days_diff > 35:
+            # Group by Month (e.g. for "This Year" or multi-month ranges)
+            import calendar
+            current_dt = start_d.replace(day=1)
+            while current_dt <= end_d:
+                year = current_dt.year
+                month = current_dt.month
+                last_day = calendar.monthrange(year, month)[1]
+                m_start = max(start_d, date(year, month, 1))
+                m_end = min(end_d, date(year, month, last_day))
 
-            day_sales_qs = Sale.objects.filter(
-                status=SaleStatus.COMPLETED,
-                created_at__range=(day_s_dt, day_e_dt)
-            )
-            if cashier_id:
-                day_sales_qs = day_sales_qs.filter(created_by_id=cashier_id)
+                m_s_dt = timezone.make_aware(datetime.combine(m_start, time.min))
+                m_e_dt = timezone.make_aware(datetime.combine(m_end, time.max))
 
-            day_gross = day_sales_qs.aggregate(
-                t=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField())
-            )["t"] or Decimal("0.00")
+                month_sales_qs = Sale.objects.filter(
+                    status=SaleStatus.COMPLETED,
+                    created_at__range=(m_s_dt, m_e_dt)
+                )
+                if cashier_id:
+                    month_sales_qs = month_sales_qs.filter(created_by_id=cashier_id)
 
-            day_orders = day_sales_qs.count()
+                m_gross = month_sales_qs.aggregate(
+                    t=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField())
+                )["t"] or Decimal("0.00")
 
-            # Day returns
-            day_ret_qs = SalesReturn.objects.filter(created_at__range=(day_s_dt, day_e_dt))
-            if cashier_id:
-                day_ret_qs = day_ret_qs.filter(created_by_id=cashier_id)
-            day_returns = day_ret_qs.aggregate(
-                t=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
-            )["t"] or Decimal("0.00")
+                m_orders = month_sales_qs.count()
 
-            day_net = max(Decimal("0.00"), day_gross - day_returns)
+                month_ret_qs = SalesReturn.objects.filter(created_at__range=(m_s_dt, m_e_dt))
+                if cashier_id:
+                    month_ret_qs = month_ret_qs.filter(created_by_id=cashier_id)
+                m_returns = month_ret_qs.aggregate(
+                    t=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
+                )["t"] or Decimal("0.00")
 
-            sales_trend.append({
-                "date": cur_date.strftime("%Y-%m-%d"),
-                "label": cur_date.strftime("%d %b"),
-                "orders_count": day_orders,
-                "gross_sales": float(day_gross),
-                "returns": float(day_returns),
-                "net_sales": float(day_net),
-            })
+                m_net = max(Decimal("0.00"), m_gross - m_returns)
+
+                sales_trend.append({
+                    "date": current_dt.strftime("%Y-%m"),
+                    "label": current_dt.strftime("%b %Y") if (end_d.year != start_d.year) else current_dt.strftime("%b"),
+                    "orders_count": m_orders,
+                    "gross_sales": float(m_gross),
+                    "returns": float(m_returns),
+                    "net_sales": float(m_net),
+                })
+
+                if month == 12:
+                    current_dt = date(year + 1, 1, 1)
+                else:
+                    current_dt = date(year, month + 1, 1)
+        else:
+            # Group by day
+            for i in range(days_diff):
+                cur_date = start_d + timedelta(days=i)
+                day_s_dt = timezone.make_aware(datetime.combine(cur_date, time.min))
+                day_e_dt = timezone.make_aware(datetime.combine(cur_date, time.max))
+
+                day_sales_qs = Sale.objects.filter(
+                    status=SaleStatus.COMPLETED,
+                    created_at__range=(day_s_dt, day_e_dt)
+                )
+                if cashier_id:
+                    day_sales_qs = day_sales_qs.filter(created_by_id=cashier_id)
+
+                day_gross = day_sales_qs.aggregate(
+                    t=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField())
+                )["t"] or Decimal("0.00")
+
+                day_orders = day_sales_qs.count()
+
+                # Day returns
+                day_ret_qs = SalesReturn.objects.filter(created_at__range=(day_s_dt, day_e_dt))
+                if cashier_id:
+                    day_ret_qs = day_ret_qs.filter(created_by_id=cashier_id)
+                day_returns = day_ret_qs.aggregate(
+                    t=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
+                )["t"] or Decimal("0.00")
+
+                day_net = max(Decimal("0.00"), day_gross - day_returns)
+
+                sales_trend.append({
+                    "date": cur_date.strftime("%Y-%m-%d"),
+                    "label": cur_date.strftime("%d %b"),
+                    "orders_count": day_orders,
+                    "gross_sales": float(day_gross),
+                    "returns": float(day_returns),
+                    "net_sales": float(day_net),
+                })
 
         # -------------------------------------------------------------
         # 10. TOP PRODUCTS (By Quantity and By Revenue)

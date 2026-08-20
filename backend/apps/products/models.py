@@ -151,6 +151,18 @@ class Product(models.Model):
         super().save(*args, **kwargs)
 
     @property
+    def cost_price(self) -> Decimal:
+        """Alias for purchase_price."""
+        return self.purchase_price
+
+    def get_current_stock(self) -> Decimal:
+        """Calculates current stock dynamically from stock movements."""
+        if not self.maintain_stock:
+            return Decimal("0.00")
+        from apps.inventory.services import InventoryService
+        return InventoryService.get_product_stock(self.id)
+
+    @property
     def profit_margin_amount(self) -> Decimal:
         """Returns gross margin per unit: Selling Price - Purchase Price."""
         return self.selling_price - self.purchase_price

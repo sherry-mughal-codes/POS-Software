@@ -41,20 +41,26 @@ class AccountViewSet(viewsets.ModelViewSet):
         if is_active is not None:
             qs = qs.filter(is_active=is_active.lower() == "true")
         if search:
-            qs = qs.filter(models.Q(name__icontains=search) | models.Q(code__icontains=search))
+            from django.db.models import Q
+            qs = qs.filter(Q(name__icontains=search) | Q(code__icontains=search))
+        
+        leaf_only = self.request.query_params.get("leaf_only") or self.request.query_params.get("is_leaf")
+        if leaf_only is not None and leaf_only.lower() == "true":
+            qs = qs.filter(children__isnull=True)
+        elif leaf_only is not None and leaf_only.lower() == "false":
+            qs = qs.filter(children__isnull=False).distinct()
+
+        parent_code = self.request.query_params.get("parent_code")
+        if parent_code:
+            qs = qs.filter(parent__code=parent_code)
+
         return qs
 
     def perform_destroy(self, instance):
         if instance.is_system:
-            return Response(
-                {"detail": "System accounts cannot be deleted."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise serializers.ValidationError({"detail": "System accounts cannot be deleted."})
         if instance.journal_items.exists():
-            return Response(
-                {"detail": "Cannot delete account with existing journal transactions. Deactivate it instead."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise serializers.ValidationError({"detail": "Cannot delete account with existing journal transactions. Deactivate it instead."})
         instance.delete()
 
     @action(detail=True, methods=["get"])

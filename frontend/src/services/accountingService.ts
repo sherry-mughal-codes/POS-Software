@@ -11,7 +11,13 @@ import {
 } from '../types/accounting';
 
 export const accountingService = {
-  async getAccounts(params?: { account_type?: string; is_active?: boolean; search?: string }): Promise<Account[]> {
+  async getAccounts(params?: {
+    account_type?: string;
+    is_active?: boolean;
+    search?: string;
+    leaf_only?: boolean;
+    parent_code?: string;
+  }): Promise<Account[]> {
     const response = await apiClient.get<Account[]>('/accounting/accounts/', { params });
     return response.data;
   },
@@ -24,6 +30,10 @@ export const accountingService = {
   async updateAccount(id: number, data: Partial<Account>): Promise<Account> {
     const response = await apiClient.patch<Account>(`/accounting/accounts/${id}/`, data);
     return response.data;
+  },
+
+  async deleteAccount(id: number): Promise<void> {
+    await apiClient.delete(`/accounting/accounts/${id}/`);
   },
 
   async setAccountOpeningBalance(

@@ -145,11 +145,11 @@ class CustomerReceivableService:
         # Resolve payment account if not provided
         if not payment_account:
             if payment_method == "BANK":
-                payment_account = Account.objects.filter(code="1020").first() or Account.objects.get(code="1020")
+                payment_account = Account.objects.filter(code="1021").first() or Account.objects.filter(parent__code="1020").first() or Account.objects.filter(code="1020").first()
             elif payment_method == "CARD":
-                payment_account = Account.objects.filter(code="1025").first() or Account.objects.filter(code="1020").first()
+                payment_account = Account.objects.filter(code="1025").first() or Account.objects.filter(code="1021").first() or Account.objects.filter(parent__code="1020").first()
             else:
-                payment_account = Account.objects.filter(code="1010").first() or Account.objects.get(code="1010")
+                payment_account = Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
 
         if payment_account.account_type != AccountType.ASSET:
             raise ValidationError(f"Payment account '{payment_account.name}' must be an Asset (Cash/Bank) account.")

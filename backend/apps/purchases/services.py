@@ -204,7 +204,7 @@ class PurchaseService:
 
         pay_acc = purchase.payment_account
         if not pay_acc:
-            pay_acc = Account.objects.filter(code="1010").first() or Account.objects.get(code="1010")
+            pay_acc = Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
 
         # 3. Create Balanced Accounting Journal Entry
         AccountingService.record_purchase(
@@ -326,7 +326,7 @@ class PurchaseService:
 
         inventory_acc = Account.objects.filter(code="1040").first() or Account.objects.get(code="1040")
         payable_acc = Account.objects.filter(code="2010").first() or Account.objects.get(code="2010")
-        cash_acc = purchase.payment_account or Account.objects.filter(code="1010").first() or Account.objects.get(code="1010")
+        cash_acc = purchase.payment_account or Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
 
         # Process each returned item
         for p_item, qty, item_total in validated_items:
@@ -354,12 +354,15 @@ class PurchaseService:
                 notes=f"Return from {purchase.purchase_number} to {purchase.supplier.name}",
             )
 
+        # Determine whether to refund Cash/Bank or reduce Accounts Payable:
+        is_cash_refund = (refund_method == RefundMethod.CASH_REFUND)
+
         # Generate Double-Entry Accounting:
-        # Debit: Accounts Payable (or Cash)
-        # Credit: Inventory Asset
+        # Debit: Cash in Hand / Bank (if cash refund) OR Accounts Payable (if payable deduction)
+        # Credit: Merchandise Inventory Asset (1040)
         lines = [
             {
-                "account": cash_acc if refund_method == RefundMethod.CASH_REFUND else payable_acc,
+                "account": cash_acc if is_cash_refund else payable_acc,
                 "debit": total_return_amount,
                 "credit": Decimal("0.00"),
                 "description": f"Purchase Return to {purchase.supplier.name} ({p_return.return_number})",

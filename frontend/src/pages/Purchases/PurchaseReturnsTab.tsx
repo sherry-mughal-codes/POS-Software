@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -27,10 +27,20 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
   onCloseReturnModal,
 }) => {
   const [returnQuantities, setReturnQuantities] = useState<Record<number, number>>({});
-  const [refundMethod, setRefundMethod] = useState<'PAYABLE_DEDUCTION' | 'CASH_REFUND'>('PAYABLE_DEDUCTION');
+  const [refundMethod, setRefundMethod] = useState<'PAYABLE_DEDUCTION' | 'CASH_REFUND'>('CASH_REFUND');
   const [returnNotes, setReturnNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (returnTargetPurchase) {
+      if (Number(returnTargetPurchase.paid_amount) > 0) {
+        setRefundMethod('CASH_REFUND');
+      } else {
+        setRefundMethod('PAYABLE_DEDUCTION');
+      }
+    }
+  }, [returnTargetPurchase]);
 
   const handleQtyChange = (itemId: number, val: number) => {
     setReturnQuantities({
