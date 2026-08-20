@@ -10,7 +10,7 @@ interface CustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
   customerToEdit?: Customer | null;
-  onSaved: () => void;
+  onSaved: (savedCustomer?: Customer) => void;
 }
 
 export const CustomerModal: React.FC<CustomerModalProps> = ({
@@ -65,8 +65,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerId || !name) {
-      setError('Customer ID and Full Name are required.');
+    if (!name.trim()) {
+      setError('Customer name is required.');
       return;
     }
 
@@ -85,12 +85,13 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     };
 
     try {
+      let saved: Customer;
       if (customerToEdit) {
-        await contactService.updateCustomer(customerToEdit.id, payload);
+        saved = await contactService.updateCustomer(customerToEdit.id, payload);
       } else {
-        await contactService.createCustomer(payload);
+        saved = await contactService.createCustomer(payload);
       }
-      onSaved();
+      onSaved(saved);
       onClose();
     } catch (err: any) {
       setError(err?.message || 'Failed to save customer.');

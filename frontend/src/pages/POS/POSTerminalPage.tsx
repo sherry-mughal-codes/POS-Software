@@ -15,6 +15,7 @@ import { POSProductGrid } from './components/POSProductGrid';
 import { POSCart } from './components/POSCart';
 import { POSCheckoutModal } from './components/POSCheckoutModal';
 import { POSReceiptModal } from './components/POSReceiptModal';
+import { CustomerModal } from '../Customers/CustomerModal';
 import { CartItem, Sale, PaymentMethodType } from '../../types/sales';
 import { InventorySummaryItem } from '../../types/inventory';
 import { Category } from '../../types/product';
@@ -42,11 +43,13 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number>(0);
-  const [overallDiscount, setOverallDiscount] = useState<number>(0);
+  const [overallDiscountType, setOverallDiscountType] = useState<'PERCENT' | 'FIXED'>('PERCENT');
+  const [overallDiscountValue, setOverallDiscountValue] = useState<number>(0);
 
   // Modals state
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
@@ -156,6 +159,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
     }
 
     const isStockFree = prod.maintain_stock === false || prod.stock_status === 'STOCK_FREE';
+    const isService = isStockFree || (prod.category_name && prod.category_name.toLowerCase().includes('service'));
     if (!isStockFree && prod.current_stock <= 0) return;
 
     setCart((prevCart) => {
@@ -183,6 +187,8 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
           quantity: 1,
           discount: 0,
           subtotal: prod.selling_price,
+          maintain_stock: prod.maintain_stock,
+          is_service: Boolean(isService),
         };
         return [...prevCart, newItem];
       }
@@ -203,6 +209,22 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
             ...item,
             quantity: clampedQty,
             subtotal: (clampedQty * item.unit_price) - item.discount,
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleUpdateUnitPrice = (productId: number, newUnitPrice: number) => {
+    const price = Math.max(0, newUnitPrice);
+    setCart((prevCart) =>
+      prevCart.map((item) => {
+        if (item.product_id === productId) {
+          return {
+            ...item,
+            unit_price: price,
+            subtotal: Math.max(0, (item.quantity * price) - item.discount),
           };
         }
         return item;
@@ -232,22 +254,43 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
 
   const handleClearCart = () => {
     setCart([]);
-    setOverallDiscount(0);
+    setOverallDiscountValue(0);
+  };
+
+  const handleCustomerCreated = async (newCustomer?: Customer) => {
+    try {
+      const custList = await contactService.getCustomers();
+      setCustomers(custList || []);
+      if (newCustomer) {
+        setSelectedCustomerId(newCustomer.id);
+      } else if (custList && custList.length > 0) {
+        const latest = custList[custList.length - 1];
+        if (latest) setSelectedCustomerId(latest.id);
+      }
+    } catch {
+      // ignore
+    }
   };
 
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId) || customers[0];
 
   const subtotal = cart.reduce((acc, item) => acc + item.subtotal, 0);
-  const grandTotal = Math.max(0, subtotal - overallDiscount);
+  const overallDiscountAmount = overallDiscountType === 'PERCENT'
+    ? Math.round((subtotal * (overallDiscountValue / 100)) * 100) / 100
+    : Math.min(subtotal, Math.max(0, overallDiscountValue));
+  const grandTotal = Math.max(0, subtotal - overallDiscountAmount);
 
   // Complete checkout
-  const handleConfirmCheckout = async (payload: {
-    payment_method: PaymentMethodType;
-    payment_account?: number;
-    paid_amount: number;
-    payments_breakdown?: { payment_method: PaymentMethodType; payment_account?: number; amount: number }[];
-    notes?: string;
-  }) => {
+  const handleConfirmCheckout = async (
+    payload: {
+      payment_method: PaymentMethodType;
+      payment_account?: number;
+      paid_amount: number;
+      payments_breakdown?: { payment_method: PaymentMethodType; payment_account?: number; amount: number }[];
+      notes?: string;
+    },
+    autoPrint: boolean = true
+  ) => {
     setCheckoutLoading(true);
     try {
       const sale = await salesService.checkout({
@@ -260,7 +303,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
         })),
         payment_method: payload.payment_method,
         payment_account: payload.payment_account,
-        discount_amount: overallDiscount,
+        discount_amount: overallDiscountAmount,
         paid_amount: payload.paid_amount,
         payments_breakdown: payload.payments_breakdown,
         notes: payload.notes,
@@ -269,7 +312,9 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
       setCompletedSale(sale);
       setIsCheckoutOpen(false);
       handleClearCart();
-      setIsReceiptOpen(true);
+      if (autoPrint) {
+        setIsReceiptOpen(true);
+      }
       // Refresh inventory stocks
       fetchCatalogData();
     } finally {
@@ -285,7 +330,11 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
           <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
             POS Register Terminal
           </h2>
-          {activeSession ? (
+          {loading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.5rem', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+              <span>Connecting session...</span>
+            </div>
+          ) : activeSession ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.6875rem' }}>
               <span style={{ width: '0.4rem', height: '0.4rem', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
               <span style={{ fontWeight: 700, color: 'var(--success)' }}>Day Open:</span>
@@ -328,8 +377,8 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
         </div>
       </div>
 
-      {/* Day Closed Warning Alert Bar */}
-      {!activeSession && (
+      {/* Day Closed Warning Alert Bar (Only when not loading and session is truly closed) */}
+      {!loading && !activeSession && (
         <div
           style={{
             padding: '0.4rem 0.75rem',
@@ -400,14 +449,20 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
               customers={customers}
               selectedCustomerId={selectedCustomerId}
               onSelectCustomer={setSelectedCustomerId}
+              onOpenNewCustomerModal={() => setIsCustomerModalOpen(true)}
               onUpdateQuantity={handleUpdateQuantity}
+              onUpdateUnitPrice={handleUpdateUnitPrice}
               onUpdateLineDiscount={handleUpdateLineDiscount}
               onRemoveItem={handleRemoveItem}
               onClearCart={handleClearCart}
-              overallDiscount={overallDiscount}
-              onUpdateOverallDiscount={setOverallDiscount}
+              overallDiscountType={overallDiscountType}
+              overallDiscountValue={overallDiscountValue}
+              overallDiscountAmount={overallDiscountAmount}
+              onUpdateOverallDiscountType={setOverallDiscountType}
+              onUpdateOverallDiscountValue={setOverallDiscountValue}
               onOpenCheckout={() => setIsCheckoutOpen(true)}
               isDayOpen={!!activeSession}
+              sessionLoading={loading}
               onOpenDay={() => {
                 setOpenDayError(null);
                 setIsOpenDayModalOpen(true);
@@ -473,6 +528,13 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
           </div>
         </form>
       </Modal>
+
+      {/* Quick Add Customer Modal */}
+      <CustomerModal
+        isOpen={isCustomerModalOpen}
+        onClose={() => setIsCustomerModalOpen(false)}
+        onSaved={handleCustomerCreated}
+      />
 
       {/* Checkout Modal */}
       {selectedCustomer && (

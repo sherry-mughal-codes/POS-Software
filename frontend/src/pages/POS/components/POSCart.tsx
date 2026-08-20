@@ -5,6 +5,7 @@ import {
   Plus,
   Minus,
   UserCheck,
+  UserPlus,
   Percent,
   AlertCircle,
 } from 'lucide-react';
@@ -17,14 +18,20 @@ interface POSCartProps {
   customers: Customer[];
   selectedCustomerId: number;
   onSelectCustomer: (customerId: number) => void;
+  onOpenNewCustomerModal?: () => void;
   onUpdateQuantity: (productId: number, newQty: number) => void;
+  onUpdateUnitPrice: (productId: number, newUnitPrice: number) => void;
   onUpdateLineDiscount: (productId: number, discount: number) => void;
   onRemoveItem: (productId: number) => void;
   onClearCart: () => void;
-  overallDiscount: number;
-  onUpdateOverallDiscount: (discount: number) => void;
+  overallDiscountType: 'PERCENT' | 'FIXED';
+  overallDiscountValue: number;
+  overallDiscountAmount: number;
+  onUpdateOverallDiscountType: (type: 'PERCENT' | 'FIXED') => void;
+  onUpdateOverallDiscountValue: (val: number) => void;
   onOpenCheckout: () => void;
   isDayOpen?: boolean;
+  sessionLoading?: boolean;
   onOpenDay?: () => void;
 }
 
@@ -38,14 +45,20 @@ export const POSCart: React.FC<POSCartProps> = ({
   customers,
   selectedCustomerId,
   onSelectCustomer,
+  onOpenNewCustomerModal,
   onUpdateQuantity,
+  onUpdateUnitPrice,
   onUpdateLineDiscount,
   onRemoveItem,
   onClearCart,
-  overallDiscount,
-  onUpdateOverallDiscount,
+  overallDiscountType,
+  overallDiscountValue,
+  overallDiscountAmount,
+  onUpdateOverallDiscountType,
+  onUpdateOverallDiscountValue,
   onOpenCheckout,
   isDayOpen = true,
+  sessionLoading = false,
   onOpenDay,
 }) => {
   const [showDiscountInput, setShowDiscountInput] = useState(false);
@@ -54,7 +67,7 @@ export const POSCart: React.FC<POSCartProps> = ({
 
   const subtotal = cart.reduce((acc, item) => acc + item.subtotal, 0);
   const totalItemsCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const grandTotal = Math.max(0, subtotal - overallDiscount);
+  const grandTotal = Math.max(0, subtotal - overallDiscountAmount);
 
   return (
     <div
@@ -77,7 +90,7 @@ export const POSCart: React.FC<POSCartProps> = ({
           backgroundColor: 'rgba(0, 0, 0, 0.25)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.25rem',
+          gap: '0.3rem',
           flexShrink: 0,
         }}
       >
@@ -86,40 +99,90 @@ export const POSCart: React.FC<POSCartProps> = ({
             <UserCheck size={11} />
             Customer
           </label>
-          {selectedCustomer && (
-            <div>
-              {selectedCustomer.is_walkin ? (
-                <span style={{ fontSize: '0.625rem', color: 'var(--primary-400)', backgroundColor: 'rgba(56, 189, 248, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>Walk-in</span>
-              ) : selectedCustomer.credit_enabled ? (
-                <span style={{ fontSize: '0.625rem', color: 'var(--success)', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>Credit OK</span>
-              ) : (
-                <span style={{ fontSize: '0.625rem', color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>No Credit</span>
-              )}
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            {selectedCustomer && (
+              <div>
+                {selectedCustomer.is_walkin ? (
+                  <span style={{ fontSize: '0.625rem', color: 'var(--primary-400)', backgroundColor: 'rgba(56, 189, 248, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>Walk-in</span>
+                ) : selectedCustomer.credit_enabled ? (
+                  <span style={{ fontSize: '0.625rem', color: 'var(--success)', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>Credit OK</span>
+                ) : (
+                  <span style={{ fontSize: '0.625rem', color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>No Credit</span>
+                )}
+              </div>
+            )}
+            {onOpenNewCustomerModal && (
+              <button
+                type="button"
+                onClick={onOpenNewCustomerModal}
+                title="Create New Customer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.2rem',
+                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  color: '#38bdf8',
+                  padding: '0.1rem 0.35rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.625rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                <UserPlus size={10} />
+                <span>+ New</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <select
-          value={selectedCustomerId}
-          onChange={(e) => onSelectCustomer(parseInt(e.target.value))}
-          style={{
-            width: '100%',
-            backgroundColor: 'var(--bg-input)',
-            border: '1px solid var(--border-medium)',
-            borderRadius: '0.3rem',
-            padding: '0.25rem 0.45rem',
-            color: 'var(--text-main)',
-            fontSize: '0.78125rem',
-            fontWeight: 600,
-            outline: 'none',
-          }}
-        >
-          {customers.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} {c.is_walkin ? '(Walk-in)' : `(${c.customer_id})`}
-            </option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+          <select
+            value={selectedCustomerId}
+            onChange={(e) => onSelectCustomer(parseInt(e.target.value))}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              backgroundColor: 'var(--bg-input)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: '0.3rem',
+              padding: '0.25rem 0.45rem',
+              color: 'var(--text-main)',
+              fontSize: '0.78125rem',
+              fontWeight: 600,
+              outline: 'none',
+            }}
+          >
+            {customers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} {c.is_walkin ? '(Walk-in)' : `(${c.customer_id})`}
+              </option>
+            ))}
+          </select>
+          {onOpenNewCustomerModal && (
+            <button
+              type="button"
+              onClick={onOpenNewCustomerModal}
+              title="Add New Customer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '1.75rem',
+                height: '1.75rem',
+                backgroundColor: 'var(--primary-600)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '0.3rem',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              <UserPlus size={13} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Cart Items List */}
@@ -194,9 +257,16 @@ export const POSCart: React.FC<POSCartProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        const d = prompt(`Enter discount for ${item.name} (Rs.):`, item.discount.toString());
+                        const d = prompt(`Enter line discount for ${item.name} (% or Rs.):\nExamples: 5% or 50`, item.discount.toString());
                         if (d !== null) {
-                          onUpdateLineDiscount(item.product_id, parseFloat(d) || 0);
+                          const trimmed = d.trim();
+                          if (trimmed.endsWith('%')) {
+                            const pct = parseFloat(trimmed.slice(0, -1)) || 0;
+                            const calcDisc = Math.round(((item.quantity * item.unit_price) * (pct / 100)) * 100) / 100;
+                            onUpdateLineDiscount(item.product_id, calcDisc);
+                          } else {
+                            onUpdateLineDiscount(item.product_id, parseFloat(trimmed) || 0);
+                          }
                         }
                       }}
                       style={{
@@ -232,8 +302,8 @@ export const POSCart: React.FC<POSCartProps> = ({
                   </div>
                 </div>
 
-                {/* Bottom Row: Stepper & Subtotal */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {/* Bottom Row: Stepper & Unit Price & Subtotal */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.35rem' }}>
                   {/* Quantity Stepper */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.15rem', backgroundColor: 'var(--bg-input)', padding: '0.05rem', borderRadius: '0.2rem', border: '1px solid var(--border-medium)' }}>
                     <button
@@ -290,10 +360,47 @@ export const POSCart: React.FC<POSCartProps> = ({
                     </button>
                   </div>
 
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                    Rs. {formatMoney(item.unit_price)}
-                    {item.discount > 0 && <span style={{ color: 'var(--warning)', marginLeft: '0.2rem' }}>(-Rs. {formatMoney(item.discount)})</span>}
-                  </div>
+                  {/* Unit Price (Directly editable for service items or click to edit) */}
+                  {item.is_service || item.maintain_stock === false ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      <span style={{ fontSize: '0.625rem', color: 'var(--primary-300)', fontWeight: 700 }}>Fee: Rs.</span>
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        value={item.unit_price}
+                        onChange={(e) => onUpdateUnitPrice(item.product_id, parseFloat(e.target.value) || 0)}
+                        style={{
+                          width: '4.2rem',
+                          padding: '0.1rem 0.25rem',
+                          backgroundColor: 'var(--bg-input)',
+                          border: '1px solid var(--primary-400)',
+                          borderRadius: '0.25rem',
+                          color: 'var(--text-main)',
+                          fontSize: '0.71875rem',
+                          fontWeight: 800,
+                          fontFamily: 'var(--font-mono)',
+                          textAlign: 'right',
+                          outline: 'none',
+                        }}
+                        title="Directly edit service charge fee"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => {
+                        const p = prompt(`Enter custom price for ${item.name} (Rs.):`, item.unit_price.toString());
+                        if (p !== null) {
+                          onUpdateUnitPrice(item.product_id, parseFloat(p) || 0);
+                        }
+                      }}
+                      style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', cursor: 'pointer' }}
+                      title="Click to edit unit price"
+                    >
+                      Rs. {formatMoney(item.unit_price)}
+                      {item.discount > 0 && <span style={{ color: 'var(--warning)', marginLeft: '0.2rem' }}>(-Rs. {formatMoney(item.discount)})</span>}
+                    </div>
+                  )}
 
                   {/* Subtotal */}
                   <div
@@ -347,7 +454,7 @@ export const POSCart: React.FC<POSCartProps> = ({
               style={{
                 background: 'none',
                 border: 'none',
-                color: overallDiscount > 0 ? 'var(--warning)' : 'var(--primary-400)',
+                color: overallDiscountAmount > 0 ? 'var(--warning)' : 'var(--primary-400)',
                 fontSize: '0.65rem',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -358,31 +465,84 @@ export const POSCart: React.FC<POSCartProps> = ({
               }}
             >
               <Percent size={9} />
-              <span>{showDiscountInput ? 'Hide' : 'Add Overall Disc.'}</span>
+              <span>
+                {showDiscountInput
+                  ? 'Hide'
+                  : overallDiscountValue > 0
+                  ? `Overall Disc. (${overallDiscountType === 'PERCENT' ? `${overallDiscountValue}%` : `Rs. ${overallDiscountValue}`})`
+                  : 'Add Overall Disc.'}
+              </span>
             </button>
             <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--warning)', fontWeight: 600, fontSize: '0.71875rem' }}>
-              {overallDiscount > 0 ? `- Rs. ${formatMoney(overallDiscount)}` : 'Rs. 0.00'}
+              {overallDiscountAmount > 0 ? `- Rs. ${formatMoney(overallDiscountAmount)}` : 'Rs. 0.00'}
             </span>
           </div>
 
           {showDiscountInput && (
-            <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.1rem' }}>
+            <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.15rem', alignItems: 'center' }}>
+              {/* Mode Selector Toggle: % vs Rs */}
+              <div style={{ display: 'flex', backgroundColor: 'var(--bg-input)', borderRadius: '0.25rem', border: '1px solid var(--border-medium)', overflow: 'hidden' }}>
+                <button
+                  type="button"
+                  onClick={() => onUpdateOverallDiscountType('PERCENT')}
+                  style={{
+                    padding: '0.2rem 0.45rem',
+                    border: 'none',
+                    backgroundColor: overallDiscountType === 'PERCENT' ? 'var(--primary-500)' : 'transparent',
+                    color: overallDiscountType === 'PERCENT' ? '#fff' : 'var(--text-muted)',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                  title="Percentage Discount"
+                >
+                  %
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdateOverallDiscountType('FIXED')}
+                  style={{
+                    padding: '0.2rem 0.45rem',
+                    border: 'none',
+                    backgroundColor: overallDiscountType === 'FIXED' ? 'var(--primary-500)' : 'transparent',
+                    color: overallDiscountType === 'FIXED' ? '#fff' : 'var(--text-muted)',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                  title="Fixed Rupee Discount"
+                >
+                  Rs
+                </button>
+              </div>
+
               <input
                 type="number"
-                placeholder="Discount (Rs.)"
-                value={overallDiscount || ''}
-                onChange={(e) => onUpdateOverallDiscount(parseFloat(e.target.value) || 0)}
+                step="any"
+                min="0"
+                max={overallDiscountType === 'PERCENT' ? 100 : subtotal}
+                placeholder={overallDiscountType === 'PERCENT' ? 'Disc % (e.g. 1 for 1%)' : 'Discount in Rs.'}
+                value={overallDiscountValue || ''}
+                onChange={(e) => onUpdateOverallDiscountValue(parseFloat(e.target.value) || 0)}
                 style={{
                   flex: 1,
                   padding: '0.2rem 0.4rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
-                  borderRadius: '0.2rem',
+                  borderRadius: '0.25rem',
                   color: 'var(--text-main)',
                   fontSize: '0.71875rem',
                   outline: 'none',
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-mono)',
                 }}
               />
+
+              {overallDiscountType === 'PERCENT' && overallDiscountValue > 0 && (
+                <span style={{ fontSize: '0.6875rem', color: 'var(--warning)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  ({overallDiscountValue}% = Rs. {formatMoney(overallDiscountAmount)})
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -405,8 +565,8 @@ export const POSCart: React.FC<POSCartProps> = ({
           </span>
         </div>
 
-        {/* Day Session Closed Warning */}
-        {!isDayOpen && (
+        {/* Day Session Closed Warning (Only when not loading and session is truly closed) */}
+        {!sessionLoading && !isDayOpen && (
           <div
             style={{
               padding: '0.35rem 0.5rem',

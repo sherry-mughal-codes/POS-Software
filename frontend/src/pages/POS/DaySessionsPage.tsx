@@ -492,27 +492,6 @@ export const DaySessionsPage: React.FC = () => {
                         <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)', fontWeight: 700 }}>- Rs. {formatMoney(liveXReport.returns.cash_refunds)}</td>
                       </tr>
 
-                      <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Operational Expenses from Cash</td>
-                        <td style={{ padding: '0.625rem 0.75rem', color: 'var(--text-muted)' }}>Expenses ({liveXReport.expenses.count} vouchers)</td>
-                        <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(liveXReport.expenses.total)}</td>
-                        <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)', fontWeight: 700 }}>- Rs. {formatMoney(liveXReport.expenses.cash)}</td>
-                      </tr>
-
-                      <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Supplier Payments from Cash</td>
-                        <td style={{ padding: '0.625rem 0.75rem', color: 'var(--text-muted)' }}>Purchasing ({liveXReport.supplier_payments.count} payments)</td>
-                        <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(liveXReport.supplier_payments.total)}</td>
-                        <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)', fontWeight: 700 }}>- Rs. {formatMoney(liveXReport.supplier_payments.cash)}</td>
-                      </tr>
-
-                      <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Salary Disbursements from Cash</td>
-                        <td style={{ padding: '0.625rem 0.75rem', color: 'var(--text-muted)' }}>Payroll ({liveXReport.salary_payments.count} disbursements)</td>
-                        <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(liveXReport.salary_payments.total)}</td>
-                        <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)', fontWeight: 700 }}>- Rs. {formatMoney(liveXReport.salary_payments.cash)}</td>
-                      </tr>
-
                       <tr style={{ borderTop: '2px solid var(--border-medium)', backgroundColor: 'var(--bg-card)' }}>
                         <td colSpan={3} style={{ padding: '0.75rem', fontWeight: 800, fontSize: '0.9375rem' }}>
                           Calculated Expected Physical Cash in Drawer
@@ -994,20 +973,6 @@ export const DaySessionsPage: React.FC = () => {
                 </tr>
 
                 <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--danger)' }}>Cash Expenses Paid Out</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>
-                    - Rs. {formatMoney(liveXReport.expenses.cash)}
-                  </td>
-                </tr>
-
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--danger)' }}>Supplier Cash Disbursements</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>
-                    - Rs. {formatMoney(liveXReport.supplier_payments.cash)}
-                  </td>
-                </tr>
-
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <td style={{ padding: '0.5rem 0.75rem', color: 'var(--danger)' }}>Customer Cash Refunds</td>
                   <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>
                     - Rs. {formatMoney(liveXReport.returns.cash_refunds)}
@@ -1107,14 +1072,6 @@ export const DaySessionsPage: React.FC = () => {
                 <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <td style={{ padding: '0.5rem 0.75rem', color: 'var(--success)' }}>Customer Payments in Cash</td>
                   <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>+ Rs. {formatMoney(viewingZReport.customer_payments.cash)}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--danger)' }}>Cash Expenses Paid</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>- Rs. {formatMoney(viewingZReport.expenses.cash)}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--danger)' }}>Supplier Payments Paid from Cash</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>- Rs. {formatMoney(viewingZReport.supplier_payments.cash)}</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <td style={{ padding: '0.5rem 0.75rem', color: 'var(--danger)' }}>Customer Refunds Paid in Cash</td>

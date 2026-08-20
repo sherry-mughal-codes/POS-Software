@@ -14,6 +14,8 @@ export interface CartItem {
   quantity: number;
   discount: number;
   subtotal: number;
+  maintain_stock?: boolean;
+  is_service?: boolean;
 }
 
 export interface SaleItem {

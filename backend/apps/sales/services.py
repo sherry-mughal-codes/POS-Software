@@ -912,9 +912,9 @@ class DaySessionService:
             if trf.from_account and trf.from_account.code == "1010":
                 cash_transfers_out += trf.amount
 
-        # --- Expected Physical Cash in Drawer ---
-        total_cash_in = cash_sales + customer_payments_cash + cash_transfers_in
-        total_cash_out = cash_refunds + cash_expenses + supplier_payments_cash + salary_payments_cash + cash_transfers_out
+        # --- Expected Physical Cash in Drawer (POS Terminal Only) ---
+        total_cash_in = cash_sales + customer_payments_cash
+        total_cash_out = cash_refunds
         expected_cash = session.opening_cash + total_cash_in - total_cash_out
 
         return {

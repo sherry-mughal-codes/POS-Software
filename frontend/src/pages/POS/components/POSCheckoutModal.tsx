@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Coins,
+  Printer,
 } from 'lucide-react';
 import { Modal } from '../../../components/common/Modal';
 import { Button } from '../../../components/common/Button';
@@ -26,7 +27,7 @@ interface POSCheckoutModalProps {
     paid_amount: number;
     payments_breakdown?: { payment_method: PaymentMethodType; payment_account?: number; amount: number }[];
     notes?: string;
-  }) => Promise<void>;
+  }, autoPrint?: boolean) => Promise<void>;
   loading: boolean;
 }
 
@@ -179,6 +180,42 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
     setCashTendered(amount.toString());
   };
 
+  const handleSplitCashChange = (val: string) => {
+    setSplitCash(val);
+    const cNum = parseFloat(val);
+    const credNum = parseFloat(splitCredit) || 0;
+    if (!isNaN(cNum)) {
+      const rem = Math.max(0, grandTotal - cNum - credNum);
+      setSplitCard(rem === 0 ? '0' : Number(rem.toFixed(2)).toString());
+    } else if (val === '') {
+      const rem = Math.max(0, grandTotal - credNum);
+      setSplitCard(rem === 0 ? '0' : Number(rem.toFixed(2)).toString());
+    }
+  };
+
+  const handleSplitCardChange = (val: string) => {
+    setSplitCard(val);
+    const cardNum = parseFloat(val);
+    const credNum = parseFloat(splitCredit) || 0;
+    if (!isNaN(cardNum)) {
+      const rem = Math.max(0, grandTotal - cardNum - credNum);
+      setSplitCash(rem === 0 ? '0' : Number(rem.toFixed(2)).toString());
+    } else if (val === '') {
+      const rem = Math.max(0, grandTotal - credNum);
+      setSplitCash(rem === 0 ? '0' : Number(rem.toFixed(2)).toString());
+    }
+  };
+
+  const handleSplitCreditChange = (val: string) => {
+    setSplitCredit(val);
+    const credNum = parseFloat(val);
+    const cNum = parseFloat(splitCash) || 0;
+    if (!isNaN(credNum)) {
+      const rem = Math.max(0, grandTotal - credNum - cNum);
+      setSplitCard(rem === 0 ? '0' : Number(rem.toFixed(2)).toString());
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -187,8 +224,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
       if (isF9 && !loading) {
         e.preventDefault();
         e.stopPropagation();
-        const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-        handleSubmit(fakeEvent);
+        handlePerformSubmit(true);
       }
     };
 
@@ -196,8 +232,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
     return () => window.removeEventListener('keydown', handleModalKeyDown, true);
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePerformSubmit = async (autoPrint: boolean = true) => {
     setError(null);
 
     try {
@@ -211,14 +246,14 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
           payment_account: selectedCashAccountId,
           paid_amount: tenderedNumber,
           notes,
-        });
+        }, autoPrint);
       } else if (paymentMethod === 'CARD') {
         await onConfirmCheckout({
           payment_method: 'CARD',
           payment_account: selectedBankAccountId,
           paid_amount: grandTotal,
           notes,
-        });
+        }, autoPrint);
       } else if (paymentMethod === 'CREDIT') {
         if (!isCreditAllowed) {
           setError('Credit purchases are not enabled for this customer.');
@@ -228,7 +263,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
           payment_method: 'CREDIT',
           paid_amount: 0,
           notes,
-        });
+        }, autoPrint);
       } else if (paymentMethod === 'SPLIT') {
         const cVal = parseFloat(splitCash) || 0;
         const cardVal = parseFloat(splitCard) || 0;
@@ -255,7 +290,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
           paid_amount: cVal + cardVal,
           payments_breakdown: breakdown,
           notes,
-        });
+        }, autoPrint);
       }
     } catch (err: any) {
       setError(err?.response?.data?.detail || err?.message || 'Failed to complete sale checkout.');
@@ -267,9 +302,9 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="POS Sale Payment & Checkout"
-      maxWidth="540px"
+      maxWidth="560px"
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <form onSubmit={(e) => { e.preventDefault(); handlePerformSubmit(true); }} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         {/* Payable Total Header */}
         <div
           style={{
@@ -652,7 +687,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
                   type="number"
                   step="any"
                   value={splitCash}
-                  onChange={(e) => setSplitCash(e.target.value)}
+                  onChange={(e) => handleSplitCashChange(e.target.value)}
                   style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}
                 />
               </div>
@@ -665,7 +700,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
                   type="number"
                   step="any"
                   value={splitCard}
-                  onChange={(e) => setSplitCard(e.target.value)}
+                  onChange={(e) => handleSplitCardChange(e.target.value)}
                   style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}
                 />
               </div>
@@ -679,7 +714,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
                   step="any"
                   disabled={!isCreditAllowed}
                   value={splitCredit}
-                  onChange={(e) => setSplitCredit(e.target.value)}
+                  onChange={(e) => handleSplitCreditChange(e.target.value)}
                   style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontFamily: 'var(--font-mono)', opacity: isCreditAllowed ? 1 : 0.5 }}
                 />
               </div>
@@ -767,22 +802,34 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
         </div>
 
         {/* Modal Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.625rem', paddingTop: '0.5rem', flexWrap: 'wrap' }}>
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={loading}
+            onClick={() => handlePerformSubmit(false)}
+            icon={<CheckCircle size={15} />}
+            style={{
+              borderColor: 'var(--border-medium)',
+              fontWeight: 700,
+            }}
+          >
+            Complete Sale & Return to POS
           </Button>
           <Button
             type="submit"
             variant="primary"
             loading={loading}
-            icon={<CheckCircle size={16} />}
+            icon={<Printer size={15} />}
             style={{
               background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
               fontWeight: 800,
-              padding: '0.625rem 1.5rem',
             }}
           >
-            Complete Sale
+            Complete Sale & Print
           </Button>
         </div>
       </form>

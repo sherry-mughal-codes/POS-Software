@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Shield, Lock, User as UserIcon, AlertCircle, KeyRound } from 'lucide-react';
+import { Shield, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
-import { Badge } from '../../components/common/Badge';
 import { useAuth } from '../../hooks/useAuth';
 
 export const LoginPage: React.FC = () => {
@@ -14,7 +13,7 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password) {
+    if (!username.trim() || !password) {
       setError('Please enter both username and password.');
       return;
     }
@@ -22,23 +21,9 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await login(username, password);
+      await login(username.trim(), password);
     } catch (err: any) {
       setError(err?.message || 'Invalid username or password.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickLogin = async (user: string, pass: string) => {
-    setUsername(user);
-    setPassword(pass);
-    setLoading(true);
-    setError(null);
-    try {
-      await login(user, pass);
-    } catch (err: any) {
-      setError(err?.message || 'Login failed.');
     } finally {
       setLoading(false);
     }
@@ -54,7 +39,7 @@ export const LoginPage: React.FC = () => {
       background: 'radial-gradient(circle at 50% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.12) 0%, transparent 50%), var(--bg-app)',
       padding: '1.5rem',
     }}>
-      <div style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {/* Brand Header */}
         <div style={{ textAlign: 'center' }}>
           <div style={{
@@ -127,105 +112,9 @@ export const LoginPage: React.FC = () => {
               loading={loading}
               style={{ width: '100%', marginTop: '0.5rem' }}
             >
-              Sign In to POS
+              Sign In
             </Button>
           </form>
-
-          {/* Quick Demo Login Switcher */}
-          <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Quick Access Profiles
-              </span>
-              <Badge variant="info">Fast Login</Badge>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin', 'admin123!')}
-                disabled={loading}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '0.5rem',
-                  backgroundColor: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  fontSize: '0.8125rem',
-                  transition: 'all 0.15s ease',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary-500)'}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-subtle)'}
-              >
-                <div>
-                  <strong style={{ color: 'var(--primary-400)' }}>Administrator</strong> (Full Access)
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>user: admin | pass: admin123!</div>
-                </div>
-                <KeyRound size={16} style={{ color: 'var(--text-muted)' }} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('manager', 'manager123!')}
-                disabled={loading}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '0.5rem',
-                  backgroundColor: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  fontSize: '0.8125rem',
-                  transition: 'all 0.15s ease',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--warning)'}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-subtle)'}
-              >
-                <div>
-                  <strong style={{ color: 'var(--warning)' }}>Store Manager</strong> (Business Ops)
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>user: manager | pass: manager123!</div>
-                </div>
-                <KeyRound size={16} style={{ color: 'var(--text-muted)' }} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('cashier', 'cashier123!')}
-                disabled={loading}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '0.5rem',
-                  backgroundColor: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  fontSize: '0.8125rem',
-                  transition: 'all 0.15s ease',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--info)'}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-subtle)'}
-              >
-                <div>
-                  <strong style={{ color: 'var(--info)' }}>Cashier</strong> (Restricted POS Operator)
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>user: cashier | pass: cashier123!</div>
-                </div>
-                <KeyRound size={16} style={{ color: 'var(--text-muted)' }} />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
