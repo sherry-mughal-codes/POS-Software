@@ -2,13 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users,
   UserPlus,
+  UserCheck,
   Search,
   CheckCircle2,
+  Check,
   Edit2,
   Power,
-  Lock,
   Phone,
   Mail,
+  Building,
+  AlertCircle,
   RefreshCw,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
@@ -64,7 +67,6 @@ export const UsersPage: React.FC = () => {
   const [newCompany, setNewCompany] = useState('');
   const [newDataScope, setNewDataScope] = useState('ALL_COMPANY');
   const [newPhone, setNewPhone] = useState('');
-  const [newPinCode, setNewPinCode] = useState('');
   const [newSelectedRoles, setNewSelectedRoles] = useState<number[]>([]);
 
   const fetchUsersAndRoles = useCallback(async () => {
@@ -97,7 +99,6 @@ export const UsersPage: React.FC = () => {
     setNewCompany(companyName || 'ApexPOS Enterprise Store');
     setNewDataScope('ALL_COMPANY');
     setNewPhone('');
-    setNewPinCode('');
     // Default to Cashier role if exists
     const cashierRole = roles.find(r => r.name === 'Cashier');
     setNewSelectedRoles(cashierRole ? [cashierRole.id] : []);
@@ -128,7 +129,6 @@ export const UsersPage: React.FC = () => {
         company: newCompany || companyName || 'ApexPOS Enterprise Store',
         data_scope: newDataScope,
         phone: newPhone,
-        pin_code: newPinCode,
         roles: newSelectedRoles,
       };
       await userService.createUser(payload);
@@ -149,7 +149,6 @@ export const UsersPage: React.FC = () => {
     setNewCompany(targetUser.profile?.company || companyName || 'ApexPOS Enterprise Store');
     setNewDataScope(targetUser.profile?.data_scope || 'ALL_COMPANY');
     setNewPhone(targetUser.profile?.phone || '');
-    setNewPinCode(targetUser.profile?.pin_code || '');
     setNewPassword('');
     setNewSelectedRoles(targetUser.role_ids || []);
     setFormError(null);
@@ -170,7 +169,6 @@ export const UsersPage: React.FC = () => {
         company: newCompany,
         data_scope: newDataScope,
         phone: newPhone,
-        pin_code: newPinCode,
         roles: newSelectedRoles,
       };
       if (newPassword) {
@@ -279,7 +277,6 @@ export const UsersPage: React.FC = () => {
                   <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>User</th>
                   <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Contact</th>
                   <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Assigned Role(s)</th>
-                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>POS PIN</th>
                   <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Status</th>
                   <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -347,19 +344,6 @@ export const UsersPage: React.FC = () => {
                           <Badge variant="phase">No Role</Badge>
                         )}
                       </div>
-                    </td>
-
-                    {/* POS PIN */}
-                    <td style={{ padding: '1rem' }}>
-                      <code style={{
-                        fontFamily: 'var(--font-mono)',
-                        backgroundColor: 'var(--bg-elevated)',
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: '0.25rem',
-                        color: 'var(--text-muted)',
-                      }}>
-                        {u.profile?.pin_code ? '••••' : 'None'}
-                      </code>
                     </td>
 
                     {/* Status */}
@@ -521,23 +505,13 @@ export const UsersPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input
-              label="Phone Number"
-              placeholder="+92 300 1234567"
-              value={newPhone}
-              onChange={(e) => setNewPhone(e.target.value)}
-              icon={<Phone size={16} />}
-            />
-            <Input
-              label="Quick POS Unlock PIN"
-              placeholder="4-digit PIN"
-              maxLength={6}
-              value={newPinCode}
-              onChange={(e) => setNewPinCode(e.target.value)}
-              icon={<Lock size={16} />}
-            />
-          </div>
+          <Input
+            label="Phone Number"
+            placeholder="+92 300 1234567"
+            value={newPhone}
+            onChange={(e) => setNewPhone(e.target.value)}
+            icon={<Phone size={16} />}
+          />
 
           {/* Role selection */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
@@ -559,33 +533,46 @@ export const UsersPage: React.FC = () => {
                       }
                     }}
                     style={{
+                      padding: '0.625rem 0.875rem',
+                      borderRadius: '0.5rem',
+                      border: '1px solid',
+                      borderColor: isSelected ? 'var(--primary-500)' : 'var(--border-subtle)',
+                      backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'var(--bg-elevated)',
+                      color: isSelected ? 'var(--primary-400)' : 'var(--text-main)',
+                      fontSize: '0.8125rem',
+                      fontWeight: isSelected ? 700 : 500,
+                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '0.5rem',
-                      border: `1px solid ${isSelected ? 'var(--primary-500)' : 'var(--border-subtle)'}`,
-                      backgroundColor: isSelected ? 'rgba(6, 182, 212, 0.15)' : 'var(--bg-elevated)',
-                      color: isSelected ? 'var(--primary-400)' : 'var(--text-muted)',
-                      cursor: 'pointer',
-                      fontSize: '0.8125rem',
+                      justifyContent: 'space-between',
+                      transition: 'all 0.15s ease',
                       textAlign: 'left',
                     }}
                   >
-                    <CheckCircle2 size={15} style={{ opacity: isSelected ? 1 : 0.2 }} />
                     <span>{role.name}</span>
+                    {isSelected && <Check size={14} style={{ color: 'var(--primary-400)' }} />}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-            <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCreateModalOpen(false)}
+              disabled={submitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" loading={submitting}>
-              Create User Account
+            <Button
+              type="submit"
+              variant="primary"
+              loading={submitting}
+              icon={<UserCheck size={16} />}
+            >
+              Create Account
             </Button>
           </div>
         </form>
@@ -595,32 +582,38 @@ export const UsersPage: React.FC = () => {
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        title={`Edit User: @${selectedUser?.username}`}
-        subtitle="Modify profile details, POS credentials, and assigned roles."
+        title={`Edit User: ${selectedUser?.username}`}
+        subtitle="Update corporate assignments, role authorizations, or security credentials."
+        maxWidth="580px"
       >
-        {formError && (
-          <div style={{
-            padding: '0.75rem 1rem',
-            borderRadius: '0.5rem',
-            backgroundColor: 'var(--danger-bg)',
-            border: '1px solid var(--danger-border)',
-            color: 'var(--danger)',
-            fontSize: '0.8125rem',
-            marginBottom: '1rem',
-          }}>
-            {formError}
-          </div>
-        )}
-
         <form onSubmit={handleUpdateUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {formError && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: 'var(--danger-bg)',
+              border: '1px solid var(--danger-border)',
+              color: 'var(--danger)',
+              fontSize: '0.8125rem',
+            }}>
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <div>{formError}</div>
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <Input
               label="First Name"
+              placeholder="First name"
               value={newFirstName}
               onChange={(e) => setNewFirstName(e.target.value)}
             />
             <Input
               label="Last Name"
+              placeholder="Last name"
               value={newLastName}
               onChange={(e) => setNewLastName(e.target.value)}
             />
@@ -629,27 +622,23 @@ export const UsersPage: React.FC = () => {
           <Input
             label="Email Address"
             type="email"
+            placeholder="user@enterprise.com"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             icon={<Mail size={16} />}
           />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <Input
+              label="Company / Branch Assigned"
+              placeholder="Store branch name"
+              value={newCompany}
+              onChange={(e) => setNewCompany(e.target.value)}
+              icon={<Building size={16} />}
+            />
             <div>
               <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                Company / Store Branch *
-              </label>
-              <Input
-                placeholder="e.g. ApexPOS Enterprise Store"
-                value={newCompany}
-                onChange={(e) => setNewCompany(e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                Data Scope Access *
+                Data Scope
               </label>
               <select
                 value={newDataScope}
@@ -675,22 +664,13 @@ export const UsersPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input
-              label="Phone Number"
-              placeholder="+92 300 1234567"
-              value={newPhone}
-              onChange={(e) => setNewPhone(e.target.value)}
-              icon={<Phone size={16} />}
-            />
-            <Input
-              label="Quick POS Unlock PIN"
-              maxLength={6}
-              value={newPinCode}
-              onChange={(e) => setNewPinCode(e.target.value)}
-              icon={<Lock size={16} />}
-            />
-          </div>
+          <Input
+            label="Phone Number"
+            placeholder="+92 300 1234567"
+            value={newPhone}
+            onChange={(e) => setNewPhone(e.target.value)}
+            icon={<Phone size={16} />}
+          />
 
           <Input
             label="Reset Password (Leave blank to keep current)"
