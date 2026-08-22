@@ -82,10 +82,16 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_effective_permissions(self, obj):
         if obj.is_superuser:
-            # Superusers have all permissions
-            return list(Permission.objects.values_list("codename", flat=True))
-        # Return combined group + user permissions
-        return list(obj.get_all_permissions())
+            perms = set(Permission.objects.values_list("codename", flat=True))
+            for ct_app, codename in Permission.objects.values_list("content_type__app_label", "codename"):
+                perms.add(f"{ct_app}.{codename}")
+            return list(perms)
+        perms = set()
+        for p in obj.get_all_permissions():
+            perms.add(p)
+            if "." in p:
+                perms.add(p.split(".", 1)[1])
+        return list(perms)
 
 
 import re

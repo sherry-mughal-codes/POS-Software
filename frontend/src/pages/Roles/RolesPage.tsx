@@ -200,47 +200,77 @@ export const RolesPage: React.FC = () => {
   // Group permissions by category
   const categorizedPermissions = permissions.reduce<Record<string, Permission[]>>((acc, perm) => {
     let category = 'System & Core';
+    const c = perm.codename.toLowerCase();
+
     if (
-      perm.codename.includes('pos') ||
-      perm.codename.includes('sale') ||
-      perm.codename.includes('drawer') ||
-      perm.codename.includes('register') ||
-      perm.codename.includes('discount')
+      c.includes('role') ||
+      c.includes('group') ||
+      c.includes('permission')
+    ) {
+      category = 'Role Management & Permissions';
+    } else if (
+      c.includes('user') ||
+      c.includes('profile')
+    ) {
+      category = 'User Management';
+    } else if (
+      c.includes('audit')
+    ) {
+      category = 'Security Audit Logs';
+    } else if (
+      c.includes('employee') ||
+      c.includes('salary') ||
+      c.includes('attendance') ||
+      c.includes('payroll')
+    ) {
+      category = 'Employees & Payroll (HR)';
+    } else if (
+      c.includes('pos') ||
+      c.includes('sale') ||
+      c.includes('drawer') ||
+      c.includes('register') ||
+      c.includes('discount')
     ) {
       category = 'POS & Register Operations';
     } else if (
-      perm.codename.includes('product') ||
-      perm.codename.includes('stock') ||
-      perm.codename.includes('cost') ||
-      perm.codename.includes('inventory')
+      c.includes('product') ||
+      c.includes('stock') ||
+      c.includes('cost') ||
+      c.includes('inventory') ||
+      c.includes('category') ||
+      c.includes('unit')
     ) {
       category = 'Products & Inventory';
     } else if (
-      perm.codename.includes('user') ||
-      perm.codename.includes('role') ||
-      perm.codename.includes('audit')
-    ) {
-      category = 'User Access & Security';
-    } else if (
-      perm.codename.includes('purchase') ||
-      perm.codename.includes('payable') ||
-      perm.codename.includes('supplier')
+      c.includes('purchase') ||
+      c.includes('payable') ||
+      c.includes('supplier')
     ) {
       category = 'Purchasing & Payables';
     } else if (
-      perm.codename.includes('customer') ||
-      perm.codename.includes('receivable') ||
-      perm.codename.includes('financial') ||
-      perm.codename.includes('report') ||
-      perm.codename.includes('account')
+      c.includes('expense') ||
+      c.includes('transfer')
+    ) {
+      category = 'Expense Management';
+    } else if (
+      c.includes('customer') ||
+      c.includes('receivable') ||
+      c.includes('financial') ||
+      c.includes('report') ||
+      c.includes('account') ||
+      c.includes('paymentmethod')
     ) {
       category = 'Financial & Accounting Reports';
+    } else if (
+      c.includes('setting')
+    ) {
+      category = 'System Settings';
     }
 
     if (!acc[category]) {
       acc[category] = [];
     }
-  acc[category].push(perm);
+    acc[category].push(perm);
     return acc;
   }, {});
 

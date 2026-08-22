@@ -111,29 +111,6 @@ export const POSCart: React.FC<POSCartProps> = ({
                 )}
               </div>
             )}
-            {onOpenNewCustomerModal && (
-              <button
-                type="button"
-                onClick={onOpenNewCustomerModal}
-                title="Create New Customer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.2rem',
-                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                  border: '1px solid rgba(56, 189, 248, 0.4)',
-                  color: '#38bdf8',
-                  padding: '0.1rem 0.35rem',
-                  borderRadius: '0.25rem',
-                  fontSize: '0.625rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                <UserPlus size={10} />
-                <span>+ New</span>
-              </button>
-            )}
           </div>
         </div>
 

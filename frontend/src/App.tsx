@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { MainLayout } from './components/layout/MainLayout';
@@ -29,6 +29,12 @@ const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      setCurrentTab('dashboard');
+    }
+  }, [isAuthenticated]);
+
   if (authLoading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)' }}>
@@ -51,60 +57,216 @@ const AppContent: React.FC = () => {
       )}
 
       {currentTab === 'reports' && (
-        <ReportsCenterPage onNavigate={setCurrentTab} />
+        <Can
+          anyOfPermissions={['view_financial_reports', 'view_sale', 'view_purchase', 'view_expense']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to access the Reports Center.
+              </p>
+            </div>
+          }
+        >
+          <ReportsCenterPage onNavigate={setCurrentTab} />
+        </Can>
       )}
 
       {currentTab === 'products' && (
-        <ProductCatalogPage />
+        <Can
+          anyOfPermissions={['view_product', 'add_product', 'change_product', 'manage_products']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to view or manage products.
+              </p>
+            </div>
+          }
+        >
+          <ProductCatalogPage />
+        </Can>
       )}
 
       {currentTab === 'purchases' && (
-        <PurchasesDashboardPage />
+        <Can
+          anyOfPermissions={['view_purchase', 'add_purchase', 'approve_purchases']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to access purchasing or invoices.
+              </p>
+            </div>
+          }
+        >
+          <PurchasesDashboardPage />
+        </Can>
       )}
 
       {currentTab === 'inventory' && (
-        <InventoryDashboardPage />
+        <Can
+          anyOfPermissions={['view_stockmovement', 'view_stockadjustment', 'create_stock_adjustment']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to view or adjust inventory.
+              </p>
+            </div>
+          }
+        >
+          <InventoryDashboardPage />
+        </Can>
       )}
 
       {currentTab === 'customers' && (
-        <CustomersPage />
+        <Can
+          anyOfPermissions={['view_customer', 'add_customer', 'change_customer']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to view customer accounts.
+              </p>
+            </div>
+          }
+        >
+          <CustomersPage />
+        </Can>
       )}
 
       {currentTab === 'suppliers' && (
-        <SuppliersPage />
+        <Can
+          anyOfPermissions={['view_supplier', 'add_supplier', 'change_supplier']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to view supplier records.
+              </p>
+            </div>
+          }
+        >
+          <SuppliersPage />
+        </Can>
       )}
 
       {currentTab === 'register' && (
-        <POSTerminalPage />
+        <Can
+          permission="access_pos_register"
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to open the POS register.
+              </p>
+            </div>
+          }
+        >
+          <POSTerminalPage />
+        </Can>
       )}
 
       {currentTab === 'sales' && (
-        <SalesHistoryPage />
+        <Can
+          anyOfPermissions={['view_sale', 'add_sale', 'process_sale_return']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to view sales records.
+              </p>
+            </div>
+          }
+        >
+          <SalesHistoryPage />
+        </Can>
       )}
 
       {currentTab === 'sales-reports' && (
-        <SalesReportPage />
+        <Can
+          anyOfPermissions={['view_financial_reports', 'view_sale']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to view sales reports.
+              </p>
+            </div>
+          }
+        >
+          <SalesReportPage />
+        </Can>
       )}
 
       {currentTab === 'expenses' && (
-        <ExpensesDashboardPage />
+        <Can
+          anyOfPermissions={['view_expense', 'add_expense', 'change_expense']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to manage expenses.
+              </p>
+            </div>
+          }
+        >
+          <ExpensesDashboardPage />
+        </Can>
       )}
 
       {currentTab === 'employees' && (
-        <EmployeesDashboardPage />
+        <Can
+          anyOfPermissions={['view_employee', 'add_employee', 'change_employee', 'view_salaryslip', 'view_attendance', 'view_salarypayment']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to view or manage employees & payroll.
+              </p>
+            </div>
+          }
+        >
+          <EmployeesDashboardPage />
+        </Can>
       )}
 
       {(currentTab === 'day-sessions' || currentTab === 'pos' || currentTab === 'pos-sessions' || currentTab === 'z-reports') && (
-        <DaySessionsPage />
+        <Can
+          anyOfPermissions={['close_register_z_report', 'view_posdaysession', 'add_posdaysession']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to manage day closing & sessions.
+              </p>
+            </div>
+          }
+        >
+          <DaySessionsPage />
+        </Can>
       )}
 
       {currentTab === 'accounting' && (
-        <AccountingDashboardPage />
+        <Can
+          anyOfPermissions={['view_account', 'add_account', 'change_account', 'view_financial_reports']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to access the accounting ledger.
+              </p>
+            </div>
+          }
+        >
+          <AccountingDashboardPage />
+        </Can>
       )}
 
       {currentTab === 'users' && (
         <Can
-          permission="manage_users"
+          anyOfPermissions={['manage_users', 'view_user', 'add_user', 'change_user']}
           fallback={
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
               <h3>Access Denied (403 Forbidden)</h3>
@@ -120,7 +282,7 @@ const AppContent: React.FC = () => {
 
       {currentTab === 'roles' && (
         <Can
-          permission="manage_roles"
+          anyOfPermissions={['manage_roles', 'view_group', 'add_group', 'change_group']}
           fallback={
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
               <h3>Access Denied (403 Forbidden)</h3>
@@ -136,7 +298,7 @@ const AppContent: React.FC = () => {
 
       {currentTab === 'audit-logs' && (
         <Can
-          permission="view_audit_logs"
+          anyOfPermissions={['view_audit_logs', 'view_auditlog']}
           fallback={
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
               <h3>Access Denied (403 Forbidden)</h3>
@@ -151,7 +313,19 @@ const AppContent: React.FC = () => {
       )}
 
       {currentTab === 'settings' && (
-        <SettingsPage />
+        <Can
+          anyOfPermissions={['view_systemsetting', 'change_systemsetting']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to access system settings.
+              </p>
+            </div>
+          }
+        >
+          <SettingsPage />
+        </Can>
       )}
 
       {!['dashboard', 'reports', 'products', 'purchases', 'inventory', 'register', 'sales', 'sales-reports', 'expenses', 'employees', 'day-sessions', 'customers', 'suppliers', 'accounting', 'users', 'roles', 'audit-logs', 'settings'].includes(currentTab) && (
