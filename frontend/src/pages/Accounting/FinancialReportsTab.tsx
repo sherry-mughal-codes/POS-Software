@@ -33,10 +33,8 @@ const computePresetDates = (preset: PeriodPreset): { start: string; end: string 
   }
   if (preset === 'this_week') {
     const d = new Date(now);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diff));
-    return { start: monday.toISOString().split('T')[0], end: todayStr };
+    d.setDate(d.getDate() - 6);
+    return { start: d.toISOString().split('T')[0], end: todayStr };
   }
   if (preset === 'this_month') {
     const y = now.getFullYear();

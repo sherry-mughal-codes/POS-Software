@@ -73,6 +73,10 @@ class Expense(models.Model):
         ordering = ["-date", "-id"]
         verbose_name = "Expense"
         verbose_name_plural = "Expenses"
+        indexes = [
+            models.Index(fields=["date", "status"]),
+            models.Index(fields=["status", "date"]),
+        ]
 
     def __str__(self):
         return f"{self.expense_number} - {self.expense_account.name} (Rs. {self.amount}) [{self.status}]"

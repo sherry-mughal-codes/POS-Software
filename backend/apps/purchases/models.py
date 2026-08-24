@@ -89,6 +89,10 @@ class Purchase(models.Model):
         ordering = ["-date", "-id"]
         verbose_name = "Purchase Order"
         verbose_name_plural = "Purchase Orders"
+        indexes = [
+            models.Index(fields=["date", "status"]),
+            models.Index(fields=["supplier", "status"]),
+        ]
 
     def __str__(self):
         return f"{self.purchase_number} - {self.supplier.company_name or self.supplier.name} (Rs. {self.grand_total})"

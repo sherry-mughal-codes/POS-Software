@@ -53,10 +53,10 @@ class DashboardService:
             end_d = start_d
             label = f"Yesterday ({start_d.strftime('%d-%b-%Y')})"
         elif period == "this_week":
-            # Monday as start of week to Sunday as end of week (full 7-day calendar week)
-            start_d = today - timedelta(days=today.weekday())
-            end_d = start_d + timedelta(days=6)
-            label = f"This Week ({start_d.strftime('%d-%b')} – {end_d.strftime('%d-%b-%Y')})"
+            # Rolling Last 7 Days (e.g. past 7 days up to and including today)
+            start_d = today - timedelta(days=6)
+            end_d = today
+            label = f"Last 7 Days ({start_d.strftime('%d-%b')} – {end_d.strftime('%d-%b-%Y')})"
         elif period == "last_week":
             start_d = today - timedelta(days=today.weekday() + 7)
             end_d = start_d + timedelta(days=6)
@@ -242,19 +242,25 @@ class DashboardService:
         customers_with_balance = 0
         top_debtors = []
 
-        all_customers = Customer.objects.filter(is_active=True, is_walkin=False)
+        customer_dues_map = {
+            row["customer_id"]: row["total_due"]
+            for row in Sale.objects.filter(status=SaleStatus.COMPLETED, due_amount__gt=0)
+            .values("customer_id")
+            .annotate(total_due=Coalesce(Sum("due_amount"), Value(Decimal("0.00")), output_field=DecimalField()))
+        }
+
+        all_customers = Customer.objects.filter(is_active=True, is_walkin=False).values("id", "customer_id", "name", "phone", "opening_balance")
         customer_balances = []
         for cust in all_customers:
-            cust_res = CustomerReceivableService.get_customer_outstanding(cust.id)
-            out_bal = cust_res["outstanding_balance"] if isinstance(cust_res, dict) else cust_res
+            out_bal = (cust["opening_balance"] or Decimal("0.00")) + customer_dues_map.get(cust["id"], Decimal("0.00"))
             if out_bal > Decimal("0.00"):
                 customers_with_balance += 1
                 total_ar += out_bal
                 customer_balances.append({
-                    "id": cust.id,
-                    "customer_id": cust.customer_id,
-                    "name": cust.name,
-                    "phone": cust.phone or "",
+                    "id": cust["id"],
+                    "customer_id": cust["customer_id"],
+                    "name": cust["name"],
+                    "phone": cust["phone"] or "",
                     "outstanding_balance": float(out_bal),
                 })
 
@@ -268,19 +274,49 @@ class DashboardService:
         suppliers_with_balance = 0
         top_creditors = []
 
-        all_suppliers = Supplier.objects.filter(is_active=True)
+        from apps.purchases.models import Purchase, PurchaseStatus, PurchaseReturn, RefundMethod, SupplierPayment, SupplierPaymentStatus
+
+        purchases_by_supp = {
+            row["supplier_id"]: (row["total_purchased"] or Decimal("0.00"), row["total_upfront"] or Decimal("0.00"))
+            for row in Purchase.objects.filter(status=PurchaseStatus.SUBMITTED)
+            .values("supplier_id")
+            .annotate(
+                total_purchased=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField()),
+                total_upfront=Coalesce(Sum("initial_paid_amount"), Value(Decimal("0.00")), output_field=DecimalField())
+            )
+        }
+        returns_by_supp = {
+            row["supplier_id"]: (row["total_ret"] or Decimal("0.00"))
+            for row in PurchaseReturn.objects.filter(refund_method=RefundMethod.PAYABLE_DEDUCTION)
+            .values("supplier_id")
+            .annotate(total_ret=Coalesce(Sum("total_amount"), Value(Decimal("0.00")), output_field=DecimalField()))
+        }
+        payments_by_supp = {
+            row["supplier_id"]: (row["total_pay"] or Decimal("0.00"))
+            for row in SupplierPayment.objects.filter(status=SupplierPaymentStatus.SUBMITTED)
+            .values("supplier_id")
+            .annotate(total_pay=Coalesce(Sum("amount"), Value(Decimal("0.00")), output_field=DecimalField()))
+        }
+
+        all_suppliers = Supplier.objects.filter(is_active=True).values("id", "supplier_id", "name", "company_name", "phone", "opening_balance")
         supplier_balances = []
         for supp in all_suppliers:
-            out_ap = PurchaseService.get_supplier_outstanding(supp.id)
+            s_id = supp["id"]
+            p_grand, p_upfront = purchases_by_supp.get(s_id, (Decimal("0.00"), Decimal("0.00")))
+            s_open = supp["opening_balance"] or Decimal("0.00")
+            ret_ded = returns_by_supp.get(s_id, Decimal("0.00"))
+            supp_pays = payments_by_supp.get(s_id, Decimal("0.00"))
+
+            out_ap = max(Decimal("0.00"), (s_open + p_grand) - p_upfront - ret_ded - supp_pays)
             if out_ap > Decimal("0.00"):
                 suppliers_with_balance += 1
                 total_ap += out_ap
                 supplier_balances.append({
-                    "id": supp.id,
-                    "supplier_id": supp.supplier_id,
-                    "name": supp.name,
-                    "company_name": supp.company_name or supp.name,
-                    "phone": supp.phone or "",
+                    "id": s_id,
+                    "supplier_id": supp["supplier_id"],
+                    "name": supp["name"],
+                    "company_name": supp["company_name"] or supp["name"],
+                    "phone": supp["phone"] or "",
                     "outstanding_payable": float(out_ap),
                 })
 
@@ -290,20 +326,24 @@ class DashboardService:
         # -------------------------------------------------------------
         # 8. INVENTORY HEALTH & VALUATION
         # -------------------------------------------------------------
-        products_qs = Product.objects.filter(is_active=True)
+        products_qs = Product.objects.filter(is_active=True).select_related("category")
         total_products_count = products_qs.count()
 
-        # Dynamic stock per product
+        # Single bulk query for all product stock quantities
+        stock_map = {
+            row["product_id"]: row["total_qty"]
+            for row in StockMovement.objects.values("product_id")
+            .annotate(total_qty=Coalesce(Sum("quantity"), Value(Decimal("0.00")), output_field=DecimalField()))
+        }
+
         in_stock_count = 0
         low_stock_count = 0
         out_of_stock_count = 0
         total_inventory_valuation = Decimal("0.00")
         low_stock_items = []
 
-        from apps.inventory.services import InventoryService
-
         for p in products_qs:
-            stock = InventoryService.get_product_stock(p.id)
+            stock = stock_map.get(p.id, Decimal("0.00"))
             val = stock * p.purchase_price
             total_inventory_valuation += max(Decimal("0.00"), val)
 
@@ -341,52 +381,50 @@ class DashboardService:
         # -------------------------------------------------------------
         # 9. SALES TREND TIME SERIES (Daily or Monthly intervals)
         # -------------------------------------------------------------
+        from django.db.models.functions import TruncMonth, TruncDate
         sales_trend = []
         days_diff = (end_d - start_d).days + 1
 
         if days_diff > 35:
-            # Group by Month (e.g. for "This Year" or multi-month ranges)
+            # Single query monthly aggregation
+            m_sales = {
+                row["m"].strftime("%Y-%m"): (row["gross"], row["orders"])
+                for row in sales_base.annotate(m=TruncMonth("created_at"))
+                .values("m")
+                .annotate(
+                    gross=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField()),
+                    orders=Count("id")
+                )
+                if row.get("m")
+            }
+            m_returns = {
+                row["m"].strftime("%Y-%m"): row["refund"]
+                for row in returns_base.annotate(m=TruncMonth("created_at"))
+                .values("m")
+                .annotate(
+                    refund=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
+                )
+                if row.get("m")
+            }
+
             import calendar
             current_dt = start_d.replace(day=1)
             while current_dt <= end_d:
                 year = current_dt.year
                 month = current_dt.month
-                last_day = calendar.monthrange(year, month)[1]
-                m_start = max(start_d, date(year, month, 1))
-                m_end = min(end_d, date(year, month, last_day))
+                key = current_dt.strftime("%Y-%m")
 
-                m_s_dt = timezone.make_aware(datetime.combine(m_start, time.min))
-                m_e_dt = timezone.make_aware(datetime.combine(m_end, time.max))
-
-                month_sales_qs = Sale.objects.filter(
-                    status=SaleStatus.COMPLETED,
-                    created_at__range=(m_s_dt, m_e_dt)
-                )
-                if cashier_id:
-                    month_sales_qs = month_sales_qs.filter(created_by_id=cashier_id)
-
-                m_gross = month_sales_qs.aggregate(
-                    t=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField())
-                )["t"] or Decimal("0.00")
-
-                m_orders = month_sales_qs.count()
-
-                month_ret_qs = SalesReturn.objects.filter(created_at__range=(m_s_dt, m_e_dt))
-                if cashier_id:
-                    month_ret_qs = month_ret_qs.filter(created_by_id=cashier_id)
-                m_returns = month_ret_qs.aggregate(
-                    t=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
-                )["t"] or Decimal("0.00")
-
-                m_net = max(Decimal("0.00"), m_gross - m_returns)
+                gross_val, orders_val = m_sales.get(key, (Decimal("0.00"), 0))
+                ret_val = m_returns.get(key, Decimal("0.00"))
+                net_val = max(Decimal("0.00"), gross_val - ret_val)
 
                 sales_trend.append({
-                    "date": current_dt.strftime("%Y-%m"),
+                    "date": key,
                     "label": current_dt.strftime("%b %Y") if (end_d.year != start_d.year) else current_dt.strftime("%b"),
-                    "orders_count": m_orders,
-                    "gross_sales": float(m_gross),
-                    "returns": float(m_returns),
-                    "net_sales": float(m_net),
+                    "orders_count": orders_val,
+                    "gross_sales": float(gross_val),
+                    "returns": float(ret_val),
+                    "net_sales": float(net_val),
                 })
 
                 if month == 12:
@@ -394,42 +432,42 @@ class DashboardService:
                 else:
                     current_dt = date(year, month + 1, 1)
         else:
-            # Group by day
+            # Single query daily aggregation
+            d_sales = {
+                row["d"].strftime("%Y-%m-%d"): (row["gross"], row["orders"])
+                for row in sales_base.annotate(d=TruncDate("created_at"))
+                .values("d")
+                .annotate(
+                    gross=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField()),
+                    orders=Count("id")
+                )
+                if row.get("d")
+            }
+            d_returns = {
+                row["d"].strftime("%Y-%m-%d"): row["refund"]
+                for row in returns_base.annotate(d=TruncDate("created_at"))
+                .values("d")
+                .annotate(
+                    refund=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
+                )
+                if row.get("d")
+            }
+
             for i in range(days_diff):
                 cur_date = start_d + timedelta(days=i)
-                day_s_dt = timezone.make_aware(datetime.combine(cur_date, time.min))
-                day_e_dt = timezone.make_aware(datetime.combine(cur_date, time.max))
+                key = cur_date.strftime("%Y-%m-%d")
 
-                day_sales_qs = Sale.objects.filter(
-                    status=SaleStatus.COMPLETED,
-                    created_at__range=(day_s_dt, day_e_dt)
-                )
-                if cashier_id:
-                    day_sales_qs = day_sales_qs.filter(created_by_id=cashier_id)
-
-                day_gross = day_sales_qs.aggregate(
-                    t=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField())
-                )["t"] or Decimal("0.00")
-
-                day_orders = day_sales_qs.count()
-
-                # Day returns
-                day_ret_qs = SalesReturn.objects.filter(created_at__range=(day_s_dt, day_e_dt))
-                if cashier_id:
-                    day_ret_qs = day_ret_qs.filter(created_by_id=cashier_id)
-                day_returns = day_ret_qs.aggregate(
-                    t=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
-                )["t"] or Decimal("0.00")
-
-                day_net = max(Decimal("0.00"), day_gross - day_returns)
+                gross_val, orders_val = d_sales.get(key, (Decimal("0.00"), 0))
+                ret_val = d_returns.get(key, Decimal("0.00"))
+                net_val = max(Decimal("0.00"), gross_val - ret_val)
 
                 sales_trend.append({
-                    "date": cur_date.strftime("%Y-%m-%d"),
+                    "date": key,
                     "label": cur_date.strftime("%d %b"),
-                    "orders_count": day_orders,
-                    "gross_sales": float(day_gross),
-                    "returns": float(day_returns),
-                    "net_sales": float(day_net),
+                    "orders_count": orders_val,
+                    "gross_sales": float(gross_val),
+                    "returns": float(ret_val),
+                    "net_sales": float(net_val),
                 })
 
         # -------------------------------------------------------------

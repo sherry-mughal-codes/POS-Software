@@ -81,6 +81,10 @@ class StockMovement(models.Model):
         ordering = ["-created_at", "-id"]
         verbose_name = "Stock Movement"
         verbose_name_plural = "Stock Movements"
+        indexes = [
+            models.Index(fields=["product", "created_at"]),
+            models.Index(fields=["movement_type", "created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.product.sku} | {self.movement_type} | {self.quantity} @ Rs. {self.unit_cost}"

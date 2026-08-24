@@ -120,6 +120,12 @@ class Sale(models.Model):
         ordering = ["-created_at", "-id"]
         verbose_name = "Sale"
         verbose_name_plural = "Sales"
+        indexes = [
+            models.Index(fields=["created_at", "status"]),
+            models.Index(fields=["date", "status"]),
+            models.Index(fields=["status", "due_amount"]),
+            models.Index(fields=["created_by", "status"]),
+        ]
 
     def __str__(self):
         return f"{self.invoice_number} | {self.customer.name} | Rs. {self.grand_total} ({self.status})"
@@ -270,6 +276,10 @@ class SalesReturn(models.Model):
         ordering = ["-created_at", "-id"]
         verbose_name = "Sales Return"
         verbose_name_plural = "Sales Returns"
+        indexes = [
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["created_by", "created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.return_number} (Ref: {self.original_sale.invoice_number}) | Rs. {self.refund_amount}"
