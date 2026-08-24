@@ -138,7 +138,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={productToEdit ? `Edit Product: ${productToEdit.name}` : 'Add New Product Master'}
-      subtitle="Canonical product definition for inventory, purchasing, and POS checkout."
     >
       {error && (
         <div style={{

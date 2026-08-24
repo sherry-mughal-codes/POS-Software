@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   RefreshCw,
   Zap,
-  Lock,
   Unlock,
   AlertTriangle,
   DollarSign,
+  ArrowLeft,
+  Menu,
+  Search,
+  Scan,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -30,15 +33,27 @@ import { useSettings } from '../../context/SettingsContext';
 
 interface POSTerminalPageProps {
   isSidebarCollapsed?: boolean;
+  isSidebarVisible?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarCollapsed = false }) => {
+export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
+  isSidebarCollapsed = false,
+  isSidebarVisible = false,
+  onToggleSidebar,
+}) => {
   const { currencySymbol } = useSettings();
+  
+  // Data state
   const [products, setProducts] = useState<InventorySummaryItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [activeSession, setActiveSession] = useState<POSDaySession | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -59,6 +74,21 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
   const [openingNotesInput, setOpeningNotesInput] = useState('');
   const [openDaySubmitting, setOpenDaySubmitting] = useState(false);
   const [openDayError, setOpenDayError] = useState<string | null>(null);
+
+  // Auto-focus search input on load and keyboard shortcut 'F2' or '/'
+  useEffect(() => {
+    searchInputRef.current?.focus();
+
+    const handleSearchShortcut = (e: KeyboardEvent) => {
+      if (e.key === 'F2' || (e.key === '/' && (e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'TEXTAREA')) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+    window.addEventListener('keydown', handleSearchShortcut);
+    return () => window.removeEventListener('keydown', handleSearchShortcut);
+  }, []);
 
   const fetchCatalogData = useCallback(async () => {
     setLoading(true);
@@ -111,6 +141,35 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
     }
   };
 
+  // Handle barcode scanner Enter press in header
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchTerm.trim()) {
+      const term = searchTerm.trim().toLowerCase();
+      // Match exact barcode or SKU first
+      const exactMatch = products.find(
+        (p) =>
+          (p.barcode && p.barcode.toLowerCase() === term) ||
+          p.sku.toLowerCase() === term
+      );
+      if (exactMatch) {
+        handleAddToCart(exactMatch);
+        setSearchTerm('');
+      } else {
+        // Match first product starting with search term
+        const partialMatch = products.find(
+          (p) =>
+            p.product_name.toLowerCase().includes(term) ||
+            p.sku.toLowerCase().includes(term) ||
+            (p.barcode && p.barcode.toLowerCase().includes(term))
+        );
+        if (partialMatch) {
+          handleAddToCart(partialMatch);
+          setSearchTerm('');
+        }
+      }
+    }
+  };
+
   // Global F9 & Ctrl+Enter keyboard shortcut to trigger checkout
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -130,10 +189,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
         }
 
         if (cart.length === 0) {
-          const searchInput = document.querySelector('input[placeholder*="Search by product name"]') as HTMLInputElement;
-          if (searchInput) {
-            searchInput.focus();
-          }
+          searchInputRef.current?.focus();
           return;
         }
 
@@ -325,23 +381,41 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '0.4rem', overflow: 'hidden' }}>
       {/* Top POS Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.35rem', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-            POS Register Terminal
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', flex: 1 }}>
+          {onToggleSidebar && (
+            <Button
+              variant="outline"
+              icon={isSidebarVisible ? <ArrowLeft size={13} /> : <Menu size={13} />}
+              onClick={onToggleSidebar}
+              style={{
+                padding: '0.2rem 0.55rem',
+                fontSize: '0.71875rem',
+                fontWeight: 700,
+                backgroundColor: isSidebarVisible ? 'rgba(56, 189, 248, 0.12)' : 'rgba(255, 255, 255, 0.05)',
+                border: isSidebarVisible ? '1px solid var(--primary-400)' : '1px solid var(--border-medium)',
+                color: isSidebarVisible ? 'var(--primary-400)' : 'var(--text-main)',
+              }}
+              title={isSidebarVisible ? 'Hide Sidebar (Full-Screen Register Mode)' : 'Show Navigation Sidebar'}
+            >
+              {isSidebarVisible ? 'Hide' : 'Menu'}
+            </Button>
+          )}
+          <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)', margin: 0, whiteSpace: 'nowrap' }}>
+            POS Register
           </h2>
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.5rem', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-              <span>Connecting session...</span>
+              <span>Connecting...</span>
             </div>
           ) : activeSession ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.6875rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
               <span style={{ width: '0.4rem', height: '0.4rem', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
               <span style={{ fontWeight: 700, color: 'var(--success)' }}>Day Open:</span>
               <code style={{ color: 'var(--text-main)', fontWeight: 800 }}>{activeSession.session_number}</code>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.6875rem' }}>
                 <span style={{ width: '0.4rem', height: '0.4rem', borderRadius: '50%', backgroundColor: 'var(--danger)', display: 'inline-block' }} />
                 <span style={{ fontWeight: 700, color: 'var(--danger)' }}>Day Closed</span>
@@ -364,6 +438,55 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
               </Button>
             </div>
           )}
+
+          {/* Barcode Scanner & Search Bar placed in Top Navbar */}
+          <div style={{ position: 'relative', flex: 1, minWidth: '220px', maxWidth: '420px', marginLeft: '0.25rem' }}>
+            <Search
+              size={14}
+              style={{
+                position: 'absolute',
+                left: '0.65rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-subtle)',
+              }}
+            />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Scan barcode or search product / SKU... (F2)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              style={{
+                width: '100%',
+                padding: '0.3rem 1.8rem 0.3rem 2rem',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.45rem',
+                color: 'var(--text-main)',
+                fontSize: '0.78125rem',
+                fontWeight: 500,
+                outline: 'none',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                right: '0.45rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.2rem',
+                color: 'var(--text-subtle)',
+                fontSize: '0.625rem',
+              }}
+            >
+              <Scan size={12} />
+              <kbd style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '0.05rem 0.2rem', borderRadius: '0.2rem', border: '1px solid var(--border-subtle)', fontSize: '0.6rem' }}>F2</kbd>
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -376,47 +499,6 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
           </Button>
         </div>
       </div>
-
-      {/* Day Closed Warning Alert Bar (Only when not loading and session is truly closed) */}
-      {!loading && !activeSession && (
-        <div
-          style={{
-            padding: '0.4rem 0.75rem',
-            backgroundColor: 'rgba(239, 68, 68, 0.12)',
-            border: '1px solid var(--danger)',
-            borderRadius: '0.375rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Lock size={15} color="var(--danger)" />
-            <span style={{ color: 'var(--text-main)', fontSize: '0.78125rem' }}>
-              <strong>POS Terminal is Closed.</strong> Open daily cash drawer session to enable sales.
-            </span>
-          </div>
-          <Button
-            variant="primary"
-            icon={<Unlock size={12} />}
-            onClick={() => {
-              setOpenDayError(null);
-              setIsOpenDayModalOpen(true);
-            }}
-            style={{
-              backgroundColor: '#ef4444',
-              borderColor: '#dc2626',
-              fontSize: '0.71875rem',
-              padding: '0.2rem 0.5rem',
-            }}
-          >
-            Open Day Now
-          </Button>
-        </div>
-      )}
 
       {/* Main Split Screen: Products Grid (Left) | Cart (Right 340px) */}
       {loading && products.length === 0 ? (
@@ -438,6 +520,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
               products={products}
               categories={categories}
               onAddToCart={handleAddToCart}
+              searchTerm={searchTerm}
               isSidebarCollapsed={isSidebarCollapsed}
             />
           </div>
@@ -462,7 +545,6 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
               onUpdateOverallDiscountValue={setOverallDiscountValue}
               onOpenCheckout={() => setIsCheckoutOpen(true)}
               isDayOpen={!!activeSession}
-              sessionLoading={loading}
               onOpenDay={() => {
                 setOpenDayError(null);
                 setIsOpenDayModalOpen(true);
@@ -477,7 +559,6 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({ isSidebarColla
         isOpen={isOpenDayModalOpen}
         onClose={() => setIsOpenDayModalOpen(false)}
         title="Open Business Day / POS Session"
-        subtitle="Initialize the daily register session with the starting physical cash present in the cash drawer."
         maxWidth="500px"
       >
         <form onSubmit={handleOpenDaySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

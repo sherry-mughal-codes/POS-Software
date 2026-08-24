@@ -339,22 +339,18 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
                       <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
                         <Button
                           variant="outline"
-                          icon={<History size={11} />}
-                          style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+                          icon={<History size={13} />}
+                          style={{ padding: '0.25rem 0.45rem' }}
                           onClick={() => onOpenStockCard(item.product_id)}
                           title="View Stock Card History"
-                        >
-                          History
-                        </Button>
+                        />
                         <Button
                           variant="secondary"
-                          icon={<SlidersHorizontal size={11} />}
-                          style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+                          icon={<SlidersHorizontal size={13} />}
+                          style={{ padding: '0.25rem 0.45rem' }}
                           onClick={() => onOpenAdjustmentModal(item)}
                           title="Record Stock Adjustment"
-                        >
-                          Adjust
-                        </Button>
+                        />
                       </div>
                     </td>
                   </tr>

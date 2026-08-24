@@ -7,9 +7,9 @@ import {
   Send,
   FileText,
   Printer,
-  Search,
   Filter,
   CheckCircle2,
+  XCircle,
   ArrowUpRight,
   TrendingDown,
   RefreshCw,
@@ -363,48 +363,48 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Metrics Banner */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem' }}>
-        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Standardized Metrics Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Accounts Payable</span>
-            <DollarSign size={15} style={{ color: 'var(--warning)' }} />
+            <DollarSign size={14} style={{ color: 'var(--warning)' }} />
           </div>
-          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
             Rs. {formatMoney(totalOutstanding)}
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Net owed across vendors</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Lifetime Purchases</span>
-            <Building size={15} style={{ color: 'var(--primary-400)' }} />
+            <Building size={14} style={{ color: 'var(--primary-400)' }} />
           </div>
-          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
             Rs. {formatMoney(totalPurchasedAll)}
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Total inventory billed</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Disbursed Paid</span>
-            <ArrowUpRight size={15} style={{ color: 'var(--success)' }} />
+            <ArrowUpRight size={14} style={{ color: 'var(--success)' }} />
           </div>
-          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
             Rs. {formatMoney(totalPaidAll)}
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Cash & bank settlements</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Returns Deductions</span>
-            <TrendingDown size={15} style={{ color: 'var(--info)' }} />
+            <TrendingDown size={14} style={{ color: 'var(--info)' }} />
           </div>
-          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--info)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--info)', fontFamily: 'var(--font-mono)' }}>
             Rs. {formatMoney(totalReturnsAll)}
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Vendor debit notes</div>
@@ -412,79 +412,89 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       </div>
 
       {/* Sub-View Navigation Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '0.2rem', borderRadius: '0.375rem', border: '1px solid var(--border-subtle)' }}>
           <button
             onClick={() => setViewMode('accounts')}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.35rem 0.65rem',
               borderRadius: '0.375rem',
               border: 'none',
-              fontSize: '0.8125rem',
+              fontSize: '0.75rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              gap: '0.35rem',
               backgroundColor: viewMode === 'accounts' ? 'var(--primary-500)' : 'transparent',
               color: viewMode === 'accounts' ? '#ffffff' : 'var(--text-muted)',
               transition: 'all 0.15s ease',
             }}
           >
-            <Building size={14} />
+            <Building size={13} />
             <span>Supplier Accounts ({suppliers.length})</span>
           </button>
 
           <button
             onClick={() => setViewMode('vouchers')}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.35rem 0.65rem',
               borderRadius: '0.375rem',
               border: 'none',
-              fontSize: '0.8125rem',
+              fontSize: '0.75rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              gap: '0.35rem',
               backgroundColor: viewMode === 'vouchers' ? 'var(--primary-500)' : 'transparent',
               color: viewMode === 'vouchers' ? '#ffffff' : 'var(--text-muted)',
               transition: 'all 0.15s ease',
             }}
           >
-            <CreditCard size={14} />
+            <CreditCard size={13} />
             <span>Payment Vouchers</span>
           </button>
 
           <button
             onClick={() => setViewMode('reports')}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.35rem 0.65rem',
               borderRadius: '0.375rem',
               border: 'none',
-              fontSize: '0.8125rem',
+              fontSize: '0.75rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              gap: '0.35rem',
               backgroundColor: viewMode === 'reports' ? 'var(--primary-500)' : 'transparent',
               color: viewMode === 'reports' ? '#ffffff' : 'var(--text-muted)',
               transition: 'all 0.15s ease',
             }}
           >
-            <FileText size={14} />
+            <FileText size={13} />
             <span>Payables Audit Report</span>
           </button>
         </div>
 
         {viewMode === 'accounts' && (
-          <div style={{ width: '320px' }}>
-            <Input
-              placeholder="Search by vendor name, code, phone..."
+          <div style={{ width: '280px' }}>
+            <input
+              type="text"
+              placeholder="Search vendor name, code, phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search size={14} />}
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.5rem',
+                color: 'var(--text-main)',
+                fontSize: '0.75rem',
+                outline: 'none',
+              }}
             />
           </div>
         )}
@@ -493,24 +503,23 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       {/* VIEW 1: SUPPLIER ACCOUNTS DIRECTORY */}
       {viewMode === 'accounts' && (
         <Card
-          title="Supplier Accounts & Outstanding Payables"
-          subtitle="Real-time statement of account derived dynamically from purchases, returns, and payment vouchers"
-          icon={<CreditCard size={20} />}
+          title="Supplier Accounts & Payables"
+          icon={<CreditCard size={18} />}
         >
           {loading ? (
             <LoadingSpinner label="Calculating supplier ledger balances..." />
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Supplier</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Contact & Phone</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Total Purchased</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Total Paid</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Returns Credit</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Net Payable</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Actions</th>
+                  <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Supplier</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Contact & Phone</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Total Purchased</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Total Paid</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Returns Credit</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Net Payable</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -537,33 +546,33 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                          <td style={{ padding: '0.875rem 1rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem' }}>
                             <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
                               {s.company_name || s.name}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.125rem' }}>
                               <code style={{ fontSize: '0.75rem', color: 'var(--primary-400)' }}>{s.supplier_id}</code>
                               {s.tax_id && (
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-subtle)' }}>• NTN: {s.tax_id}</span>
+                                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>• NTN: {s.tax_id}</span>
                               )}
                             </div>
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)' }}>
                             <div>{s.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>{s.phone || 'No phone'}</div>
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>{s.phone || 'No phone'}</div>
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                             Rs. {formatMoney(totalPurchased)}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                             <div style={{ color: 'var(--success)', fontWeight: 600 }}>
                               Rs. {formatMoney(totalPaid)}
                             </div>
                             {(upfrontPaid > 0 || voucherPaid > 0) && (
-                              <div style={{ fontSize: '0.7rem', color: 'var(--text-subtle)' }}>
+                              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
                                 {upfrontPaid > 0 ? `Upfront: Rs. ${formatMoney(upfrontPaid)}` : ''}
                                 {voucherPaid > 0 ? `${upfrontPaid > 0 ? ' | ' : ''}Vouchers: Rs. ${formatMoney(voucherPaid)}` : ''}
                                 {totalPaid > totalPurchased ? ` (Rs. ${formatMoney(totalPaid - totalPurchased)} advance)` : ''}
@@ -571,13 +580,13 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                             )}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
                             Rs. {formatMoney(totalReturns)}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
                             {netPayable > 0 ? (
-                              <span style={{ color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.12)', padding: '0.25rem 0.5rem', borderRadius: '0.25rem' }}>
+                              <span style={{ color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.12)', padding: '0.15rem 0.4rem', borderRadius: '0.25rem' }}>
                                 Rs. {formatMoney(netPayable)}
                               </span>
                             ) : (
@@ -585,28 +594,24 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                             )}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
                               <Button
                                 variant="primary"
-                                style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                                icon={<Send size={13} />}
+                                style={{ padding: '0.25rem 0.45rem' }}
+                                icon={<Send size={12} />}
                                 onClick={() => handleOpenPaymentModal(s)}
                                 disabled={netPayable <= 0}
                                 title={netPayable <= 0 ? 'No outstanding payable balance to settle' : 'Disburse Payment Voucher'}
-                              >
-                                Pay
-                              </Button>
+                              />
 
                               <Button
                                 variant="outline"
-                                style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                                icon={<FileText size={13} />}
+                                style={{ padding: '0.25rem 0.45rem' }}
+                                icon={<FileText size={12} />}
                                 onClick={() => handleOpenStatementModal(s)}
-                                title="View Statement of Account"
-                              >
-                                Statement
-                              </Button>
+                                title="View Complete Statement of Account"
+                              />
                             </div>
                           </td>
                         </tr>
@@ -623,21 +628,20 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       {/* VIEW 2: PAYMENT VOUCHERS HISTORY */}
       {viewMode === 'vouchers' && (
         <Card
-          title="Supplier Payment Vouchers & Settlement Audit"
-          subtitle="Chronological log of all cash and bank disbursements reducing Accounts Payable"
-          icon={<CreditCard size={20} />}
+          title="Payment Vouchers Log"
+          icon={<CreditCard size={18} />}
           action={
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <select
                 value={voucherFilterStatus}
                 onChange={(e) => setVoucherFilterStatus(e.target.value)}
                 style={{
-                  padding: '0.375rem 0.75rem',
+                  padding: '0.35rem 0.5rem',
                   borderRadius: '0.375rem',
                   border: '1px solid var(--border-medium)',
                   backgroundColor: 'var(--bg-input)',
                   color: 'var(--text-main)',
-                  fontSize: '0.8125rem',
+                  fontSize: '0.75rem',
                 }}
               >
                 <option value="ALL">All Statuses</option>
@@ -646,7 +650,7 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                 <option value="CANCELLED">Cancelled</option>
               </select>
 
-              <Button variant="outline" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }} icon={<RefreshCw size={13} />} onClick={fetchVouchers}>
+              <Button variant="outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} icon={<RefreshCw size={12} />} onClick={fetchVouchers} title="Refresh Vouchers">
                 Refresh
               </Button>
             </div>
@@ -656,17 +660,17 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
             <LoadingSpinner label="Loading payment vouchers..." />
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Payment #</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Date</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Supplier</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Payment Method</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Account / Ref</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Amount</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                  <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Payment #</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Date</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Supplier</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Payment Method</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Account / Ref</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Amount</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
+                    <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -685,71 +689,68 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                          <td style={{ padding: '0.875rem 1rem' }}>
-                            <code style={{ fontWeight: 800, color: 'var(--primary-400)' }}>{v.payment_number}</code>
+                          <td style={{ padding: '0.4rem 0.6rem' }}>
+                            <code style={{ fontWeight: 800, color: 'var(--primary-400)', fontSize: '0.75rem' }}>{v.payment_number}</code>
                             {v.journal_entry_number && (
-                              <div style={{ fontSize: '0.7rem', color: 'var(--text-subtle)' }}>
+                              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
                                 GL: {v.journal_entry_number}
                               </div>
                             )}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                             {v.date}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem' }}>
-                            <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                          <td style={{ padding: '0.4rem 0.6rem' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.8125rem' }}>
                               {v.supplier_company || v.supplier_name}
                             </div>
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem' }}>
                             <Badge variant="phase">
                               {v.payment_method_display || v.payment_method}
                             </Badge>
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', fontSize: '0.8125rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem' }}>
                             <div style={{ color: 'var(--text-main)' }}>{v.payment_account_name || 'Cash/Bank'}</div>
                             {v.reference && (
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>Ref: {v.reference}</div>
+                              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>Ref: {v.reference}</div>
                             )}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: v.status === 'CANCELLED' ? 'var(--text-muted)' : 'var(--success)' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: v.status === 'CANCELLED' ? 'var(--text-muted)' : 'var(--success)' }}>
                             Rs. {formatMoney(v.amount)}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
                             {v.status === 'SUBMITTED' && <Badge variant="success">Submitted</Badge>}
                             {v.status === 'DRAFT' && <Badge variant="warning">Draft</Badge>}
                             {v.status === 'CANCELLED' && <Badge variant="danger">Cancelled</Badge>}
                           </td>
 
-                          <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
                               {v.status === 'DRAFT' && (
                                 <Button
                                   variant="primary"
-                                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                                  icon={<CheckCircle2 size={13} />}
+                                  style={{ padding: '0.25rem 0.45rem' }}
+                                  icon={<CheckCircle2 size={12} />}
+                                  title="Submit & Post Payment Voucher"
                                   onClick={() => handleSubmitDraftPayment(v)}
-                                >
-                                  Submit
-                                </Button>
+                                />
                               )}
 
                               {v.status === 'SUBMITTED' && (
                                 <Button
                                   variant="outline"
-                                  style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderColor: 'var(--danger)', color: 'var(--danger)' }}
-                                  icon={<RotateCcw size={13} />}
+                                  style={{ padding: '0.25rem 0.45rem', borderColor: 'var(--danger)', color: 'var(--danger)' }}
+                                  icon={<XCircle size={12} />}
                                   onClick={() => handleOpenCancelModal(v)}
                                   title="Cancel payment and post reversal GL entry"
-                                >
-                                  Cancel
-                                </Button>
+                                />
                               )}
                             </div>
                           </td>
@@ -768,9 +769,8 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       {viewMode === 'reports' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <Card
-            title="Consolidated Supplier Payables & Settlement Report"
-            subtitle="Multi-dimensional auditing matrix across all vendor accounts"
-            icon={<FileText size={20} />}
+            title="Payables Audit Report"
+            icon={<FileText size={18} />}
           >
             {/* Report Filters */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '0.5rem' }}>

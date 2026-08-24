@@ -3,11 +3,8 @@ import {
   Scale,
   TrendingUp,
   PieChart,
-  RefreshCw,
   Filter,
   Search,
-  Download,
-  Printer,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -22,6 +19,10 @@ import { accountingService } from '../../services/accountingService';
 
 type ReportType = 'TRIAL_BALANCE' | 'INCOME_STATEMENT' | 'BALANCE_SHEET';
 type PeriodPreset = 'this_month' | 'today' | 'this_week' | 'last_month' | 'this_quarter' | 'this_year' | 'all_time' | 'custom';
+
+interface FinancialReportsTabProps {
+  refreshTrigger?: number;
+}
 
 const computePresetDates = (preset: PeriodPreset): { start: string; end: string } => {
   const now = new Date();
@@ -67,7 +68,7 @@ const formatMoney = (val: number | string | undefined | null): string => {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-export const FinancialReportsTab: React.FC = () => {
+export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refreshTrigger }) => {
   const [activeReport, setActiveReport] = useState<ReportType>('TRIAL_BALANCE');
   const [trialBalance, setTrialBalance] = useState<TrialBalanceResponse | null>(null);
   const [incomeStatement, setIncomeStatement] = useState<IncomeStatementResponse | null>(null);
@@ -121,7 +122,7 @@ export const FinancialReportsTab: React.FC = () => {
 
   useEffect(() => {
     fetchReports();
-  }, [fetchReports]);
+  }, [fetchReports, refreshTrigger]);
 
   // Client-side filtered rows for Trial Balance
   const filteredTrialBalanceRows = useMemo(() => {
@@ -338,30 +339,17 @@ export const FinancialReportsTab: React.FC = () => {
             <span>Balance Sheet</span>
           </button>
         </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <Button variant="outline" icon={<Download size={14} />} onClick={handleExportCSV}>
-            Export CSV
-          </Button>
-          <Button variant="outline" icon={<Printer size={14} />} onClick={handlePrint}>
-            Print Report
-          </Button>
-          <Button variant="secondary" icon={<RefreshCw size={14} />} loading={loading} onClick={fetchReports}>
-            Recalculate
-          </Button>
-        </div>
       </div>
 
       {/* Comprehensive Filter Control Panel */}
       <Card
         title="Report Parameters & Date Range Filters"
-        subtitle="Filter financial accounting transactions by date periods, specific as-of dates, or account codes"
-        icon={<Filter size={18} />}
+        icon={<Filter size={16} />}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem', alignItems: 'flex-end' }}>
           {/* Period Preset */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Period Preset
             </label>
             <select
@@ -369,11 +357,11 @@ export const FinancialReportsTab: React.FC = () => {
               onChange={(e) => handlePeriodPresetChange(e.target.value as PeriodPreset)}
               style={{
                 width: '100%',
-                padding: '0.55rem 0.75rem',
-                fontSize: '0.8125rem',
+                padding: '0.35rem 0.6rem',
+                fontSize: '0.78125rem',
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
+                borderRadius: '0.375rem',
                 color: 'var(--text-main)',
                 outline: 'none',
               }}
@@ -393,7 +381,7 @@ export const FinancialReportsTab: React.FC = () => {
           {activeReport === 'INCOME_STATEMENT' ? (
             <>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                   Start Date
                 </label>
                 <input
@@ -406,11 +394,11 @@ export const FinancialReportsTab: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.55rem 0.75rem',
-                    fontSize: '0.8125rem',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.78125rem',
                     backgroundColor: 'var(--bg-input)',
                     border: '1px solid var(--border-medium)',
-                    borderRadius: '0.5rem',
+                    borderRadius: '0.375rem',
                     color: 'var(--text-main)',
                     outline: 'none',
                     opacity: periodPreset === 'all_time' ? 0.5 : 1,
@@ -419,7 +407,7 @@ export const FinancialReportsTab: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                   End Date
                 </label>
                 <input
@@ -432,11 +420,11 @@ export const FinancialReportsTab: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.55rem 0.75rem',
-                    fontSize: '0.8125rem',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.78125rem',
                     backgroundColor: 'var(--bg-input)',
                     border: '1px solid var(--border-medium)',
-                    borderRadius: '0.5rem',
+                    borderRadius: '0.375rem',
                     color: 'var(--text-main)',
                     outline: 'none',
                     opacity: periodPreset === 'all_time' ? 0.5 : 1,
@@ -446,7 +434,7 @@ export const FinancialReportsTab: React.FC = () => {
             </>
           ) : (
             <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                 As of Date
               </label>
               <input
@@ -459,11 +447,11 @@ export const FinancialReportsTab: React.FC = () => {
                 }}
                 style={{
                   width: '100%',
-                  padding: '0.55rem 0.75rem',
-                  fontSize: '0.8125rem',
+                  padding: '0.35rem 0.6rem',
+                  fontSize: '0.78125rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
-                  borderRadius: '0.5rem',
+                  borderRadius: '0.375rem',
                   color: 'var(--text-main)',
                   outline: 'none',
                   opacity: periodPreset === 'all_time' ? 0.5 : 1,
@@ -474,11 +462,11 @@ export const FinancialReportsTab: React.FC = () => {
 
           {/* Account Filter / Search */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Search Line Item / Code
             </label>
             <div style={{ position: 'relative' }}>
-              <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
+              <Search size={13} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
               <input
                 type="text"
                 placeholder="Filter by name or code..."
@@ -486,11 +474,11 @@ export const FinancialReportsTab: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.55rem 0.75rem 0.55rem 2.25rem',
-                  fontSize: '0.8125rem',
+                  padding: '0.35rem 0.65rem 0.35rem 1.9rem',
+                  fontSize: '0.78125rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
-                  borderRadius: '0.5rem',
+                  borderRadius: '0.375rem',
                   color: 'var(--text-main)',
                   outline: 'none',
                 }}
@@ -529,8 +517,7 @@ export const FinancialReportsTab: React.FC = () => {
           {activeReport === 'TRIAL_BALANCE' && trialBalance && (
             <Card
               title="General Ledger Trial Balance"
-              subtitle={`Verified double-entry summary as of ${trialBalance.as_of_date} (${filteredTrialBalanceRows.length} active accounts displayed)`}
-              icon={<Scale size={20} />}
+              icon={<Scale size={16} />}
               action={
                 <Badge variant={trialBalance.is_balanced ? 'success' : 'danger'}>
                   {trialBalance.is_balanced ? 'Balanced (DR = CR)' : 'Unbalanced'}
@@ -599,8 +586,7 @@ export const FinancialReportsTab: React.FC = () => {
           {activeReport === 'INCOME_STATEMENT' && incomeStatement && (
             <Card
               title="Profit & Loss Statement (Income Statement)"
-              subtitle={`Accounting Period: ${incomeStatement.period.start_date} to ${incomeStatement.period.end_date}`}
-              icon={<TrendingUp size={20} />}
+              icon={<TrendingUp size={16} />}
               action={
                 <Badge variant={incomeStatement.net_profit >= 0 ? 'success' : 'danger'}>
                   Net {incomeStatement.net_profit >= 0 ? 'Profit' : 'Loss'}: Rs. {formatMoney(Math.abs(incomeStatement.net_profit))}
@@ -683,8 +669,7 @@ export const FinancialReportsTab: React.FC = () => {
           {activeReport === 'BALANCE_SHEET' && balanceSheet && (
             <Card
               title="Balance Sheet"
-              subtitle={`Financial position as of ${balanceSheet.as_of_date}`}
-              icon={<PieChart size={20} />}
+              icon={<PieChart size={16} />}
               action={
                 <Badge variant={balanceSheet.is_balanced ? 'success' : 'danger'}>
                   {balanceSheet.is_balanced ? 'Balanced (Assets = Liabilities + Equity)' : 'Unbalanced'}

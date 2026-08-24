@@ -23,7 +23,6 @@ import {
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { CustomerModal } from './CustomerModal';
@@ -324,6 +323,21 @@ export const CustomersPage: React.FC = () => {
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Button
             variant="outline"
+            icon={<RefreshCw size={13} />}
+            loading={loading || paymentsLoading || reportLoading}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+            onClick={() => {
+              if (activeTab === 'customers') fetchCustomers();
+              else if (activeTab === 'payments') fetchPayments();
+              else if (activeTab === 'receivables') fetchReceivablesReport();
+            }}
+            title="Refresh Data"
+          >
+            Refresh
+          </Button>
+
+          <Button
+            variant="outline"
             icon={<DollarSign size={14} />}
             style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             onClick={() => handleOpenPaymentModal()}
@@ -413,92 +427,135 @@ export const CustomersPage: React.FC = () => {
       {/* TAB 1: CUSTOMERS DIRECTORY & BALANCES */}
       {activeTab === 'customers' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-          {/* Metrics Grid */}
+          {/* Standardized Metrics Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
             <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
                 <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Receivables</span>
                 <DollarSign size={15} style={{ color: 'var(--danger)' }} />
               </div>
-              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                 Rs. {formatMoney(totalReceivables)}
               </div>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Outstanding customer credit</div>
             </div>
 
             <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
                 <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Credit Authorized</span>
                 <CreditCard size={15} style={{ color: 'var(--success)' }} />
               </div>
-              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
                 {creditEligibleCount}
               </div>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Allowed on-account purchases</div>
             </div>
 
             <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
                 <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Customers</span>
                 <Users size={15} style={{ color: 'var(--primary-400)' }} />
               </div>
-              <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                 {totalCount}
               </div>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Registered + Walk-in</div>
             </div>
           </div>
 
-          {/* Filter & Search Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: 1, maxWidth: '600px' }}>
-              <div style={{ flex: 1, minWidth: '240px' }}>
-                <Input
-                  placeholder="Search by name, phone (+92...), or ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  icon={<Search size={14} />}
-                />
-              </div>
-
-              <select
-                value={creditFilter}
-                onChange={(e) => setCreditFilter(e.target.value as any)}
+          {/* Standard Compact Filter Toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.45rem 0.65rem',
+              borderRadius: '0.5rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
+            <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '160px' }}>
+              <Search
+                size={13}
                 style={{
+                  position: 'absolute',
+                  left: '0.6rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-subtle)',
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Search customer name, phone, or ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.3rem 0.6rem 0.3rem 1.85rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
-                  borderRadius: '0.5rem',
-                  padding: '0.625rem',
+                  borderRadius: '0.375rem',
                   color: 'var(--text-main)',
+                  fontSize: '0.75rem',
                   outline: 'none',
-                  fontSize: '0.8125rem',
                 }}
-              >
-                <option value="ALL">All Credit Policies</option>
-                <option value="CREDIT_ENABLED">Credit Authorized Only</option>
-                <option value="CASH_ONLY">Cash-Only</option>
-              </select>
-
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                style={{
-                  backgroundColor: 'var(--bg-input)',
-                  border: '1px solid var(--border-medium)',
-                  borderRadius: '0.5rem',
-                  padding: '0.625rem',
-                  color: 'var(--text-main)',
-                  outline: 'none',
-                  fontSize: '0.8125rem',
-                }}
-              >
-                <option value="ALL">All Status</option>
-                <option value="ACTIVE">Active Only</option>
-                <option value="INACTIVE">Inactive Only</option>
-              </select>
+              />
             </div>
 
-            <Button variant="secondary" icon={<RefreshCw size={14} />} onClick={fetchCustomers} />
+            <select
+              value={creditFilter}
+              onChange={(e) => setCreditFilter(e.target.value as any)}
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.3rem 0.6rem',
+                color: 'var(--text-main)',
+                fontSize: '0.75rem',
+                outline: 'none',
+                minWidth: '130px',
+              }}
+            >
+              <option value="ALL">All Credit Policies</option>
+              <option value="CREDIT_ENABLED">Credit Authorized</option>
+              <option value="CASH_ONLY">Cash Only</option>
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.3rem 0.6rem',
+                color: 'var(--text-main)',
+                fontSize: '0.75rem',
+                outline: 'none',
+                minWidth: '110px',
+              }}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="ACTIVE">Active Only</option>
+              <option value="INACTIVE">Inactive Only</option>
+            </select>
+
+            {(searchQuery || creditFilter !== 'ALL' || statusFilter !== 'ALL') && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery('');
+                  setCreditFilter('ALL');
+                  setStatusFilter('ALL');
+                }}
+                style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
+              >
+                Clear
+              </Button>
+            )}
           </div>
 
           {/* Customer Table Card */}
@@ -529,7 +586,7 @@ export const CustomersPage: React.FC = () => {
                       <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Receivable Balance</th>
                       <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Credit Policy</th>
                       <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
-                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                      <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -635,36 +692,32 @@ export const CustomersPage: React.FC = () => {
                             </Badge>
                           </td>
 
-                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.3rem' }}>
                               {!cust.is_walkin && balance > 0 && (
                                 <Button
                                   variant="primary"
-                                  icon={<DollarSign size={11} />}
-                                  style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem', backgroundColor: 'var(--success)', borderColor: 'var(--success)' }}
+                                  icon={<DollarSign size={13} />}
+                                  style={{ padding: '0.3rem 0.45rem', backgroundColor: 'var(--success)', borderColor: 'var(--success)' }}
                                   onClick={() => handleOpenPaymentModal(cust)}
-                                  title="Record Payment"
-                                >
-                                  Pay
-                                </Button>
+                                  title="Record Payment / Receive Cash"
+                                />
                               )}
 
                               {!cust.is_walkin && (
                                 <Button
                                   variant="outline"
-                                  icon={<FileText size={11} />}
-                                  style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+                                  icon={<FileText size={13} />}
+                                  style={{ padding: '0.3rem 0.45rem' }}
                                   onClick={() => handleOpenStatement(cust)}
                                   title="View Statement of Account"
-                                >
-                                  Statement
-                                </Button>
+                                />
                               )}
 
                               <Button
                                 variant="outline"
-                                icon={<Edit2 size={11} />}
-                                style={{ padding: '0.2rem 0.4rem', fontSize: '0.6875rem' }}
+                                icon={<Edit2 size={13} />}
+                                style={{ padding: '0.3rem 0.45rem' }}
                                 onClick={() => handleOpenEditCustomer(cust)}
                                 title="Edit Customer Profile"
                               />
@@ -672,10 +725,10 @@ export const CustomersPage: React.FC = () => {
                               {!cust.is_walkin && (
                                 <Button
                                   variant="outline"
-                                  icon={<Power size={11} />}
+                                  icon={<Power size={13} />}
                                   title={cust.is_active ? 'Deactivate customer' : 'Reactivate customer'}
                                   style={{
-                                    padding: '0.2rem 0.4rem',
+                                    padding: '0.3rem 0.45rem',
                                     color: cust.is_active ? 'var(--warning)' : 'var(--success)',
                                     borderColor: cust.is_active ? 'var(--warning-border)' : 'var(--success-border)',
                                   }}
@@ -697,54 +750,91 @@ export const CustomersPage: React.FC = () => {
 
       {/* TAB 2: CUSTOMER PAYMENTS HISTORY */}
       {activeTab === 'payments' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Filters Bar */}
-          <Card title="Payment Filters" subtitle="Search by receipt number, customer, or status" icon={<Receipt size={18} />}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '220px' }}>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                  Search Payment
-                </label>
-                <input
-                  type="text"
-                  placeholder="PAY-2026-00001 or Customer Name..."
-                  value={paymentSearch}
-                  onChange={(e) => setPaymentSearch(e.target.value)}
-                  style={{ width: '100%', padding: '0.45rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                  Status
-                </label>
-                <select
-                  value={paymentStatusFilter}
-                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.45rem 0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-                >
-                  <option value="">All Statuses</option>
-                  <option value="SUBMITTED">Submitted</option>
-                  <option value="DRAFT">Draft</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="primary" icon={<Search size={13} />} onClick={fetchPayments}>
-                  Filter
-                </Button>
-                <Button
-                  variant="outline"
-                  icon={<RefreshCw size={13} />}
-                  onClick={() => {
-                    setPaymentSearch('');
-                    setPaymentStatusFilter('');
-                  }}
-                />
-              </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+          {/* Standard Compact Filter Toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.45rem 0.65rem',
+              borderRadius: '0.5rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
+            <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '160px' }}>
+              <Search
+                size={13}
+                style={{
+                  position: 'absolute',
+                  left: '0.6rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-subtle)',
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Search voucher # or customer name..."
+                value={paymentSearch}
+                onChange={(e) => setPaymentSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.3rem 0.6rem 0.3rem 1.85rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.75rem',
+                  outline: 'none',
+                }}
+              />
             </div>
-          </Card>
+
+            <select
+              value={paymentStatusFilter}
+              onChange={(e) => setPaymentStatusFilter(e.target.value)}
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.3rem 0.6rem',
+                color: 'var(--text-main)',
+                fontSize: '0.75rem',
+                outline: 'none',
+                minWidth: '120px',
+              }}
+            >
+              <option value="">All Statuses</option>
+              <option value="SUBMITTED">Submitted</option>
+              <option value="DRAFT">Draft</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+
+            <Button
+              variant="primary"
+              icon={<Search size={12} />}
+              onClick={fetchPayments}
+              style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem', fontWeight: 600 }}
+            >
+              Filter
+            </Button>
+
+            {(paymentSearch || paymentStatusFilter) && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPaymentSearch('');
+                  setPaymentStatusFilter('');
+                }}
+                style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
 
           {/* Payments Table */}
           <Card title={`Customer Payment Receipts (${payments.length})`} subtitle="Double-entry integrated Accounts Receivable settlement vouchers" icon={<Receipt size={18} />}>
@@ -828,12 +918,11 @@ export const CustomersPage: React.FC = () => {
                             {pay.status === 'SUBMITTED' && (
                               <Button
                                 variant="outline"
-                                icon={<RotateCcw size={12} />}
+                                icon={<RotateCcw size={13} />}
                                 onClick={() => handleOpenCancelPayment(pay)}
                                 title="Cancel Payment & Reverse Accounts Receivable"
-                              >
-                                Cancel
-                              </Button>
+                                style={{ padding: '0.3rem 0.45rem' }}
+                              />
                             )}
                           </td>
                         </tr>
@@ -849,61 +938,61 @@ export const CustomersPage: React.FC = () => {
 
       {/* TAB 3: RECEIVABLES AGING REPORT */}
       {activeTab === 'receivables' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {reportLoading ? (
             <LoadingSpinner label="Generating customer receivables report..." />
           ) : receivablesReport ? (
             <>
-              {/* KPI Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Outstanding Receivables</span>
-                    <DollarSign size={18} style={{ color: 'var(--danger)' }} />
+              {/* Standardized KPI Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Outstanding Receivables</span>
+                    <DollarSign size={15} style={{ color: 'var(--danger)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(receivablesReport.summary.total_outstanding_receivables)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Active customer credit debt
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Credit Invoiced</span>
-                    <CreditCard size={18} style={{ color: 'var(--primary-400)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Credit Invoiced</span>
+                    <CreditCard size={15} style={{ color: 'var(--primary-400)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(receivablesReport.summary.total_credit_sales)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Net Invoiced: Rs. {formatMoney(receivablesReport.summary.net_credit_invoiced ?? (receivablesReport.summary.total_credit_sales - (receivablesReport.summary.total_sales_returns || 0)))}
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Returns Deductions</span>
-                    <TrendingDown size={18} style={{ color: 'var(--info)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Returns Deductions</span>
+                    <TrendingDown size={15} style={{ color: 'var(--info)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--info)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--info)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(receivablesReport.summary.total_sales_returns || 0)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Sales return credits & allowances
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Payments Collected</span>
-                    <CheckCircle size={18} style={{ color: 'var(--success)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Payments Collected</span>
+                    <CheckCircle size={15} style={{ color: 'var(--success)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(receivablesReport.summary.total_payments_collected)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Cleared via cash/bank receipts
                   </div>
                 </div>
@@ -975,14 +1064,14 @@ export const CustomersPage: React.FC = () => {
                             <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
                               <Button
                                 variant="outline"
-                                icon={<FileText size={12} />}
+                                icon={<FileText size={13} />}
                                 onClick={() => {
                                   const c = customers.find((cust) => cust.id === row.customer_id);
                                   if (c) handleOpenStatement(c);
                                 }}
-                              >
-                                Statement
-                              </Button>
+                                title="View Statement of Account"
+                                style={{ padding: '0.3rem 0.45rem' }}
+                              />
                             </td>
                           </tr>
                         ))
@@ -1220,25 +1309,48 @@ export const CustomersPage: React.FC = () => {
 
             {/* Summary Bar */}
             {statementData && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '0.5rem' }}>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Invoiced (Sales)</div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-main)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.625rem' }}>
+                <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Invoiced</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-main)', marginTop: '0.15rem' }}>
                     Rs. {formatMoney(statementData.summary.total_debit)}
                   </div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Credit purchases billed</div>
                 </div>
 
-                <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '0.5rem' }}>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Paid / Credited</div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>
-                    Rs. {formatMoney(statementData.summary.total_credit)}
+                <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Payments Paid</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--success)', marginTop: '0.15rem' }}>
+                    Rs. {formatMoney(statementData.summary.total_payments ?? statementData.summary.total_credit)}
                   </div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Customer cash receipts</div>
                 </div>
 
-                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '0.5rem' }}>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--danger)', fontWeight: 600 }}>Closing Outstanding Balance</div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>
-                    Rs. {formatMoney(statementData.summary.closing_balance)}
+                <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Sales Returns</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--info)', marginTop: '0.15rem' }}>
+                    Rs. {formatMoney(statementData.summary.total_returns ?? 0)}
+                  </div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Goods returned credits</div>
+                </div>
+
+                <div
+                  className="glass-card"
+                  style={{
+                    padding: '0.625rem 0.75rem',
+                    border: statementData.summary.closing_balance > 0 ? '1px solid var(--danger)' : statementData.summary.closing_balance < 0 ? '1px solid var(--info)' : '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <div style={{ fontSize: '0.6875rem', color: statementData.summary.closing_balance > 0 ? 'var(--danger)' : statementData.summary.closing_balance < 0 ? 'var(--info)' : 'var(--success)', fontWeight: 600, textTransform: 'uppercase' }}>
+                    {statementData.summary.closing_balance > 0 ? 'Due Balance' : statementData.summary.closing_balance < 0 ? 'Store Credit' : 'Balance'}
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: statementData.summary.closing_balance > 0 ? 'var(--danger)' : statementData.summary.closing_balance < 0 ? 'var(--info)' : 'var(--success)', marginTop: '0.15rem' }}>
+                    {statementData.summary.closing_balance < 0
+                      ? `- Rs. ${formatMoney(Math.abs(statementData.summary.closing_balance))}`
+                      : `Rs. ${formatMoney(statementData.summary.closing_balance)}`}
+                  </div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                    {statementData.summary.closing_balance > 0 ? 'Customer owes' : statementData.summary.closing_balance < 0 ? 'Overpaid / Advance credit' : 'Account fully settled'}
                   </div>
                 </div>
               </div>

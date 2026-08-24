@@ -27,6 +27,11 @@ export const purchaseService = {
     return response.data;
   },
 
+  async updatePurchase(id: number, data: PurchaseCreatePayload): Promise<Purchase> {
+    const response = await apiClient.put<Purchase>(`/purchases/orders/${id}/`, data);
+    return response.data;
+  },
+
   async submitDraftPurchase(id: number): Promise<Purchase> {
     const response = await apiClient.post<Purchase>(`/purchases/orders/${id}/submit/`);
     return response.data;

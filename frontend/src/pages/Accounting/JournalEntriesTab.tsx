@@ -299,8 +299,7 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
       {/* Entries List Card */}
       <Card
         title="Double-Entry Journal Vouchers"
-        subtitle={`${filteredEntries.length} chronological journal transactions`}
-        icon={<BookOpen size={20} />}
+        icon={<BookOpen size={16} />}
       >
         {filteredEntries.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -464,7 +463,6 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
         isOpen={!!reversingEntry}
         onClose={() => setReversingEntry(null)}
         title={`Reverse Journal Entry: ${reversingEntry?.entry_number}`}
-        subtitle="Creates an exact inverse balancing transaction without modifying historical records."
       >
         {reversalError && (
           <div style={{
@@ -505,7 +503,6 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
         isOpen={isCreateModalOpen}
         onClose={() => !isCreating && setIsCreateModalOpen(false)}
         title="Create General Journal Entry"
-        subtitle="Post a double-entry transaction to general ledger with automatic balancing validation."
         maxWidth="820px"
       >
         {createError && (

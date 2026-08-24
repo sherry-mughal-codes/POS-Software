@@ -31,7 +31,6 @@ interface POSCartProps {
   onUpdateOverallDiscountValue: (val: number) => void;
   onOpenCheckout: () => void;
   isDayOpen?: boolean;
-  sessionLoading?: boolean;
   onOpenDay?: () => void;
 }
 
@@ -58,7 +57,6 @@ export const POSCart: React.FC<POSCartProps> = ({
   onUpdateOverallDiscountValue,
   onOpenCheckout,
   isDayOpen = true,
-  sessionLoading = false,
   onOpenDay,
 }) => {
   const [showDiscountInput, setShowDiscountInput] = useState(false);
@@ -541,47 +539,6 @@ export const POSCart: React.FC<POSCartProps> = ({
             Rs. {formatMoney(grandTotal)}
           </span>
         </div>
-
-        {/* Day Session Closed Warning (Only when not loading and session is truly closed) */}
-        {!sessionLoading && !isDayOpen && (
-          <div
-            style={{
-              padding: '0.35rem 0.5rem',
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid var(--danger)',
-              borderRadius: '0.3rem',
-              fontSize: '0.6875rem',
-              color: 'var(--danger)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '0.35rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <AlertCircle size={12} style={{ flexShrink: 0 }} />
-              <span style={{ fontWeight: 600 }}>Day Session Closed</span>
-            </div>
-            {onOpenDay && (
-              <button
-                type="button"
-                onClick={onOpenDay}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#38bdf8',
-                  textDecoration: 'underline',
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  fontSize: '0.6875rem',
-                  padding: 0,
-                }}
-              >
-                Open Day Now
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '0.3rem' }}>

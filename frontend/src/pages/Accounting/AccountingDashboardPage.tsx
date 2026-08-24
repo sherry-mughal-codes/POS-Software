@@ -28,6 +28,7 @@ export const AccountingDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedLedgerAccountId, setSelectedLedgerAccountId] = useState<number | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   const fetchAccountingData = useCallback(async () => {
     setLoading(true);
@@ -49,6 +50,11 @@ export const AccountingDashboardPage: React.FC = () => {
       setLoading(false);
     }
   }, []);
+
+  const handleRefresh = async () => {
+    await fetchAccountingData();
+    setRefreshTrigger((prev) => prev + 1);
+  };
 
   useEffect(() => {
     fetchAccountingData();
@@ -81,9 +87,9 @@ export const AccountingDashboardPage: React.FC = () => {
           icon={<RefreshCw size={13} />}
           loading={loading}
           style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-          onClick={fetchAccountingData}
+          onClick={handleRefresh}
         >
-          Refresh Ledger
+          Refresh
         </Button>
       </div>
 
@@ -229,11 +235,12 @@ export const AccountingDashboardPage: React.FC = () => {
             <AccountLedgerTab
               accounts={accounts}
               initialAccountId={selectedLedgerAccountId}
+              refreshTrigger={refreshTrigger}
             />
           )}
 
           {activeTab === 'REPORTS' && (
-            <FinancialReportsTab />
+            <FinancialReportsTab refreshTrigger={refreshTrigger} />
           )}
         </>
       )}

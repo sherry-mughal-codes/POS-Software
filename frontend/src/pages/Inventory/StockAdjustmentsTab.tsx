@@ -145,10 +145,9 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
       {/* Header with New Adjustment CTA */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Stock Adjustments Audit Log</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '0.125rem' }}>
-            Permanent audit trail of manual adjustments, shrinkage, discovered stock, and physical count corrections.
-          </p>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            Stock Adjustments & Audit
+          </h2>
         </div>
 
         <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenCreateModal}>
@@ -157,7 +156,7 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
       </div>
 
       {/* Adjustments Table */}
-      <Card title="Posted Stock Adjustments" subtitle="Immutable adjustment records with mandatory reasons and cost impact" icon={<SlidersHorizontal size={20} />}>
+      <Card title="Posted Stock Adjustments" icon={<SlidersHorizontal size={16} />}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
             <thead>
@@ -251,12 +250,11 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                     <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
                       <Button
                         variant="outline"
-                        icon={<Eye size={11} />}
-                        style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+                        icon={<Eye size={13} />}
+                        style={{ padding: '0.25rem 0.45rem' }}
                         onClick={() => setSelectedAdjustmentDetail(adj)}
-                      >
-                        Details
-                      </Button>
+                        title="View Adjustment Voucher Details"
+                      />
                     </td>
                   </tr>
                 ))
@@ -271,68 +269,67 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
         <Modal
           isOpen={!!selectedAdjustmentDetail}
           onClose={() => setSelectedAdjustmentDetail(null)}
-          title={`Adjustment Document: ${selectedAdjustmentDetail.adjustment_number}`}
-          subtitle={`Reason: ${selectedAdjustmentDetail.reason_display} | Posted by: ${selectedAdjustmentDetail.created_by_name}`}
+          title={`Adjustment Voucher: ${selectedAdjustmentDetail.adjustment_number}`}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', padding: '1rem', backgroundColor: 'var(--bg-input)', borderRadius: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.625rem', padding: '0.75rem', backgroundColor: 'var(--bg-input)', borderRadius: '0.375rem' }}>
               <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Adjustment Type</span>
-                <div style={{ fontWeight: 700, marginTop: '0.25rem' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Adjustment Type</span>
+                <div style={{ fontWeight: 700, fontSize: '0.8125rem', marginTop: '0.15rem' }}>
                   {selectedAdjustmentDetail.adjustment_type === 'IN' ? 'Stock Increase (+)' : 'Stock Decrease (-)'}
                 </div>
               </div>
               <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Posting Date</span>
-                <div style={{ fontWeight: 700, marginTop: '0.25rem' }}>{selectedAdjustmentDetail.date}</div>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Posting Date</span>
+                <div style={{ fontWeight: 700, fontSize: '0.8125rem', marginTop: '0.15rem' }}>{selectedAdjustmentDetail.date}</div>
               </div>
               <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Cost Impact</span>
-                <div style={{ fontWeight: 700, marginTop: '0.25rem', color: 'var(--primary-400)' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Cost Impact</span>
+                <div style={{ fontWeight: 700, fontSize: '0.8125rem', marginTop: '0.15rem', color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                   Rs. {formatMoney(selectedAdjustmentDetail.total_cost_impact)}
                 </div>
               </div>
             </div>
 
             {selectedAdjustmentDetail.notes && (
-              <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)', fontSize: '0.8125rem' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Notes / Remarks: </span>
+              <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: '0.375rem', border: '1px solid var(--border-subtle)', fontSize: '0.75rem' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Notes: </span>
                 <span>{selectedAdjustmentDetail.notes}</span>
               </div>
             )}
 
-            <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, marginTop: '0.5rem' }}>Adjusted Line Items</h4>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+            <h4 style={{ fontSize: '0.8125rem', fontWeight: 700, marginTop: '0.25rem' }}>Adjusted Line Items</h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78125rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.5rem', textAlign: 'left' }}>Product</th>
-                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>Before</th>
-                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>Difference</th>
-                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>After</th>
-                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>Unit Cost</th>
-                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>Subtotal</th>
+                  <th style={{ padding: '0.4rem', textAlign: 'left' }}>Product</th>
+                  <th style={{ padding: '0.4rem', textAlign: 'right' }}>Before</th>
+                  <th style={{ padding: '0.4rem', textAlign: 'right' }}>Difference</th>
+                  <th style={{ padding: '0.4rem', textAlign: 'right' }}>After</th>
+                  <th style={{ padding: '0.4rem', textAlign: 'right' }}>Unit Cost</th>
+                  <th style={{ padding: '0.4rem', textAlign: 'right' }}>Subtotal</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedAdjustmentDetail.items.map((it) => (
                   <tr key={it.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    <td style={{ padding: '0.625rem 0.5rem' }}>
+                    <td style={{ padding: '0.45rem 0.4rem' }}>
                       <div style={{ fontWeight: 600 }}>{it.product_name}</div>
-                      <code style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{it.product_sku}</code>
+                      <code style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{it.product_sku}</code>
                     </td>
-                    <td style={{ padding: '0.625rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                    <td style={{ padding: '0.45rem 0.4rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                       {it.system_stock}
                     </td>
-                    <td style={{ padding: '0.625rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: it.difference_quantity > 0 ? 'var(--success)' : 'var(--danger)' }}>
+                    <td style={{ padding: '0.45rem 0.4rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: it.difference_quantity > 0 ? 'var(--success)' : 'var(--danger)' }}>
                       {it.difference_quantity > 0 ? `+${it.difference_quantity}` : it.difference_quantity}
                     </td>
-                    <td style={{ padding: '0.625rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                    <td style={{ padding: '0.45rem 0.4rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                       {it.actual_stock}
                     </td>
-                    <td style={{ padding: '0.625rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                    <td style={{ padding: '0.45rem 0.4rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                       Rs. {formatMoney(it.unit_cost)}
                     </td>
-                    <td style={{ padding: '0.625rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                    <td style={{ padding: '0.45rem 0.4rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
                       Rs. {formatMoney(it.subtotal)}
                     </td>
                   </tr>
@@ -340,8 +337,8 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
               </tbody>
             </table>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <Button variant="outline" onClick={() => setSelectedAdjustmentDetail(null)}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+              <Button variant="outline" style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }} onClick={() => setSelectedAdjustmentDetail(null)}>
                 Close
               </Button>
             </div>
@@ -355,31 +352,30 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
           isOpen={isCreateModalOpen}
           onClose={handleCloseCreateModal}
           title="Record Stock Adjustment"
-          subtitle="Generate verifiable stock movement with mandatory justification reason"
         >
           {errorMsg && (
             <div style={{
-              padding: '0.75rem 1rem',
+              padding: '0.5rem 0.75rem',
               backgroundColor: 'var(--danger-bg)',
               border: '1px solid var(--danger-border)',
-              borderRadius: '0.5rem',
+              borderRadius: '0.375rem',
               color: 'var(--danger)',
-              fontSize: '0.8125rem',
-              marginBottom: '1rem',
+              fontSize: '0.75rem',
+              marginBottom: '0.75rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
             }}>
-              <AlertCircle size={16} />
+              <AlertCircle size={14} />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmitAdjustment} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <form onSubmit={handleSubmitAdjustment} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {/* Adjustment Type & Reason */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                   Adjustment Type *
                 </label>
                 <select
@@ -389,11 +385,11 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                     width: '100%',
                     backgroundColor: 'var(--bg-input)',
                     border: '1px solid var(--border-medium)',
-                    borderRadius: '0.5rem',
-                    padding: '0.625rem',
+                    borderRadius: '0.375rem',
+                    padding: '0.35rem 0.6rem',
                     color: 'var(--text-main)',
                     outline: 'none',
-                    fontSize: '0.8125rem',
+                    fontSize: '0.78125rem',
                   }}
                 >
                   <option value="OUT">Decrease Stock (-) [Loss / Damage / Spoiled]</option>
@@ -402,7 +398,7 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                   Reason Category *
                 </label>
                 <select
@@ -412,11 +408,11 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                     width: '100%',
                     backgroundColor: 'var(--bg-input)',
                     border: '1px solid var(--border-medium)',
-                    borderRadius: '0.5rem',
-                    padding: '0.625rem',
+                    borderRadius: '0.375rem',
+                    padding: '0.35rem 0.6rem',
                     color: 'var(--text-main)',
                     outline: 'none',
-                    fontSize: '0.8125rem',
+                    fontSize: '0.78125rem',
                   }}
                 >
                   <option value="DAMAGED">Damaged Goods</option>
@@ -432,7 +428,7 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
 
             {/* Product Selector */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                 Select Product *
               </label>
               <select
@@ -446,11 +442,11 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                   width: '100%',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
-                  borderRadius: '0.5rem',
-                  padding: '0.625rem',
+                  borderRadius: '0.375rem',
+                  padding: '0.35rem 0.6rem',
                   color: 'var(--text-main)',
                   outline: 'none',
-                  fontSize: '0.8125rem',
+                  fontSize: '0.78125rem',
                 }}
               >
                 {inventoryItems.map((p) => (

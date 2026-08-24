@@ -121,6 +121,7 @@ class SalesReturnViewSet(viewsets.ModelViewSet):
                 sale_id=data["sale_id"],
                 items_data=data["items"],
                 reason=data["reason"],
+                payment_account_id=data.get("payment_account"),
                 notes=data.get("notes", ""),
                 return_date=data.get("date"),
                 created_by=request.user,

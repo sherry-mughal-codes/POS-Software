@@ -55,6 +55,27 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
         return qs
 
+    def perform_create(self, serializer):
+        customer = serializer.save()
+        if customer.opening_balance > 0 and not customer.is_walkin:
+            from apps.accounting.services import AccountingService
+            AccountingService.record_customer_opening_balance(
+                customer=customer,
+                amount=customer.opening_balance,
+                created_by=self.request.user if self.request.user.is_authenticated else None,
+            )
+
+    def perform_update(self, serializer):
+        old_opening = serializer.instance.opening_balance
+        customer = serializer.save()
+        if not customer.is_walkin and customer.opening_balance != old_opening:
+            from apps.accounting.services import AccountingService
+            AccountingService.record_customer_opening_balance(
+                customer=customer,
+                amount=customer.opening_balance,
+                created_by=self.request.user if self.request.user.is_authenticated else None,
+            )
+
     def destroy(self, request, *args, **kwargs):
         customer = self.get_object()
         if customer.is_walkin:
@@ -136,6 +157,27 @@ class SupplierViewSet(viewsets.ModelViewSet):
         if self.action in ["create", "update", "partial_update", "destroy", "toggle_status"]:
             return [IsAdminOrManager()]
         return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        supplier = serializer.save()
+        if supplier.opening_balance > 0:
+            from apps.accounting.services import AccountingService
+            AccountingService.record_supplier_opening_balance(
+                supplier=supplier,
+                amount=supplier.opening_balance,
+                created_by=self.request.user if self.request.user.is_authenticated else None,
+            )
+
+    def perform_update(self, serializer):
+        old_opening = serializer.instance.opening_balance
+        supplier = serializer.save()
+        if supplier.opening_balance != old_opening:
+            from apps.accounting.services import AccountingService
+            AccountingService.record_supplier_opening_balance(
+                supplier=supplier,
+                amount=supplier.opening_balance,
+                created_by=self.request.user if self.request.user.is_authenticated else None,
+            )
 
     def get_queryset(self):
         qs = super().get_queryset()

@@ -91,6 +91,40 @@ class PurchaseViewSet(viewsets.ModelViewSet):
         except Exception as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
+    def update(self, request, *args, **kwargs):
+        purchase = self.get_object()
+        if purchase.status != "DRAFT":
+            return Response({"detail": "Only DRAFT purchase orders can be edited."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = PurchaseCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        supplier = Supplier.objects.get(pk=data["supplier"])
+        pay_method = PaymentMethod.objects.filter(pk=data.get("payment_method")).first() if data.get("payment_method") else None
+        pay_acc = Account.objects.filter(pk=data.get("payment_account")).first() if data.get("payment_account") else None
+
+        try:
+            updated = PurchaseService.update_purchase(
+                purchase=purchase,
+                supplier=supplier,
+                items_data=data["items"],
+                purchase_date=data.get("date"),
+                discount_amount=data.get("discount_amount", 0),
+                tax_amount=data.get("tax_amount", 0),
+                paid_amount=data.get("paid_amount", 0),
+                payment_method=pay_method,
+                payment_account=pay_acc,
+                supplier_invoice_number=data.get("supplier_invoice_number"),
+                supplier_invoice_file=data.get("supplier_invoice_file"),
+                notes=data.get("notes", ""),
+                submit_immediately=data.get("submit_immediately", False),
+                created_by=request.user,
+            )
+            return Response(PurchaseSerializer(updated).data)
+        except Exception as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=["post"], url_path="submit")
     def submit(self, request, pk=None):
         """Submits a draft purchase order."""

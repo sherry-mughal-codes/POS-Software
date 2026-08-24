@@ -26,6 +26,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [taxId, setTaxId] = useState('');
+  const [openingBalance, setOpeningBalance] = useState<number>(0);
   const [isActive, setIsActive] = useState(true);
   const [notes, setNotes] = useState('');
 
@@ -43,6 +44,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
         setEmail(supplierToEdit.email || '');
         setAddress(supplierToEdit.address || '');
         setTaxId(supplierToEdit.tax_id || '');
+        setOpeningBalance(supplierToEdit.opening_balance ? Number(supplierToEdit.opening_balance) : 0);
         setIsActive(supplierToEdit.is_active);
         setNotes(supplierToEdit.notes || '');
       } else {
@@ -52,6 +54,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
         setEmail('');
         setAddress('');
         setTaxId('');
+        setOpeningBalance(0);
         setIsActive(true);
         setNotes('');
 
@@ -82,6 +85,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
       email: email.trim() || null,
       address: address.trim() || null,
       tax_id: taxId.trim() || null,
+      opening_balance: Number(openingBalance) || 0,
       is_active: isActive,
       notes: notes.trim() || null,
     };
@@ -175,12 +179,24 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
           />
         </div>
 
-        <Input
-          label="Warehouse / Business Address"
-          placeholder="Plot #, Industrial Area / City..."
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+          <Input
+            label="Warehouse / Business Address"
+            placeholder="Plot #, Industrial Area / City..."
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+          <Input
+            label="Opening Payable (Rs.)"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={openingBalance || ''}
+            onChange={(e) => setOpeningBalance(parseFloat(e.target.value) || 0)}
+            helperText="Prior balance owed for initial setup."
+          />
+        </div>
 
         <Input
           label="Payment Terms & Notes"

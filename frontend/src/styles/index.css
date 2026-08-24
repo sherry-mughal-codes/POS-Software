@@ -61,8 +61,8 @@
   --shadow-glow: 0 0 20px -3px var(--primary-glow);
 
   /* Layout Dimensions */
-  --sidebar-width: 280px;
-  --sidebar-collapsed-width: 72px;
+  --sidebar-width: 226px;
+  --sidebar-collapsed-width: 60px;
   --header-height: 68px;
 }
 

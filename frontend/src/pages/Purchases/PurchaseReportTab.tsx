@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BarChart3, Filter, RefreshCw, DollarSign, ShoppingBag, RotateCcw } from 'lucide-react';
-import { Card } from '../../components/common/Card';
+import { BarChart3, Filter, DollarSign, ShoppingBag, RotateCcw } from 'lucide-react';
 import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Supplier } from '../../types/contact';
 import { PurchaseReportSummary } from '../../types/purchase';
@@ -47,159 +45,165 @@ export const PurchaseReportTab: React.FC = () => {
   }, [fetchReport]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Filter Bar */}
-      <Card title="Report Filters" subtitle="Filter purchases and supplier liabilities by date range and distributor">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
-          <Input
-            label="Date From"
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-          <Input
-            label="Date To"
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Compact Filters Toolbar */}
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          title="Date From"
+          style={{
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '0.375rem',
+            padding: '0.35rem 0.5rem',
+            color: 'var(--text-main)',
+            fontSize: '0.75rem',
+            outline: 'none',
+          }}
+        />
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
-              Supplier Filter
-            </label>
-            <select
-              value={selectedSupplierId}
-              onChange={(e) => setSelectedSupplierId(e.target.value)}
-              style={{
-                width: '100%',
-                backgroundColor: 'var(--bg-input)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.625rem',
-                color: 'var(--text-main)',
-                outline: 'none',
-                fontSize: '0.8125rem',
-              }}
-            >
-              <option value="">All Suppliers</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.company_name || s.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          title="Date To"
+          style={{
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '0.375rem',
+            padding: '0.35rem 0.5rem',
+            color: 'var(--text-main)',
+            fontSize: '0.75rem',
+            outline: 'none',
+          }}
+        />
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
-              Status Filter
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              style={{
-                width: '100%',
-                backgroundColor: 'var(--bg-input)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.625rem',
-                color: 'var(--text-main)',
-                outline: 'none',
-                fontSize: '0.8125rem',
-              }}
-            >
-              <option value="">All Statuses</option>
-              <option value="SUBMITTED">Submitted</option>
-              <option value="DRAFT">Draft</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-          </div>
+        <select
+          value={selectedSupplierId}
+          onChange={(e) => setSelectedSupplierId(e.target.value)}
+          style={{
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '0.375rem',
+            padding: '0.35rem 0.5rem',
+            color: 'var(--text-main)',
+            outline: 'none',
+            fontSize: '0.75rem',
+            minWidth: '150px',
+          }}
+        >
+          <option value="">All Suppliers</option>
+          {suppliers.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.company_name || s.name}
+            </option>
+          ))}
+        </select>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Button variant="primary" icon={<Filter size={14} />} onClick={fetchReport} style={{ flex: 1 }}>
-              Apply
-            </Button>
-            <Button
-              variant="outline"
-              icon={<RefreshCw size={14} />}
-              onClick={() => {
-                setStartDate('');
-                setEndDate('');
-                setSelectedSupplierId('');
-                setStatusFilter('');
-              }}
-            />
-          </div>
-        </div>
-      </Card>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '0.375rem',
+            padding: '0.35rem 0.5rem',
+            color: 'var(--text-main)',
+            outline: 'none',
+            fontSize: '0.75rem',
+          }}
+        >
+          <option value="">All Statuses</option>
+          <option value="SUBMITTED">Submitted</option>
+          <option value="DRAFT">Draft</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
 
-      {/* Metrics Cards */}
+        <Button variant="primary" icon={<Filter size={12} />} onClick={fetchReport} style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}>
+          Apply
+        </Button>
+        <Button
+          variant="outline"
+          icon={<RotateCcw size={12} />}
+          style={{ padding: '0.25rem 0.45rem' }}
+          title="Reset Filters"
+          onClick={() => {
+            setStartDate('');
+            setEndDate('');
+            setSelectedSupplierId('');
+            setStatusFilter('');
+          }}
+        />
+      </div>
+
+      {/* Standardized Metrics Cards */}
       {loading ? (
         <LoadingSpinner label="Generating Purchase Analytics..." />
       ) : summary ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem' }}>
-          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Purchase Orders</span>
-              <ShoppingBag size={15} style={{ color: 'var(--primary-400)' }} />
+              <ShoppingBag size={14} style={{ color: 'var(--primary-400)' }} />
             </div>
-            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
               {summary.total_orders}
             </div>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Transactions in period</div>
           </div>
 
-          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Gross Purchases</span>
-              <DollarSign size={15} style={{ color: 'var(--primary-400)' }} />
+              <DollarSign size={14} style={{ color: 'var(--primary-400)' }} />
             </div>
-            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
               Rs. {formatMoney(summary.total_purchases)}
             </div>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Total inventory billed</div>
           </div>
 
-          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Paid Amount</span>
-              <DollarSign size={15} style={{ color: 'var(--success)' }} />
+              <DollarSign size={14} style={{ color: 'var(--success)' }} />
             </div>
-            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
               Rs. {formatMoney(summary.total_paid)}
             </div>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Cash / Bank paid</div>
           </div>
 
-          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Payables</span>
-              <DollarSign size={15} style={{ color: 'var(--warning)' }} />
+              <DollarSign size={14} style={{ color: 'var(--warning)' }} />
             </div>
-            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
               Rs. {formatMoney(summary.total_payable)}
             </div>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Unpaid supplier credit</div>
           </div>
 
-          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Returns</span>
-              <RotateCcw size={15} style={{ color: '#a5b4fc' }} />
+              <RotateCcw size={14} style={{ color: '#a5b4fc' }} />
             </div>
-            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#a5b4fc', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#a5b4fc', fontFamily: 'var(--font-mono)' }}>
               Rs. {formatMoney(summary.total_returned)}
             </div>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Restocking deductions</div>
           </div>
 
-          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Net Purchases</span>
-              <BarChart3 size={15} style={{ color: 'var(--primary-400)' }} />
+              <BarChart3 size={14} style={{ color: 'var(--primary-400)' }} />
             </div>
-            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
               Rs. {formatMoney(summary.net_purchases)}
             </div>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Gross minus returns</div>

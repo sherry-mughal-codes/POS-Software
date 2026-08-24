@@ -404,19 +404,20 @@ class SalesService:
     def process_sales_return(
         cls,
         sale_id: int,
-        items_data: List[Dict[str, Any]],
+        items_data: list,
         reason: str,
         notes: str = "",
-        return_date: Optional[date] = None,
-        created_by: Optional[User] = None,
+        return_date=None,
+        payment_account_id=None,
+        created_by=None,
     ) -> SalesReturn:
         """
-        Processes customer sales return against an existing completed sale:
+        Processes sales return for items from a completed sale:
         1. Validates return quantity against returnable limit per line.
         2. Increments returned_quantity on SaleItem.
         3. Creates SalesReturn and SalesReturnItems.
         4. Re-increases inventory (+Qty) in StockMovement.
-        5. Posts General Ledger Reversal entries.
+        5. Posts General Ledger Reversal entries (paying out immediate cash to customer on the spot).
         """
         # Validate that an active business day session is open
         active_session = DaySessionService.get_active_session()
@@ -474,12 +475,19 @@ class SalesService:
 
         return_number = cls.generate_return_number()
 
+        payout_acc = None
+        if payment_account_id:
+            payout_acc = Account.objects.filter(pk=payment_account_id).first()
+        if not payout_acc:
+            payout_acc = Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
+
         sales_return = SalesReturn.objects.create(
             return_number=return_number,
             original_sale=sale,
             date=return_date,
             refund_amount=total_refund,
             reason=reason,
+            payment_account=payout_acc,
             notes=notes,
             created_by=created_by,
         )
@@ -514,8 +522,8 @@ class SalesService:
                     created_by=created_by,
                 )
 
-        # General Ledger Accounting Reversal
-        cls._post_sales_return_accounting(sales_return, total_refund, total_returned_cogs, created_by)
+        # General Ledger Accounting Reversal (Immediate Payout on Return)
+        cls._post_sales_return_accounting(sales_return, total_refund, total_returned_cogs, payment_account_id, created_by)
 
         # Reallocate customer payments
         if not sale.customer.is_walkin:
@@ -530,27 +538,34 @@ class SalesService:
         sales_return: SalesReturn,
         total_refund: Decimal,
         total_cogs: Decimal,
+        payment_account_id=None,
         created_by=None,
     ):
         """
         Posts reversal journal entries for sales return:
-        1. DR Sales Returns (4020) / CR Cash or Accounts Receivable (1010/1030)
+        1. DR Sales Returns (4020) / CR Cash/Bank Payout (1010/1011/1020) or Accounts Receivable (1030)
         2. DR Merchandise Inventory (1040) / CR COGS (5010)
         """
-        cash_acc = Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
+        payout_acc = None
+        if payment_account_id:
+            payout_acc = Account.objects.filter(pk=payment_account_id).first()
+        if not payout_acc:
+            payout_acc = Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
+
         ar_acc = Account.objects.filter(code="1030").first() or Account.objects.get(code="1030")
         inventory_acc = Account.objects.filter(code="1040").first() or Account.objects.get(code="1040")
         sales_ret_acc = Account.objects.filter(code="4020").first() or Account.objects.get(code="4010")
         cogs_acc = Account.objects.filter(code="5010").first() or Account.objects.get(code="5010")
 
-        # Credit source
         orig_sale = sales_return.original_sale
-        if orig_sale.payment_method == PaymentMethodType.CREDIT or orig_sale.due_amount > Decimal("0.00"):
+        # If the original sale was an UNPAID credit sale with remaining due balance, adjust AR
+        if orig_sale.payment_method == PaymentMethodType.CREDIT and orig_sale.due_amount >= total_refund and orig_sale.paid_amount == Decimal("0.00"):
             refund_credit_acc = ar_acc
-        elif orig_sale.payment_account:
-            refund_credit_acc = orig_sale.payment_account
+            orig_sale.due_amount = max(Decimal("0.00"), orig_sale.due_amount - total_refund)
+            orig_sale.save(update_fields=["due_amount"])
         else:
-            refund_credit_acc = cash_acc
+            # Immediate Cash / Bank Payout to customer on the spot
+            refund_credit_acc = payout_acc
 
         if total_refund > Decimal("0.00"):
             rev_lines = [
@@ -564,7 +579,7 @@ class SalesService:
                     "account": refund_credit_acc,
                     "debit": Decimal("0.00"),
                     "credit": total_refund,
-                    "description": f"Refund / credit adjustment for {sales_return.return_number}",
+                    "description": f"Immediate refund payout for {sales_return.return_number}",
                 },
             ]
             AccountingService.create_journal_entry(
@@ -572,7 +587,7 @@ class SalesService:
                 reference_type=ReferenceType.SALE_RETURN if hasattr(ReferenceType, "SALE_RETURN") else ReferenceType.JOURNAL,
                 reference_id=sales_return.return_number,
                 lines=rev_lines,
-                narration=f"Customer Sales Return: {sales_return.return_number} (Ref: {orig_sale.invoice_number})",
+                narration=f"Customer Sales Return Payout: {sales_return.return_number} (Ref: {orig_sale.invoice_number})",
                 created_by=created_by,
             )
 
@@ -756,20 +771,22 @@ class DaySessionService:
         opened_at = session.opened_at
         closed_at = session.closed_at
 
+        # Helper time-range filter
+        def apply_session_filter(qs):
+            if opened_at and closed_at:
+                return qs.filter(created_at__gte=opened_at, created_at__lte=closed_at)
+            elif opened_at:
+                return qs.filter(created_at__gte=opened_at)
+            else:
+                return qs.filter(date=s_date)
+
         # 1. Sales Invoices
-        sales_qs = Sale.objects.filter(status=SaleStatus.COMPLETED)
-        if opened_at:
-            sales_qs = sales_qs.filter(created_at__gte=opened_at)
-        if closed_at:
-            sales_qs = sales_qs.filter(created_at__lte=closed_at)
-        else:
-            sales_qs = sales_qs.filter(date=s_date)
-        sales_qs = sales_qs.prefetch_related("payments", "returns")
+        sales_qs = apply_session_filter(Sale.objects.filter(status=SaleStatus.COMPLETED)).prefetch_related("payments", "returns")
 
         total_gross_sales = Decimal("0.00")
         total_discounts = Decimal("0.00")
         total_tax = Decimal("0.00")
-        total_net_sales = Decimal("0.00")
+        total_invoiced = Decimal("0.00")
         cash_sales = Decimal("0.00")
         card_sales = Decimal("0.00")
         credit_sales = Decimal("0.00")
@@ -778,138 +795,128 @@ class DaySessionService:
             total_gross_sales += s.subtotal
             total_discounts += s.discount_amount
             total_tax += s.tax_amount
-            total_net_sales += s.grand_total
+            total_invoiced += s.grand_total
 
-            # Cash collected from sale
+            # Categorize payment streams collected at POS checkout
             if s.payment_method == PaymentMethodType.CASH:
-                cash_sales += min(s.paid_amount, s.grand_total)
+                cash_sales += s.grand_total
             elif s.payment_method == PaymentMethodType.CARD:
-                card_sales += min(s.paid_amount, s.grand_total)
+                card_sales += s.grand_total
             elif s.payment_method == PaymentMethodType.CREDIT:
-                credit_sales += s.due_amount
+                credit_sales += s.grand_total
             elif s.payment_method == PaymentMethodType.SPLIT:
-                for p in s.payments.all():
-                    if p.payment_method == PaymentMethodType.CASH:
-                        cash_sales += p.amount
-                    elif p.payment_method == PaymentMethodType.CARD:
-                        card_sales += p.amount
-                credit_sales += s.due_amount
+                if s.payments.exists():
+                    for p in s.payments.all():
+                        if p.payment_method == PaymentMethodType.CASH:
+                            cash_sales += p.amount
+                        elif p.payment_method == PaymentMethodType.CARD:
+                            card_sales += p.amount
+                        elif p.payment_method == PaymentMethodType.CREDIT:
+                            credit_sales += p.amount
+                else:
+                    cash_sales += s.paid_amount
+                    credit_sales += s.due_amount
             else:
-                cash_sales += min(s.paid_amount, s.grand_total)
-                credit_sales += s.due_amount
+                cash_sales += s.grand_total
 
         # 2. Sales Returns / Refunds
-        returns_qs = SalesReturn.objects.all()
-        if opened_at:
-            returns_qs = returns_qs.filter(created_at__gte=opened_at)
-        if closed_at:
-            returns_qs = returns_qs.filter(created_at__lte=closed_at)
-        else:
-            returns_qs = returns_qs.filter(date=s_date)
-        returns_qs = returns_qs.select_related("original_sale")
+        returns_qs = apply_session_filter(SalesReturn.objects.all()).select_related("original_sale", "payment_account")
 
         total_returns_amount = Decimal("0.00")
         cash_refunds = Decimal("0.00")
+        bank_refunds = Decimal("0.00")
         credit_refunds = Decimal("0.00")
 
         for r in returns_qs:
             total_returns_amount += r.refund_amount
-            if r.original_sale.payment_method == PaymentMethodType.CREDIT or r.original_sale.due_amount > Decimal("0.00"):
-                credit_refunds += r.refund_amount
+            # Check if this return was refunded via cash drawer or bank account
+            is_cash = False
+            if r.payment_account:
+                is_cash = r.payment_account.code.startswith("101") or r.payment_account.code == "1010"
             else:
+                je = JournalEntry.objects.filter(reference_id=r.return_number).first()
+                if je:
+                    cr_line = je.lines.filter(credit__gt=Decimal("0.00")).first()
+                    is_cash = bool(cr_line and (cr_line.account.code.startswith("101") or cr_line.account.code == "1010"))
+                else:
+                    orig_sale = r.original_sale
+                    is_cash = bool(orig_sale and (orig_sale.payment_method == PaymentMethodType.CASH or (orig_sale.payment_account and (orig_sale.payment_account.code.startswith("101") or orig_sale.payment_account.code == "1010"))))
+
+            if is_cash:
                 cash_refunds += r.refund_amount
+            else:
+                bank_refunds += r.refund_amount
+
+        # Net Sales = Total Invoiced - Returns
+        total_net_sales = max(Decimal("0.00"), total_invoiced - total_returns_amount)
+
+        # Net Cash & Card Sales breakdown on Net Sale KPI card
+        net_cash_sales = max(Decimal("0.00"), cash_sales - cash_refunds)
+        net_card_sales = max(Decimal("0.00"), card_sales - bank_refunds)
 
         # 3. Customer Payments (Receivables collections)
-        customer_pay_qs = CustomerPayment.objects.filter(status="SUBMITTED")
-        if opened_at:
-            customer_pay_qs = customer_pay_qs.filter(created_at__gte=opened_at)
-        if closed_at:
-            customer_pay_qs = customer_pay_qs.filter(created_at__lte=closed_at)
-        else:
-            customer_pay_qs = customer_pay_qs.filter(date=s_date)
+        customer_pay_qs = apply_session_filter(CustomerPayment.objects.filter(status="SUBMITTED"))
 
         customer_payments_cash = Decimal("0.00")
         customer_payments_bank = Decimal("0.00")
 
         for cp in customer_pay_qs:
-            if cp.payment_method == "CASH" or (cp.payment_account and cp.payment_account.code == "1010"):
+            is_cash = cp.payment_method == "CASH" or (cp.payment_account and (cp.payment_account.code.startswith("101") or cp.payment_account.code == "1010"))
+            if is_cash:
                 customer_payments_cash += cp.amount
             else:
                 customer_payments_bank += cp.amount
 
         # 4. Operational Expenses
-        expense_qs = Expense.objects.filter(status="SUBMITTED")
-        if opened_at:
-            expense_qs = expense_qs.filter(created_at__gte=opened_at)
-        if closed_at:
-            expense_qs = expense_qs.filter(created_at__lte=closed_at)
-        else:
-            expense_qs = expense_qs.filter(date=s_date)
+        expense_qs = apply_session_filter(Expense.objects.filter(status="SUBMITTED"))
 
         cash_expenses = Decimal("0.00")
         bank_expenses = Decimal("0.00")
 
         for exp in expense_qs:
-            if exp.payment_account and exp.payment_account.code == "1010":
+            is_cash = exp.payment_account and (exp.payment_account.code.startswith("101") or exp.payment_account.code == "1010")
+            if is_cash:
                 cash_expenses += exp.amount
             else:
                 bank_expenses += exp.amount
 
         # 5. Supplier Payments (Purchases Payables disbursements)
-        supplier_pay_qs = SupplierPayment.objects.filter(status="SUBMITTED")
-        if opened_at:
-            supplier_pay_qs = supplier_pay_qs.filter(created_at__gte=opened_at)
-        if closed_at:
-            supplier_pay_qs = supplier_pay_qs.filter(created_at__lte=closed_at)
-        else:
-            supplier_pay_qs = supplier_pay_qs.filter(date=s_date)
-        supplier_pay_qs = supplier_pay_qs.select_related("payment_account")
+        supplier_pay_qs = apply_session_filter(SupplierPayment.objects.filter(status="SUBMITTED")).select_related("payment_account")
 
         supplier_payments_cash = Decimal("0.00")
         supplier_payments_bank = Decimal("0.00")
 
         for sp in supplier_pay_qs:
             is_cash_method = sp.payment_method == "CASH" or (hasattr(sp.payment_method, "code") and sp.payment_method.code == "CASH")
-            is_cash_account = sp.payment_account and sp.payment_account.code == "1010"
+            is_cash_account = sp.payment_account and (sp.payment_account.code.startswith("101") or sp.payment_account.code == "1010")
             if is_cash_method or is_cash_account:
                 supplier_payments_cash += sp.amount
             else:
                 supplier_payments_bank += sp.amount
 
         # 6. Salary Disbursements
-        salary_pay_qs = SalaryPayment.objects.filter(status="SUBMITTED")
-        if opened_at:
-            salary_pay_qs = salary_pay_qs.filter(created_at__gte=opened_at)
-        if closed_at:
-            salary_pay_qs = salary_pay_qs.filter(created_at__lte=closed_at)
-        else:
-            salary_pay_qs = salary_pay_qs.filter(date=s_date)
+        salary_pay_qs = apply_session_filter(SalaryPayment.objects.filter(status="SUBMITTED"))
 
         salary_payments_cash = Decimal("0.00")
         salary_payments_bank = Decimal("0.00")
 
         for sal in salary_pay_qs:
-            if sal.payment_account and sal.payment_account.code == "1010":
+            is_cash = sal.payment_account and (sal.payment_account.code.startswith("101") or sal.payment_account.code == "1010")
+            if is_cash:
                 salary_payments_cash += sal.amount
             else:
                 salary_payments_bank += sal.amount
 
         # 7. Cash Drawer Transfers In & Out
-        transfer_qs = AccountTransfer.objects.filter(status="COMPLETED")
-        if opened_at:
-            transfer_qs = transfer_qs.filter(created_at__gte=opened_at)
-        if closed_at:
-            transfer_qs = transfer_qs.filter(created_at__lte=closed_at)
-        else:
-            transfer_qs = transfer_qs.filter(date=s_date)
+        transfer_qs = apply_session_filter(AccountTransfer.objects.filter(status="COMPLETED"))
 
         cash_transfers_in = Decimal("0.00")
         cash_transfers_out = Decimal("0.00")
 
         for trf in transfer_qs:
-            if trf.to_account and trf.to_account.code == "1010":
+            if trf.to_account and (trf.to_account.code.startswith("101") or trf.to_account.code == "1010"):
                 cash_transfers_in += trf.amount
-            if trf.from_account and trf.from_account.code == "1010":
+            if trf.from_account and (trf.from_account.code.startswith("101") or trf.from_account.code == "1010"):
                 cash_transfers_out += trf.amount
 
         # --- Expected Physical Cash in Drawer (POS Terminal Only) ---
@@ -933,14 +940,15 @@ class DaySessionService:
                 "discounts": float(total_discounts),
                 "tax": float(total_tax),
                 "net_sales": float(total_net_sales),
-                "cash_sales": float(cash_sales),
-                "card_sales": float(card_sales),
+                "cash_sales": float(net_cash_sales),
+                "card_sales": float(net_card_sales),
                 "credit_sales": float(credit_sales),
             },
             "returns": {
                 "returns_count": returns_qs.count(),
                 "total_returns": float(total_returns_amount),
                 "cash_refunds": float(cash_refunds),
+                "bank_refunds": float(bank_refunds),
                 "credit_refunds": float(credit_refunds),
             },
             "customer_payments": {

@@ -1,7 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Search,
-  Scan,
   Package,
   Layers,
 } from 'lucide-react';
@@ -12,6 +10,7 @@ interface POSProductGridProps {
   products: InventorySummaryItem[];
   categories: Category[];
   onAddToCart: (product: InventorySummaryItem) => void;
+  searchTerm?: string;
   isSidebarCollapsed?: boolean;
 }
 
@@ -24,43 +23,10 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
   products,
   categories,
   onAddToCart,
+  searchTerm = '',
   isSidebarCollapsed: _isSidebarCollapsed = false,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Auto-focus search on load and keyboard shortcut 'F2' or '/'
-  useEffect(() => {
-    searchInputRef.current?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F2' || (e.key === '/' && (e.target as HTMLElement).tagName !== 'INPUT')) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Handle barcode scanner Enter press
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchTerm.trim()) {
-      const term = searchTerm.trim().toLowerCase();
-      // Match exact barcode or SKU first
-      const exactMatch = products.find(
-        (p) =>
-          (p.barcode && p.barcode.toLowerCase() === term) ||
-          p.sku.toLowerCase() === term
-      );
-      if (exactMatch) {
-        onAddToCart(exactMatch);
-        setSearchTerm('');
-      }
-    }
-  };
 
   const filteredProducts = products.filter((p) => {
     // Category filter
@@ -78,59 +44,7 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '0.625rem', overflow: 'hidden' }}>
-      {/* Search & Barcode Scan Bar */}
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search
-            size={16}
-            style={{
-              position: 'absolute',
-              left: '0.875rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--text-subtle)',
-            }}
-          />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Scan barcode or search product / SKU... (Press F2 or Enter)"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            style={{
-              width: '100%',
-              padding: '0.625rem 0.875rem 0.625rem 2.5rem',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-medium)',
-              borderRadius: '0.625rem',
-              color: 'var(--text-main)',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              outline: 'none',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              right: '0.75rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              color: 'var(--text-subtle)',
-              fontSize: '0.6875rem',
-            }}
-          >
-            <Scan size={13} />
-            <kbd style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '0.125rem 0.25rem', borderRadius: '0.25rem', border: '1px solid var(--border-subtle)' }}>F2</kbd>
-          </div>
-        </div>
-      </div>
-
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '0.45rem', overflow: 'hidden' }}>
       {/* Category Pills Slider */}
       <div
         style={{

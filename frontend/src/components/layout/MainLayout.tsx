@@ -5,25 +5,21 @@ interface MainLayoutProps {
   children: React.ReactNode;
   currentTab: string;
   onSelectTab: (tabId: string) => void;
+  isPOSSidebarOpen?: boolean;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
   children,
   currentTab,
   onSelectTab,
+  isPOSSidebarOpen = false,
 }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('apexpos_sidebar_collapsed') === 'true';
   });
 
   const isPOS = currentTab === 'register';
-
-  // Automatically collapse sidebar when on POS register terminal
-  React.useEffect(() => {
-    if (isPOS) {
-      setIsSidebarCollapsed(true);
-    }
-  }, [isPOS]);
+  const showSidebar = !isPOS || isPOSSidebarOpen;
 
   const handleToggleCollapse = () => {
     setIsSidebarCollapsed((prev) => {
@@ -34,13 +30,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   return (
-    <div className="app-container" style={{ overflow: 'hidden', height: '100vh', display: 'flex' }}>
-      <Sidebar
-        currentTab={currentTab}
-        onSelectTab={onSelectTab}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={handleToggleCollapse}
-      />
+    <div className="app-container" style={{ overflow: 'hidden', height: '100vh', display: 'flex', width: '100vw' }}>
+      {showSidebar && (
+        <Sidebar
+          currentTab={currentTab}
+          onSelectTab={onSelectTab}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={handleToggleCollapse}
+        />
+      )}
       <div
         className="main-content-wrapper"
         style={{
@@ -50,6 +48,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           height: '100vh',
           overflow: isPOS ? 'hidden' : 'auto',
           backgroundColor: 'var(--bg-app)',
+          minWidth: 0,
         }}
       >
         <main
@@ -64,11 +63,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             display: isPOS ? 'flex' : 'block',
             flexDirection: 'column',
             overflow: isPOS ? 'hidden' : 'visible',
+            minWidth: 0,
           }}
         >
-          {React.isValidElement(children)
-            ? React.cloneElement(children as React.ReactElement<any>, { isSidebarCollapsed })
-            : children}
+          {children}
         </main>
       </div>
     </div>

@@ -137,6 +137,7 @@ export interface SalesReturnPayload {
     quantity: number;
   }[];
   reason: string;
+  payment_account?: number;
   notes?: string;
   date?: string;
 }

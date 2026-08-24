@@ -103,8 +103,9 @@ class CustomerReceivableService:
             original_sale__status=SaleStatus.COMPLETED,
         ).aggregate(total_refund=models.Sum("refund_amount"))["total_refund"] or Decimal("0.00")
 
-        # Sum of actual due_amount on sales
-        outstanding = sum(s.due_amount for s in sales)
+        # Sum of actual due_amount on sales + opening balance
+        base_opening = customer.opening_balance or Decimal("0.00")
+        outstanding = base_opening + sum(s.due_amount for s in sales)
 
         return {
             "customer_id": customer.id,
@@ -112,6 +113,7 @@ class CustomerReceivableService:
             "customer_name": customer.name,
             "is_walkin": False,
             "credit_enabled": customer.credit_enabled,
+            "opening_balance": base_opening,
             "total_credit_sales": total_credit_sales,
             "total_payments": payments_total,
             "total_returns": returns_total,
@@ -334,7 +336,7 @@ class CustomerReceivableService:
                 "credit": float(pay.amount),
             })
 
-        # 3. Sales Returns
+        # 3. Sales Returns (Immediate cash payouts at counter)
         returns_qs = SalesReturn.objects.filter(original_sale__customer=customer)
         if start_date:
             returns_qs = returns_qs.filter(date__gte=start_date)
@@ -342,31 +344,41 @@ class CustomerReceivableService:
             returns_qs = returns_qs.filter(date__lte=end_date)
 
         for ret in returns_qs:
+            orig = ret.original_sale
             events.append({
                 "date": ret.date,
                 "created_at": ret.created_at,
                 "type": "RETURN",
-                "type_display": "Sales Return",
+                "type_display": "Sales Return (Cash Paid Out)",
                 "reference": ret.return_number,
-                "description": f"Refund against {ret.original_sale.invoice_number}: {ret.reason}",
-                "debit": 0.0,
+                "description": f"Refund paid to customer in cash at counter ({ret.reason})",
+                "debit": float(ret.refund_amount),
                 "credit": float(ret.refund_amount),
             })
 
         # Sort chronologically
         events.sort(key=lambda x: (x["date"], x["created_at"]))
 
-        running_balance = Decimal("0.00")
+        base_opening = customer.opening_balance or Decimal("0.00")
+        running_balance = base_opening
         ledger_rows = []
-        total_debit = Decimal("0.00")
-        total_credit = Decimal("0.00")
+        total_sales = Decimal("0.00")
+        total_payments = Decimal("0.00")
+        total_returns = Decimal("0.00")
 
         for ev in events:
             dr = Decimal(str(ev["debit"]))
             cr = Decimal(str(ev["credit"]))
-            running_balance += (dr - cr)
-            total_debit += dr
-            total_credit += cr
+            if ev["type"] == "SALE":
+                total_sales += dr
+                running_balance += dr
+            elif ev["type"] == "PAYMENT":
+                total_payments += cr
+                running_balance -= cr
+            elif ev["type"] == "RETURN":
+                total_returns += cr
+                # Cash refund was handed to customer directly on the spot, AR ledger balance is unchanged
+                pass
 
             ledger_rows.append({
                 "date": str(ev["date"]),
@@ -374,10 +386,12 @@ class CustomerReceivableService:
                 "type_display": ev["type_display"],
                 "reference": ev["reference"],
                 "description": ev["description"],
-                "debit": float(dr),
-                "credit": float(cr),
+                "debit": float(dr) if ev["type"] == "SALE" else 0.0,
+                "credit": float(cr) if ev["type"] == "PAYMENT" else 0.0,
                 "running_balance": float(running_balance),
             })
+
+        closing_balance = max(Decimal("0.00"), base_opening + total_sales - total_payments)
 
         return {
             "customer": {
@@ -395,9 +409,13 @@ class CustomerReceivableService:
                 "end_date": str(end_date) if end_date else None,
             },
             "summary": {
-                "total_debit": float(total_debit),
-                "total_credit": float(total_credit),
-                "closing_balance": float(running_balance),
+                "opening_balance": float(base_opening),
+                "total_debit": float(base_opening + total_sales),
+                "total_sales": float(total_sales),
+                "total_payments": float(total_payments),
+                "total_returns": float(total_returns),
+                "total_credit": float(total_payments),
+                "closing_balance": float(closing_balance),
             },
             "rows": ledger_rows,
         }

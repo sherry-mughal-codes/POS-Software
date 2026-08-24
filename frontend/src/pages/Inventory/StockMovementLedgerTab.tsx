@@ -23,7 +23,11 @@ const formatMoney = (val: number | string | undefined | null): string => {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-export const StockMovementLedgerTab: React.FC = () => {
+interface StockMovementLedgerTabProps {
+  refreshTrigger?: number;
+}
+
+export const StockMovementLedgerTab: React.FC<StockMovementLedgerTabProps> = ({ refreshTrigger }) => {
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +58,7 @@ export const StockMovementLedgerTab: React.FC = () => {
 
   useEffect(() => {
     fetchMovements();
-  }, [fetchMovements]);
+  }, [fetchMovements, refreshTrigger]);
 
   const filteredMovements = movements.filter((m) => {
     if (!searchTerm) return true;
@@ -89,21 +93,21 @@ export const StockMovementLedgerTab: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Filters Card */}
-      <Card title="Stock Ledger Audit Filters" subtitle="Filter immutable transaction movements across products and dates" icon={<Filter size={20} />}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
+      <Card title="Stock Ledger Audit Filters" icon={<Filter size={16} />}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem', alignItems: 'flex-end' }}>
           {/* Search Box */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Search
             </label>
             <div style={{ position: 'relative' }}>
               <Search
-                size={14}
+                size={13}
                 style={{
                   position: 'absolute',
-                  left: '0.75rem',
+                  left: '0.65rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   color: 'var(--text-subtle)',
@@ -116,13 +120,13 @@ export const StockMovementLedgerTab: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.55rem 0.75rem 0.55rem 2.2rem',
+                  padding: '0.35rem 0.65rem 0.35rem 1.9rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
-                  borderRadius: '0.5rem',
+                  borderRadius: '0.375rem',
                   color: 'var(--text-main)',
                   outline: 'none',
-                  fontSize: '0.8125rem',
+                  fontSize: '0.78125rem',
                 }}
               />
             </div>
@@ -130,7 +134,7 @@ export const StockMovementLedgerTab: React.FC = () => {
 
           {/* Product Dropdown */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Product Filter
             </label>
             <select
@@ -140,11 +144,11 @@ export const StockMovementLedgerTab: React.FC = () => {
                 width: '100%',
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.55rem 0.75rem',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
                 color: 'var(--text-main)',
                 outline: 'none',
-                fontSize: '0.8125rem',
+                fontSize: '0.78125rem',
               }}
             >
               <option value="">All Products</option>
@@ -158,7 +162,7 @@ export const StockMovementLedgerTab: React.FC = () => {
 
           {/* Movement Type Dropdown */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Movement Type
             </label>
             <select
@@ -168,11 +172,11 @@ export const StockMovementLedgerTab: React.FC = () => {
                 width: '100%',
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.55rem 0.75rem',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
                 color: 'var(--text-main)',
                 outline: 'none',
-                fontSize: '0.8125rem',
+                fontSize: '0.78125rem',
               }}
             >
               <option value="">All Movement Types</option>
@@ -186,20 +190,10 @@ export const StockMovementLedgerTab: React.FC = () => {
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Button variant="primary" icon={<Filter size={14} />} onClick={fetchMovements} style={{ flex: 1 }}>
+          <div>
+            <Button variant="primary" icon={<Filter size={13} />} onClick={fetchMovements} style={{ width: '100%', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
               Apply
             </Button>
-            <Button
-              variant="outline"
-              icon={<RefreshCw size={14} />}
-              onClick={() => {
-                setSelectedProductId('');
-                setSelectedType('');
-                setSearchTerm('');
-              }}
-              title="Reset Filters"
-            />
           </div>
         </div>
       </Card>

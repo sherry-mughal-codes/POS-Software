@@ -120,22 +120,22 @@ export const AuditLogsPage: React.FC = () => {
                     </td>
 
                     {/* Username */}
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '0.45rem 0.6rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <User size={15} style={{ color: 'var(--primary-400)' }} />
+                        <User size={14} style={{ color: 'var(--primary-400)' }} />
                         <strong style={{ color: 'var(--text-main)' }}>{log.username}</strong>
                       </div>
                     </td>
 
                     {/* Action */}
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '0.45rem 0.6rem' }}>
                       <Badge variant={getActionBadgeVariant(log.action) as any}>
                         {log.action.replace(/_/g, ' ')}
                       </Badge>
                     </td>
 
                     {/* IP */}
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '0.45rem 0.6rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                         <Globe size={13} />
                         <code>{log.ip_address || '127.0.0.1'}</code>
@@ -143,7 +143,7 @@ export const AuditLogsPage: React.FC = () => {
                     </td>
 
                     {/* Details */}
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '0.45rem 0.6rem' }}>
                       <code style={{
                         fontSize: '0.75rem',
                         fontFamily: 'var(--font-mono)',

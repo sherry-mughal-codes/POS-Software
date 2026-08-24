@@ -429,8 +429,7 @@ export const RolesPage: React.FC = () => {
           {selectedRole && (
             <Card
               title={`${selectedRole.name} Permissions`}
-              subtitle={`Grant or revoke capabilities for ${selectedRole.name} with module-level master checkboxes.`}
-              icon={<ShieldCheck size={20} />}
+              icon={<ShieldCheck size={16} />}
               action={
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   {saveSuccess && <Badge variant="success">Saved Successfully</Badge>}
@@ -623,8 +622,7 @@ export const RolesPage: React.FC = () => {
           {selectedUserObj && (
             <Card
               title={`Company Scope & Data Isolation: @${selectedUserObj.username}`}
-              subtitle="Scope this user's data access and company branch affiliation for multi-tenant and cloud operations."
-              icon={<Building size={20} />}
+              icon={<Building size={16} />}
             >
               {userScopeSuccess && (
                 <div
@@ -750,7 +748,6 @@ export const RolesPage: React.FC = () => {
         isOpen={isCreateRoleModalOpen}
         onClose={() => setIsCreateRoleModalOpen(false)}
         title="Create New Custom Role"
-        subtitle="Define a custom authorization role with granular module permissions."
         maxWidth="680px"
       >
         {createRoleError && (

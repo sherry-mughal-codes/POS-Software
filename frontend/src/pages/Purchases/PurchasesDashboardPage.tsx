@@ -5,6 +5,7 @@ import {
   RotateCcw,
   CreditCard,
   BarChart3,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -26,6 +27,9 @@ export const PurchasesDashboardPage: React.FC = () => {
 
   // Return modal trigger state
   const [returnTargetPurchase, setReturnTargetPurchase] = useState<Purchase | null>(null);
+
+  // Draft editing state
+  const [editingDraftPurchase, setEditingDraftPurchase] = useState<Purchase | null>(null);
 
   const fetchPurchasesData = useCallback(async () => {
     setLoading(true);
@@ -52,7 +56,13 @@ export const PurchasesDashboardPage: React.FC = () => {
     setActiveTab('returns');
   };
 
+  const handleEditDraft = (p: Purchase) => {
+    setEditingDraftPurchase(p);
+    setActiveTab('create');
+  };
+
   const handleCreateSuccess = () => {
+    setEditingDraftPurchase(null);
     fetchPurchasesData();
     setActiveTab('orders');
   };
@@ -62,21 +72,21 @@ export const PurchasesDashboardPage: React.FC = () => {
       {/* Compact Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)', margin: 0 }}>
             Purchasing & Payables
           </h2>
         </div>
 
-        {activeTab !== 'create' && (
-          <Button
-            variant="primary"
-            icon={<Plus size={14} />}
-            onClick={() => setActiveTab('create')}
-            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-          >
-            New Purchase Order
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          icon={<RefreshCw size={13} />}
+          loading={loading}
+          onClick={fetchPurchasesData}
+          style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+          title="Refresh Purchasing & Payables Data"
+        >
+          Refresh
+        </Button>
       </div>
 
       {/* Tabs Navigation */}
@@ -88,7 +98,10 @@ export const PurchasesDashboardPage: React.FC = () => {
         paddingBottom: '0.35rem',
       }}>
         <button
-          onClick={() => setActiveTab('orders')}
+          onClick={() => {
+            setEditingDraftPurchase(null);
+            setActiveTab('orders');
+          }}
           style={{
             padding: '0.35rem 0.75rem',
             border: 'none',
@@ -108,7 +121,10 @@ export const PurchasesDashboardPage: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('create')}
+          onClick={() => {
+            setEditingDraftPurchase(null);
+            setActiveTab('create');
+          }}
           style={{
             padding: '0.35rem 0.75rem',
             border: 'none',
@@ -124,11 +140,14 @@ export const PurchasesDashboardPage: React.FC = () => {
           }}
         >
           <Plus size={14} />
-          <span>Create Purchase</span>
+          <span>{editingDraftPurchase ? `Edit Draft (${editingDraftPurchase.purchase_number})` : 'Create Purchase'}</span>
         </button>
 
         <button
-          onClick={() => setActiveTab('returns')}
+          onClick={() => {
+            setEditingDraftPurchase(null);
+            setActiveTab('returns');
+          }}
           style={{
             padding: '0.35rem 0.75rem',
             border: 'none',
@@ -148,7 +167,10 @@ export const PurchasesDashboardPage: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('payables')}
+          onClick={() => {
+            setEditingDraftPurchase(null);
+            setActiveTab('payables');
+          }}
           style={{
             padding: '0.35rem 0.75rem',
             border: 'none',
@@ -168,7 +190,10 @@ export const PurchasesDashboardPage: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('reports')}
+          onClick={() => {
+            setEditingDraftPurchase(null);
+            setActiveTab('reports');
+          }}
           style={{
             padding: '0.35rem 0.75rem',
             border: 'none',
@@ -199,11 +224,19 @@ export const PurchasesDashboardPage: React.FC = () => {
               loading={loading}
               onRefresh={fetchPurchasesData}
               onOpenReturn={handleOpenReturnModal}
+              onEditDraft={handleEditDraft}
             />
           )}
 
           {activeTab === 'create' && (
-            <CreatePurchaseTab onSuccess={handleCreateSuccess} />
+            <CreatePurchaseTab
+              onSuccess={handleCreateSuccess}
+              editingPurchase={editingDraftPurchase}
+              onCancelEdit={() => {
+                setEditingDraftPurchase(null);
+                setActiveTab('orders');
+              }}
+            />
           )}
 
           {activeTab === 'returns' && (

@@ -94,12 +94,11 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Return Logs Table */}
       <Card
         title="Purchase Returns & Restocking Credits"
-        subtitle={`${returns.length} merchandise return vouchers processed`}
-        icon={<RotateCcw size={20} />}
+        icon={<RotateCcw size={18} />}
       >
         {returns.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -107,51 +106,52 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Return #</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Original Order</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Date</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Supplier</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Settlement</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Credit Amount</th>
+                <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Return #</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Original Order</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Date</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600 }}>Supplier</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'center' }}>Settlement</th>
+                  <th style={{ padding: '0.45rem 0.6rem', fontWeight: 600, textAlign: 'right' }}>Credit Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {returns.map((r) => (
                   <tr key={r.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    <td style={{ padding: '0.875rem 1rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
                       <code style={{
                         fontFamily: 'var(--font-mono)',
                         fontWeight: 700,
+                        fontSize: '0.75rem',
                         color: 'var(--warning)',
                         backgroundColor: 'var(--bg-app)',
-                        padding: '0.2rem 0.5rem',
+                        padding: '0.15rem 0.4rem',
                         borderRadius: '0.25rem',
                       }}>
                         {r.return_number}
                       </code>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--primary-400)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
+                      <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--primary-400)', fontSize: '0.75rem' }}>
                         {r.original_purchase_number}
                       </code>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                       {r.date}
                     </td>
-                    <td style={{ padding: '0.875rem 1rem' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.8125rem' }}>
                         {r.supplier_company || r.supplier_name}
                       </div>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
                       <Badge variant="phase">
                         {r.refund_method === 'PAYABLE_DEDUCTION' ? 'Payable Reduced' : 'Cash Refund'}
                       </Badge>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--success)' }}>
+                    <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--success)' }}>
                       Rs. {formatMoney(r.total_amount)}
                     </td>
                   </tr>
@@ -168,7 +168,6 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
           isOpen={!!returnTargetPurchase}
           onClose={onCloseReturnModal}
           title={`Process Return for ${returnTargetPurchase.purchase_number}`}
-          subtitle={`Supplier: ${returnTargetPurchase.supplier_company || returnTargetPurchase.supplier_name}`}
         >
           {error && (
             <div style={{

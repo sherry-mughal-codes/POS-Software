@@ -8,6 +8,7 @@ export interface Customer {
   is_walkin: boolean;
   credit_enabled: boolean;
   is_active: boolean;
+  opening_balance?: number;
   outstanding_balance?: number;
   notes?: string | null;
   created_at: string;
@@ -24,6 +25,7 @@ export interface Supplier {
   address?: string | null;
   tax_id?: string | null;
   is_active: boolean;
+  opening_balance?: number;
   outstanding_payable?: number;
   notes?: string | null;
   created_at: string;
@@ -115,6 +117,9 @@ export interface CustomerStatement {
   };
   summary: {
     total_debit: number;
+    total_sales?: number;
+    total_payments?: number;
+    total_returns?: number;
     total_credit: number;
     closing_balance: number;
   };

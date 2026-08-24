@@ -28,12 +28,19 @@ import { Can } from './components/auth/Can';
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
+  const [isPOSSidebarOpen, setIsPOSSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (isAuthenticated) {
       setCurrentTab('dashboard');
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (currentTab === 'register') {
+      setIsPOSSidebarOpen(false);
+    }
+  }, [currentTab]);
 
   if (authLoading) {
     return (
@@ -51,6 +58,7 @@ const AppContent: React.FC = () => {
     <MainLayout
       currentTab={currentTab}
       onSelectTab={setCurrentTab}
+      isPOSSidebarOpen={isPOSSidebarOpen}
     >
       {currentTab === 'dashboard' && (
         <DashboardPage onNavigate={setCurrentTab} />
@@ -164,7 +172,10 @@ const AppContent: React.FC = () => {
             </div>
           }
         >
-          <POSTerminalPage />
+          <POSTerminalPage
+            isSidebarVisible={isPOSSidebarOpen}
+            onToggleSidebar={() => setIsPOSSidebarOpen((prev) => !prev)}
+          />
         </Can>
       )}
 

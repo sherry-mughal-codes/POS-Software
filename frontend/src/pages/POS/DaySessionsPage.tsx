@@ -227,105 +227,99 @@ export const DaySessionsPage: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-      {/* Compact Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <div>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+      {/* Top Navigation & Session Status Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.45rem', paddingBottom: '0.25rem' }}>
+        {/* Left Side: Title & Session Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)', margin: 0 }}>
             Day Closing & X/Z Reports
           </h2>
-        </div>
-      </div>
 
-      {/* ACTIVE SESSION HERO CARD */}
-      {sessionLoading ? (
-        <LoadingSpinner label="Checking active business day status..." />
-      ) : currentSession?.status === 'OPEN' && liveXReport ? (
-        <div
-          className="glass-card"
-          style={{
-            padding: '0.625rem 0.875rem',
-            background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%)',
-            border: '1px solid rgba(56, 189, 248, 0.35)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.15rem' }}>
-                <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block', boxShadow: '0 0 6px var(--success)' }} />
-                <code style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--primary-400)' }}>
-                  {currentSession.session_number}
-                </code>
-                <Badge variant="success">Active Session</Badge>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Opened by <strong>{currentSession.opened_by_name}</strong> on {currentSession.date}
-              </div>
+          {sessionLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.5rem', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+              <span>Connecting session...</span>
             </div>
-
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Opening Cash</div>
-                <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
-                  Rs. {formatMoney(currentSession.opening_cash)}
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--primary-400)', fontWeight: 700 }}>Expected Cash</div>
-                <div style={{ fontSize: '1.125rem', fontWeight: 900, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
-                  Rs. {formatMoney(liveXReport.cash_drawer.expected_cash)}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.4rem', marginLeft: '0.5rem' }}>
-                <Button
-                  variant="outline"
-                  icon={<FileText size={14} />}
-                  style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-                  onClick={() => setIsXReportModalOpen(true)}
-                >
-                  View X-Report
-                </Button>
-                <Button
-                  variant="primary"
-                  icon={<Lock size={14} />}
-                  onClick={handleOpenCloseDayModal}
-                  style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)', fontWeight: 700, padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-                >
-                  Close Day (Z-Report)
-                </Button>
-              </div>
+          ) : currentSession?.status === 'OPEN' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.6875rem' }}>
+              <span style={{ width: '0.4rem', height: '0.4rem', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
+              <span style={{ fontWeight: 700, color: 'var(--success)' }}>Day Open:</span>
+              <code style={{ color: 'var(--text-main)', fontWeight: 800 }}>{currentSession.session_number}</code>
             </div>
-          </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.2rem 0.5rem', borderRadius: '9999px', fontSize: '0.6875rem' }}>
+                <span style={{ width: '0.4rem', height: '0.4rem', borderRadius: '50%', backgroundColor: 'var(--danger)', display: 'inline-block' }} />
+                <span style={{ fontWeight: 700, color: 'var(--danger)' }}>Day Closed</span>
+              </div>
+              <Button
+                variant="primary"
+                icon={<Plus size={12} />}
+                onClick={handleOpenDayModal}
+                style={{
+                  background: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)',
+                  fontSize: '0.6875rem',
+                  padding: '0.2rem 0.45rem',
+                  fontWeight: 700,
+                }}
+              >
+                Open Day
+              </Button>
+            </div>
+          )}
         </div>
-      ) : (
-        <div
-          className="glass-card"
-          style={{
-            padding: '0.625rem 0.875rem',
-            border: '1px solid var(--border-medium)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.75rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <AlertTriangle size={16} style={{ color: 'var(--warning)' }} />
-            <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>No Business Day Currently Open</span>
-          </div>
+
+        {/* Right Side: Quick KPIs (Opening / Expected), X/Z Actions & Refresh Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+          {currentSession?.status === 'OPEN' && liveXReport && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '0.15rem 0.45rem', borderRadius: '0.375rem', fontSize: '0.6875rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Opening:</span>
+                <strong style={{ fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(currentSession.opening_cash)}</strong>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '0.15rem 0.45rem', borderRadius: '0.375rem', fontSize: '0.6875rem' }}>
+                <span style={{ color: 'var(--primary-400)', fontWeight: 600 }}>Expected Drawer:</span>
+                <strong style={{ color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(liveXReport.cash_drawer.expected_cash)}</strong>
+              </div>
+
+              <Button
+                variant="outline"
+                icon={<FileText size={11} />}
+                style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+                onClick={() => setIsXReportModalOpen(true)}
+                title="View Operational X-Report Snapshot"
+              >
+                X-Report
+              </Button>
+
+              <Button
+                variant="primary"
+                icon={<Lock size={11} />}
+                onClick={handleOpenCloseDayModal}
+                style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)', fontWeight: 700, padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+                title="Finalize & Lock Z-Report"
+              >
+                Close Day (Z-Report)
+              </Button>
+            </>
+          )}
 
           <Button
-            variant="primary"
-            icon={<Plus size={14} />}
-            onClick={handleOpenDayModal}
-            style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)', fontWeight: 700, padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+            variant="outline"
+            icon={<RefreshCw size={11} />}
+            loading={sessionLoading || sessionsLoading || reportLoading}
+            style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+            onClick={() => {
+              fetchCurrentSession();
+              if (activeTab === 'history') fetchSessionsList();
+              if (activeTab === 'report') fetchReport();
+            }}
+            title="Refresh Session Data"
           >
-            Open Business Day
+            Refresh
           </Button>
         </div>
-      )}
+      </div>
 
       {/* Sub-Tabs Selector */}
       <div style={{ display: 'flex', gap: '0.35rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.35rem' }}>
@@ -395,64 +389,67 @@ export const DaySessionsPage: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {liveXReport ? (
             <>
-              {/* Operational Streams Grid */}
+              {/* Standardized Operational Streams Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
                 <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
                     <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Net Sales</span>
                     <TrendingUp size={15} style={{ color: 'var(--primary-400)' }} />
                   </div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(liveXReport.sales.net_sales)}
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.25rem', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
                     <span>Cash: Rs. {formatMoney(liveXReport.sales.cash_sales)}</span>
                     <span>Card: Rs. {formatMoney(liveXReport.sales.card_sales)}</span>
+                    {liveXReport.sales.credit_sales > 0 && (
+                      <span>Credit: Rs. {formatMoney(liveXReport.sales.credit_sales)}</span>
+                    )}
                   </div>
                 </div>
 
                 <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
                     <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Cash In (+)</span>
                     <ArrowDownRight size={15} style={{ color: 'var(--success)' }} />
                   </div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
                     + Rs. {formatMoney(liveXReport.cash_drawer.total_cash_in)}
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Sales + Receipts
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                    Cash Sales + Customer Receipts
                   </div>
                 </div>
 
                 <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
                     <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Cash Out (-)</span>
                     <ArrowUpRight size={15} style={{ color: 'var(--danger)' }} />
                   </div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                     - Rs. {formatMoney(liveXReport.cash_drawer.total_cash_out)}
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Expenses + Refunds
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                    Refunds & Drawer Payouts
                   </div>
                 </div>
 
                 <div className="glass-card" style={{ padding: '0.625rem 0.875rem', border: '1px solid var(--primary-400)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
                     <span style={{ fontSize: '0.6875rem', color: 'var(--primary-400)', fontWeight: 700, textTransform: 'uppercase' }}>Expected Cash</span>
                     <DollarSign size={15} style={{ color: 'var(--primary-400)' }} />
                   </div>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 900, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(liveXReport.cash_drawer.expected_cash)}
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Opening (Rs. {formatMoney(liveXReport.opening_cash)}) + In - Out
                   </div>
                 </div>
               </div>
 
               {/* Detailed Real-time Cash Ledger Matrix */}
-              <Card title="Real-Time Physical Cash Drawer Breakdown" subtitle="Detailed transactional audit of physical cash movements" icon={<DollarSign size={18} />}>
+              <Card title="Real-Time Physical Cash Drawer Breakdown" icon={<DollarSign size={18} />}>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
                     <thead>
@@ -493,10 +490,10 @@ export const DaySessionsPage: React.FC = () => {
                       </tr>
 
                       <tr style={{ borderTop: '2px solid var(--border-medium)', backgroundColor: 'var(--bg-card)' }}>
-                        <td colSpan={3} style={{ padding: '0.75rem', fontWeight: 800, fontSize: '0.9375rem' }}>
+                        <td colSpan={3} style={{ padding: '0.75rem', fontWeight: 800, fontSize: '0.875rem' }}>
                           Calculated Expected Physical Cash in Drawer
                         </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900, fontSize: '1.125rem', color: 'var(--primary-400)' }}>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900, fontSize: '1.25rem', color: 'var(--primary-400)' }}>
                           Rs. {formatMoney(liveXReport.cash_drawer.expected_cash)}
                         </td>
                       </tr>
@@ -515,54 +512,80 @@ export const DaySessionsPage: React.FC = () => {
 
       {/* TAB 2: DAY SESSIONS HISTORY & Z-REPORTS */}
       {activeTab === 'history' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Filter Bar */}
-          <Card title="Filter Business Days" subtitle="Search historical sessions and Z-report records" icon={<Calendar size={18} />}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.45rem 0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-                />
-              </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+          {/* Standard Compact Filter Toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.45rem 0.65rem',
+              borderRadius: '0.5rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              title="Filter by Date"
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.3rem 0.6rem',
+                color: 'var(--text-main)',
+                fontSize: '0.75rem',
+                outline: 'none',
+              }}
+            />
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                  Status
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.45rem 0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-                >
-                  <option value="">All Statuses</option>
-                  <option value="OPEN">Open</option>
-                  <option value="CLOSED">Closed (Z-Report Finalized)</option>
-                </select>
-              </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.3rem 0.6rem',
+                color: 'var(--text-main)',
+                fontSize: '0.75rem',
+                outline: 'none',
+                minWidth: '130px',
+              }}
+            >
+              <option value="">All Statuses</option>
+              <option value="OPEN">Open</option>
+              <option value="CLOSED">Closed (Z-Report)</option>
+            </select>
 
-              <Button variant="primary" icon={<Search size={13} />} onClick={fetchSessionsList}>
-                Filter
-              </Button>
+            <Button
+              variant="primary"
+              icon={<Search size={12} />}
+              onClick={fetchSessionsList}
+              style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem', fontWeight: 600 }}
+            >
+              Filter
+            </Button>
 
+            {(dateFilter || statusFilter) && (
               <Button
                 variant="outline"
-                icon={<RefreshCw size={13} />}
                 onClick={() => {
                   setDateFilter('');
                   setStatusFilter('');
                 }}
-              />
-            </div>
-          </Card>
+                style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
 
           {/* Historical Table */}
-          <Card title={`POS Business Day Sessions (${sessionsList.length})`} subtitle="Authoritative record of daily drawer reconciliations" icon={<Receipt size={18} />}>
+          <Card title={`POS Business Day Sessions (${sessionsList.length})`} icon={<Receipt size={18} />}>
             {sessionsLoading ? (
               <LoadingSpinner label="Loading day sessions..." />
             ) : (
@@ -577,7 +600,7 @@ export const DaySessionsPage: React.FC = () => {
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Expected Cash</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Counted Cash</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Discrepancy</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Status</th>
+                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Action</th>
                     </tr>
                   </thead>
@@ -631,7 +654,7 @@ export const DaySessionsPage: React.FC = () => {
                             ) : '-'}
                           </td>
 
-                          <td style={{ padding: '0.625rem 0.75rem' }}>
+                          <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
                             <Badge variant={s.status === 'OPEN' ? 'success' : 'phase'}>
                               {s.status_display}
                             </Badge>
@@ -641,23 +664,19 @@ export const DaySessionsPage: React.FC = () => {
                             {s.status === 'CLOSED' ? (
                               <Button
                                 variant="outline"
-                                icon={<Printer size={12} />}
+                                icon={<Printer size={13} />}
                                 onClick={() => handleViewZReport(s)}
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                style={{ padding: '0.3rem 0.45rem' }}
                                 title="View / Print Z-Report"
-                              >
-                                Z-Report
-                              </Button>
+                              />
                             ) : (
                               <Button
                                 variant="outline"
-                                icon={<FileText size={12} />}
+                                icon={<FileText size={13} />}
                                 onClick={() => setIsXReportModalOpen(true)}
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                style={{ padding: '0.3rem 0.45rem' }}
                                 title="View Live X-Report"
-                              >
-                                X-Report
-                              </Button>
+                              />
                             )}
                           </td>
                         </tr>
@@ -673,61 +692,61 @@ export const DaySessionsPage: React.FC = () => {
 
       {/* TAB 3: MASTER DAILY AUDIT REPORT */}
       {activeTab === 'report' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {reportLoading ? (
             <LoadingSpinner label="Compiling daily audit report..." />
           ) : sessionsReport ? (
             <>
-              {/* Summary KPIs */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Day Sessions</span>
-                    <Calendar size={18} style={{ color: 'var(--primary-400)' }} />
+              {/* Standardized Summary KPIs */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Day Sessions</span>
+                    <Calendar size={15} style={{ color: 'var(--primary-400)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                     {sessionsReport.summary.total_sessions}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     {sessionsReport.summary.closed_sessions} closed, {sessionsReport.summary.open_sessions} active
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Opening Cash Seeded</span>
-                    <DollarSign size={18} style={{ color: 'var(--text-main)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Opening Cash Seeded</span>
+                    <DollarSign size={15} style={{ color: 'var(--text-main)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(sessionsReport.summary.total_opening_cash)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Across all business days
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Counted Actual Cash</span>
-                    <CheckCircle size={18} style={{ color: 'var(--success)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Counted Actual Cash</span>
+                    <CheckCircle size={15} style={{ color: 'var(--success)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(sessionsReport.summary.total_actual_cash)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Physical cash audited at closing
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Net Discrepancy / Variance</span>
-                    <AlertTriangle size={18} style={{ color: sessionsReport.summary.total_cash_difference === 0 ? 'var(--success)' : 'var(--danger)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Discrepancy / Variance</span>
+                    <AlertTriangle size={15} style={{ color: sessionsReport.summary.total_cash_difference === 0 ? 'var(--success)' : 'var(--danger)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: sessionsReport.summary.total_cash_difference === 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: sessionsReport.summary.total_cash_difference === 0 ? 'var(--success)' : 'var(--danger)' }}>
                     {sessionsReport.summary.total_cash_difference > 0 ? `+ Rs. ${formatMoney(sessionsReport.summary.total_cash_difference)}` : sessionsReport.summary.total_cash_difference < 0 ? `- Rs. ${formatMoney(Math.abs(sessionsReport.summary.total_cash_difference))}` : 'Rs. 0.00 (Balanced)'}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Cumulative drawer variances
                   </div>
                 </div>

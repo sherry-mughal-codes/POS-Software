@@ -354,16 +354,15 @@ export const UsersPage: React.FC = () => {
                     </td>
 
                     {/* Actions */}
-                    <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                    <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.375rem' }}>
                         <Button
                           variant="outline"
                           icon={<Edit2 size={13} />}
                           onClick={() => handleOpenEditModal(u)}
-                          style={{ padding: '0.375rem 0.625rem', fontSize: '0.75rem' }}
-                        >
-                          Edit
-                        </Button>
+                          style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem' }}
+                          title="Edit User"
+                        />
 
                         <Button
                           variant={u.is_active ? 'outline' : 'primary'}
@@ -371,14 +370,13 @@ export const UsersPage: React.FC = () => {
                           onClick={() => handleToggleStatus(u)}
                           disabled={u.id === currentUser?.id}
                           style={{
-                            padding: '0.375rem 0.625rem',
+                            padding: '0.3rem 0.45rem',
                             fontSize: '0.75rem',
-                            color: u.is_active ? 'var(--danger)' : undefined,
-                            borderColor: u.is_active ? 'var(--danger-border)' : undefined,
+                            color: u.is_active ? 'var(--warning)' : 'var(--success)',
+                            borderColor: u.is_active ? 'var(--warning-border)' : 'var(--success-border)',
                           }}
-                        >
-                          {u.is_active ? 'Deactivate' : 'Activate'}
-                        </Button>
+                          title={u.is_active ? 'Deactivate User' : 'Activate User'}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -394,7 +392,6 @@ export const UsersPage: React.FC = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         title="Create New System User"
-        subtitle="Provide credentials and assign functional role permissions."
       >
         {formError && (
           <div style={{
@@ -582,8 +579,7 @@ export const UsersPage: React.FC = () => {
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        title={`Edit User: ${selectedUser?.username}`}
-        subtitle="Update corporate assignments, role authorizations, or security credentials."
+        title={`Edit User: @${selectedUser?.username}`}
         maxWidth="580px"
       >
         <form onSubmit={handleUpdateUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

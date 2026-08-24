@@ -10,11 +10,13 @@ import { accountingService } from '../../services/accountingService';
 interface AccountLedgerTabProps {
   accounts: Account[];
   initialAccountId?: number | null;
+  refreshTrigger?: number;
 }
 
 export const AccountLedgerTab: React.FC<AccountLedgerTabProps> = ({
   accounts,
   initialAccountId,
+  refreshTrigger,
 }) => {
   const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
   const postingAccounts = accounts.filter((a) => isLeaf(a));
@@ -43,16 +45,16 @@ export const AccountLedgerTab: React.FC<AccountLedgerTabProps> = ({
     if (selectedAccountId) {
       fetchLedger(selectedAccountId);
     }
-  }, [selectedAccountId, fetchLedger]);
+  }, [selectedAccountId, fetchLedger, refreshTrigger]);
 
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Account Selector Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, maxWidth: '480px' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.625rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flex: 1, maxWidth: '420px' }}>
+          <label style={{ fontSize: '0.78125rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
             Select Account:
           </label>
           <select
@@ -62,11 +64,11 @@ export const AccountLedgerTab: React.FC<AccountLedgerTabProps> = ({
               width: '100%',
               backgroundColor: 'var(--bg-input)',
               border: '1px solid var(--border-medium)',
-              borderRadius: '0.5rem',
-              padding: '0.625rem',
+              borderRadius: '0.375rem',
+              padding: '0.35rem 0.6rem',
               color: 'var(--text-main)',
               outline: 'none',
-              fontSize: '0.875rem',
+              fontSize: '0.78125rem',
             }}
           >
             {postingAccounts.map((acc) => (
@@ -77,11 +79,12 @@ export const AccountLedgerTab: React.FC<AccountLedgerTabProps> = ({
           </select>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
           <Button
             variant="secondary"
-            icon={<RefreshCw size={14} />}
+            icon={<RefreshCw size={13} />}
             loading={loading}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             onClick={() => selectedAccountId && fetchLedger(selectedAccountId)}
           >
             Refresh Ledger
@@ -93,43 +96,43 @@ export const AccountLedgerTab: React.FC<AccountLedgerTabProps> = ({
       {selectedAccount && ledgerData && (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: '0.625rem',
         }}>
-          <div className="glass-card" style={{ padding: '1rem' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase' }}>Account Code & Name</div>
-            <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '0.25rem' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600 }}>Account</div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 700, marginTop: '0.15rem' }}>
               [{selectedAccount.code}] {selectedAccount.name}
             </div>
-            <div style={{ marginTop: '0.5rem' }}>
+            <div style={{ marginTop: '0.35rem' }}>
               <Badge variant="info">{selectedAccount.account_type}</Badge>
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '1rem' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase' }}>Normal Balance</div>
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary-400)', marginTop: '0.25rem' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600 }}>Normal Balance</div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-400)', marginTop: '0.15rem', fontFamily: 'var(--font-mono)' }}>
               {selectedAccount.normal_balance}
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '1rem' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase' }}>Total Debits</div>
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600 }}>Total Debits</div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.15rem', fontFamily: 'var(--font-mono)' }}>
               Rs. {ledgerData.total_debit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '1rem' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase' }}>Total Credits</div>
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600 }}>Total Credits</div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.15rem', fontFamily: 'var(--font-mono)' }}>
               Rs. {ledgerData.total_credit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '1rem', borderColor: 'var(--primary-400)' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase' }}>Current Balance</div>
-            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
+          <div className="glass-card" style={{ padding: '0.625rem 0.875rem', borderColor: 'var(--primary-400)' }}>
+            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600 }}>Closing Balance</div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', marginTop: '0.15rem', fontFamily: 'var(--font-mono)' }}>
               Rs. {ledgerData.closing_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </div>
           </div>
@@ -139,8 +142,7 @@ export const AccountLedgerTab: React.FC<AccountLedgerTabProps> = ({
       {/* Statement of Account Table */}
       <Card
         title="Chronological Statement of Account"
-        subtitle={`Audit transactions for ${selectedAccount?.name || 'selected account'}`}
-        icon={<Book size={20} />}
+        icon={<Book size={16} />}
       >
         {loading ? (
           <LoadingSpinner label="Loading account ledger statement..." />

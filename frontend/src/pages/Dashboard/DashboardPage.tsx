@@ -10,7 +10,6 @@ import {
   Truck,
   BarChart3,
   PieChart,
-  Download,
   RefreshCw,
   ArrowRight,
   Store,
@@ -69,36 +68,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     });
   };
 
-  const handleExportSummaryCSV = () => {
-    if (!data) return;
-    const headers = ['Metric Category', 'Key Indicator', 'Value (PKR / Count)'];
-    const rows = [
-      ['Sales & Orders', 'Period Label', data.period_label],
-      ['Sales & Orders', 'Orders Completed', data.sales_summary.orders_count],
-      ['Sales & Orders', 'Gross Billed Sales', `Rs. ${formatMoney(data.sales_summary.gross_sales)}`],
-      ['Sales & Orders', 'Discounts Given', `Rs. ${formatMoney(data.sales_summary.discounts)}`],
-      ['Sales & Orders', 'Sales Returns (Refunded)', `Rs. ${formatMoney(data.sales_summary.sales_returns)}`],
-      ['Sales & Orders', 'Net Revenue', `Rs. ${formatMoney(data.sales_summary.net_sales)}`],
-      ['Sales & Orders', 'Average Order Value', `Rs. ${formatMoney(data.sales_summary.avg_order_value)}`],
-      ['Profitability', 'Cost of Goods Sold (COGS)', `Rs. ${formatMoney(data.profit_overview.cogs)}`],
-      ['Profitability', 'Gross Profit', `Rs. ${formatMoney(data.profit_overview.gross_profit)}`],
-      ['Profitability', 'Gross Margin %', `${data.profit_overview.gross_margin_percentage}%`],
-      ['Profitability', 'Operating Expenses', `Rs. ${formatMoney(data.profit_overview.operating_expenses)}`],
-      ['Profitability', 'Net Profit', `Rs. ${formatMoney(data.profit_overview.net_profit)}`],
-      ['Profitability', 'Net Margin %', `${data.profit_overview.net_margin_percentage}%`],
-      ['Liquidity & Balance Sheet', 'Cash in Hand (1010)', `Rs. ${formatMoney(data.cash_position.cash_in_hand)}`],
-      ['Liquidity & Balance Sheet', 'Bank Account (1020)', `Rs. ${formatMoney(data.cash_position.bank_balance)}`],
-      ['Liquidity & Balance Sheet', 'Total Liquid Assets', `Rs. ${formatMoney(data.cash_position.total_liquid_cash)}`],
-      ['Liquidity & Balance Sheet', 'Customer Receivables (AR)', `Rs. ${formatMoney(data.receivables_summary.total_receivables)}`],
-      ['Liquidity & Balance Sheet', 'Supplier Payables (AP)', `Rs. ${formatMoney(data.payables_summary.total_payables)}`],
-      ['Inventory Health', 'Total Active SKUs', data.inventory_health.total_skus],
-      ['Inventory Health', 'Total Inventory Valuation', `Rs. ${formatMoney(data.inventory_health.total_inventory_valuation)}`],
-      ['Inventory Health', 'Low Stock SKUs', data.inventory_health.low_stock_count],
-      ['Inventory Health', 'Out of Stock SKUs', data.inventory_health.out_of_stock_count],
-    ];
-    dashboardService.exportToCSV(`ApexPOS_Executive_Dashboard_${data.period}`, headers, rows);
-  };
-
   const periods: { key: DashboardPeriod; label: string }[] = [
     { key: 'today', label: 'Today' },
     { key: 'yesterday', label: 'Yesterday' },
@@ -116,7 +85,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-      {/* 1. Compact Header: Day Session Status & Filter Toolbar Only */}
+      {/* 1. Top Filters Toolbar */}
       <div
         style={{
           display: 'flex',
@@ -124,27 +93,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '0.625rem',
-          padding: '0.5rem 0.75rem',
+          padding: '0.45rem 0.65rem',
           borderRadius: '0.5rem',
           backgroundColor: 'rgba(255, 255, 255, 0.02)',
           border: '1px solid var(--border-subtle)',
         }}
       >
-        {/* Day Session Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {data?.active_pos_session ? (
-            <Badge variant="success" pulse>
-              Day Session: {data.active_pos_session.session_number} (Open)
-            </Badge>
-          ) : (
-            <Badge variant="warning">No Active Day Session</Badge>
-          )}
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Period: <strong style={{ color: 'var(--primary-400)' }}>{data?.period_label || 'Loading...'}</strong>
-          </span>
-        </div>
-
-        {/* Date Filter Toolbar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
           <div
             style={{
@@ -211,28 +165,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
               </Button>
             </div>
           )}
-
-          <Button
-            variant="outline"
-            style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
-            icon={<RefreshCw size={12} />}
-            loading={loading}
-            onClick={fetchDashboard}
-            title="Refresh"
-          >
-            Refresh
-          </Button>
-
-          <Button
-            variant="outline"
-            style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
-            icon={<Download size={12} />}
-            onClick={handleExportSummaryCSV}
-            title="Export CSV"
-          >
-            CSV
-          </Button>
         </div>
+
+        <Button
+          variant="outline"
+          style={{ padding: '0.25rem 0.55rem', fontSize: '0.71875rem' }}
+          icon={<RefreshCw size={12} />}
+          loading={loading}
+          onClick={fetchDashboard}
+          title="Refresh Dashboard"
+        >
+          Refresh
+        </Button>
       </div>
 
       {error && (
@@ -642,8 +586,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                 </tr>
               </thead>
               <tbody>
-                {(topProductsTab === 'revenue' ? data?.top_products_by_revenue : data?.top_products_by_quantity)?.map(
-                  (prod, idx) => (
+                {(topProductsTab === 'revenue' ? data?.top_products_by_revenue : data?.top_products_by_quantity)
+                  ?.slice(0, 5)
+                  ?.map((prod, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                       <td style={{ padding: '0.375rem 0.5rem' }}>
                         <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{prod.name}</div>
@@ -659,8 +604,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         Rs. {formatMoney(prod.profit)}
                       </td>
                     </tr>
-                  )
-                )}
+                  ))}
                 {(!data?.top_products_by_revenue || data.top_products_by_revenue.length === 0) && (
                   <tr>
                     <td colSpan={4} style={{ padding: '1.25rem', textAlign: 'center', color: 'var(--text-muted)' }}>

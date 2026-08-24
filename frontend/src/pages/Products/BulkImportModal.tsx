@@ -169,7 +169,6 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
       isOpen={isOpen}
       onClose={handleClose}
       title="Bulk Import Products from Excel / CSV"
-      subtitle="Upload a spreadsheet to create and autocomplete multiple catalog products with opening stock in seconds."
       maxWidth="850px"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

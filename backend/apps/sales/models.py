@@ -248,6 +248,14 @@ class SalesReturn(models.Model):
         help_text="Total refund / credit issued to customer",
     )
     reason = models.CharField(max_length=200, help_text="Reason for customer return")
+    payment_account = models.ForeignKey(
+        "accounting.Account",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sales_returns_paid",
+        help_text="Cash drawer or bank account from which refund was paid",
+    )
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(
         User,

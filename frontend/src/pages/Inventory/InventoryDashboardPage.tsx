@@ -31,6 +31,7 @@ export const InventoryDashboardPage: React.FC = () => {
   // Cross-tab interaction targets
   const [stockCardProductId, setStockCardProductId] = useState<number | null>(null);
   const [targetProductForAdjustment, setTargetProductForAdjustment] = useState<InventorySummaryItem | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   const fetchInventoryData = useCallback(async () => {
     setLoading(true);
@@ -49,6 +50,11 @@ export const InventoryDashboardPage: React.FC = () => {
       setLoading(false);
     }
   }, []);
+
+  const handleRefresh = async () => {
+    await fetchInventoryData();
+    setRefreshTrigger((prev) => prev + 1);
+  };
 
   useEffect(() => {
     fetchInventoryData();
@@ -79,12 +85,13 @@ export const InventoryDashboardPage: React.FC = () => {
         </div>
 
         <Button
-          variant="outline"
+          variant="secondary"
           icon={<RefreshCw size={13} />}
+          loading={loading}
           style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-          onClick={fetchInventoryData}
+          onClick={handleRefresh}
         >
-          Refresh Stock
+          Refresh
         </Button>
       </div>
 
@@ -224,15 +231,15 @@ export const InventoryDashboardPage: React.FC = () => {
           )}
 
           {activeTab === 'movements' && (
-            <StockMovementLedgerTab />
+            <StockMovementLedgerTab refreshTrigger={refreshTrigger} />
           )}
 
           {activeTab === 'stock-card' && (
-            <ProductStockCardTab initialProductId={stockCardProductId} />
+            <ProductStockCardTab initialProductId={stockCardProductId} refreshTrigger={refreshTrigger} />
           )}
 
           {activeTab === 'reports' && (
-            <InventoryReportTab />
+            <InventoryReportTab refreshTrigger={refreshTrigger} />
           )}
         </>
       )}

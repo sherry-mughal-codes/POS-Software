@@ -34,6 +34,12 @@ class Customer(models.Model):
         help_text="Whether customer is eligible for credit purchases (always False for Walk-in)",
     )
     is_active = models.BooleanField(default=True, db_index=True)
+    opening_balance = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Initial/Opening receivable balance at system setup",
+    )
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -95,6 +101,12 @@ class Supplier(models.Model):
     address = models.TextField(blank=True, null=True)
     tax_id = models.CharField(max_length=50, blank=True, null=True, help_text="NTN / STRN / Tax Registration Number")
     is_active = models.BooleanField(default=True, db_index=True)
+    opening_balance = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Initial/Opening payable balance at system setup",
+    )
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

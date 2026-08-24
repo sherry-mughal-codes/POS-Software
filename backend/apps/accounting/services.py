@@ -529,6 +529,118 @@ class AccountingService:
         )
 
     @classmethod
+    def record_customer_opening_balance(
+        cls,
+        customer,
+        amount: Decimal,
+        created_by=None,
+        entry_date=None,
+    ) -> Optional[JournalEntry]:
+        """
+        Records opening receivable balance for a customer:
+        - Debit Accounts Receivable (1030)
+        - Credit Owner's Equity (3010)
+        """
+        amt = Decimal(str(amount))
+        if amt <= Decimal("0.00"):
+            return None
+
+        if entry_date is None:
+            entry_date = timezone.now().date()
+
+        ar_acc = Account.objects.filter(code="1030").first()
+        equity_acc = Account.objects.filter(code="3010").first() or Account.objects.filter(code="3000").first()
+
+        if not ar_acc or not equity_acc:
+            return None
+
+        # Clean existing opening entry if present
+        ref_id = f"OP-CUS-{customer.customer_id}"
+        existing = JournalEntry.objects.filter(reference_type=ReferenceType.OPENING_BALANCE, reference_id=ref_id).first()
+        if existing:
+            existing.delete()
+
+        lines = [
+            {
+                "account": ar_acc,
+                "debit": amt,
+                "credit": Decimal("0.00"),
+                "description": f"Opening receivable balance for [{customer.customer_id}] {customer.name}",
+            },
+            {
+                "account": equity_acc,
+                "debit": Decimal("0.00"),
+                "credit": amt,
+                "description": f"Opening balance equity for customer [{customer.customer_id}]",
+            },
+        ]
+
+        return cls.create_journal_entry(
+            entry_date=entry_date,
+            reference_type=ReferenceType.OPENING_BALANCE,
+            reference_id=ref_id,
+            lines=lines,
+            narration=f"Customer Opening Receivable Setup: [{customer.customer_id}] {customer.name} (Amount: Rs. {amt})",
+            created_by=created_by,
+        )
+
+    @classmethod
+    def record_supplier_opening_balance(
+        cls,
+        supplier,
+        amount: Decimal,
+        created_by=None,
+        entry_date=None,
+    ) -> Optional[JournalEntry]:
+        """
+        Records opening payable balance for a supplier:
+        - Debit Owner's Equity (3010)
+        - Credit Accounts Payable (2010)
+        """
+        amt = Decimal(str(amount))
+        if amt <= Decimal("0.00"):
+            return None
+
+        if entry_date is None:
+            entry_date = timezone.now().date()
+
+        ap_acc = Account.objects.filter(code="2010").first()
+        equity_acc = Account.objects.filter(code="3010").first() or Account.objects.filter(code="3000").first()
+
+        if not ap_acc or not equity_acc:
+            return None
+
+        # Clean existing opening entry if present
+        ref_id = f"OP-SUP-{supplier.supplier_id}"
+        existing = JournalEntry.objects.filter(reference_type=ReferenceType.OPENING_BALANCE, reference_id=ref_id).first()
+        if existing:
+            existing.delete()
+
+        lines = [
+            {
+                "account": equity_acc,
+                "debit": amt,
+                "credit": Decimal("0.00"),
+                "description": f"Opening balance equity for supplier [{supplier.supplier_id}]",
+            },
+            {
+                "account": ap_acc,
+                "debit": Decimal("0.00"),
+                "credit": amt,
+                "description": f"Opening payable balance for [{supplier.supplier_id}] {supplier.company_name or supplier.name}",
+            },
+        ]
+
+        return cls.create_journal_entry(
+            entry_date=entry_date,
+            reference_type=ReferenceType.OPENING_BALANCE,
+            reference_id=ref_id,
+            lines=lines,
+            narration=f"Supplier Opening Payable Setup: [{supplier.supplier_id}] {supplier.company_name or supplier.name} (Amount: Rs. {amt})",
+            created_by=created_by,
+        )
+
+    @classmethod
     @transaction.atomic
     def reverse_entry(cls, original_entry: JournalEntry, reason: str = "", created_by=None) -> JournalEntry:
         """
@@ -555,9 +667,6 @@ class AccountingService:
             narration=f"Reversal of {original_entry.entry_number}. Reason: {reason}",
             created_by=created_by,
         )
-
-        original_entry.status = JournalEntryStatus.CANCELLED
-        original_entry.save(update_fields=["status"])
 
         return reversal_entry
 

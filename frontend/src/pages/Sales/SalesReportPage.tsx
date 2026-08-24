@@ -216,7 +216,7 @@ export const SalesReportPage: React.FC = () => {
           </div>
 
           {/* Master Table */}
-          <Card title="Sales Transactions Breakdown" subtitle="Detailed transactional audit logs for selected period" icon={<BarChart3 size={20} />}>
+          <Card title="Sales Transactions Breakdown" icon={<BarChart3 size={20} />}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
                 <thead>

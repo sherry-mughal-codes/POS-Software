@@ -241,6 +241,7 @@ class SalesReturnCreateSerializer(serializers.Serializer):
     sale_id = serializers.IntegerField(required=True)
     items = SalesReturnItemInputSerializer(many=True, required=True)
     reason = serializers.CharField(required=True)
+    payment_account = serializers.IntegerField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True, default="")
     date = serializers.DateField(required=False)
 

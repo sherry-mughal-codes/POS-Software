@@ -24,6 +24,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [openingBalance, setOpeningBalance] = useState<number>(0);
   const [creditEnabled, setCreditEnabled] = useState(true);
   const [isActive, setIsActive] = useState(true);
   const [notes, setNotes] = useState('');
@@ -42,6 +43,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         setPhone(customerToEdit.phone || '');
         setEmail(customerToEdit.email || '');
         setAddress(customerToEdit.address || '');
+        setOpeningBalance(customerToEdit.opening_balance ? Number(customerToEdit.opening_balance) : 0);
         setCreditEnabled(customerToEdit.credit_enabled);
         setIsActive(customerToEdit.is_active);
         setNotes(customerToEdit.notes || '');
@@ -50,6 +52,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         setPhone('');
         setEmail('');
         setAddress('');
+        setOpeningBalance(0);
         setCreditEnabled(true);
         setIsActive(true);
         setNotes('');
@@ -79,6 +82,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       phone: phone.trim() || null,
       email: email.trim() || null,
       address: address.trim() || null,
+      opening_balance: isWalkin ? 0 : Number(openingBalance) || 0,
       credit_enabled: isWalkin ? false : creditEnabled,
       is_active: isWalkin ? true : isActive,
       notes: notes.trim() || null,
@@ -105,7 +109,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={customerToEdit ? `Edit Customer: ${customerToEdit.name}` : 'Register New Customer'}
-      subtitle="Canonical customer master record for POS sales, credit tracking, and receivables."
     >
       {error && (
         <div style={{
@@ -180,12 +183,26 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           />
         </div>
 
-        <Input
-          label="Physical Address / Shop Location"
-          placeholder="Shop #, Street, Commercial Area..."
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+          <Input
+            label="Physical Address / Shop Location"
+            placeholder="Shop #, Street, Commercial Area..."
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+          {!isWalkin && (
+            <Input
+              label="Opening Receivable (Rs.)"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={openingBalance || ''}
+              onChange={(e) => setOpeningBalance(parseFloat(e.target.value) || 0)}
+              helperText="Prior unbilled balance for initial setup."
+            />
+          )}
+        </div>
 
         {/* Credit Eligibility Box */}
         <div style={{

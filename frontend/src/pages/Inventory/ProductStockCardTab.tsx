@@ -17,6 +17,7 @@ import { productService } from '../../services/productService';
 
 interface ProductStockCardTabProps {
   initialProductId?: number | null;
+  refreshTrigger?: number;
 }
 
 const formatMoney = (val: number | string | undefined | null): string => {
@@ -24,7 +25,7 @@ const formatMoney = (val: number | string | undefined | null): string => {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initialProductId }) => {
+export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initialProductId, refreshTrigger }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(initialProductId || null);
   const [stockCard, setStockCard] = useState<ProductStockCard | null>(null);
@@ -37,7 +38,7 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
         setSelectedProductId(pList[0].id);
       }
     });
-  }, [selectedProductId]);
+  }, [selectedProductId, refreshTrigger]);
 
   useEffect(() => {
     if (initialProductId) {
@@ -52,7 +53,7 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
       .then((data) => setStockCard(data))
       .catch(() => setStockCard(null))
       .finally(() => setLoading(false));
-  }, [selectedProductId]);
+  }, [selectedProductId, refreshTrigger]);
 
   const renderMovementTypeBadge = (type: string, name: string) => {
     switch (type) {
@@ -76,12 +77,12 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Product Selector Bar */}
-      <Card title="Product Stock Card Audit" subtitle="Answers authoritatively: 'Why is this product's current stock X?'" icon={<History size={20} />}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '280px' }}>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+      <Card title="Product Stock Card" icon={<History size={16} />}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '260px' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Select Product to Inspect Lifecycle
             </label>
             <select
@@ -91,11 +92,11 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
                 width: '100%',
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.625rem 0.875rem',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
                 color: 'var(--text-main)',
                 outline: 'none',
-                fontSize: '0.9375rem',
+                fontSize: '0.78125rem',
                 fontWeight: 600,
               }}
             >
@@ -115,24 +116,24 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
       ) : stockCard ? (
         <>
           {/* Header Summary Banner */}
-          <div className="glass-card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+          <div className="glass-card" style={{ padding: '0.875rem 1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
-                  <Package size={20} style={{ color: 'var(--primary-400)' }} />
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{stockCard.product_name}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                  <Package size={16} style={{ color: 'var(--primary-400)' }} />
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>{stockCard.product_name}</h3>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <code style={{ fontSize: '0.875rem', color: 'var(--primary-400)' }}>SKU: {stockCard.sku}</code>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <code style={{ fontSize: '0.75rem', color: 'var(--primary-400)' }}>SKU: {stockCard.sku}</code>
                   {stockCard.barcode && (
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       Barcode: {stockCard.barcode}
                     </span>
                   )}
-                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Category: {stockCard.category || 'Uncategorized'}
                   </span>
-                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Unit: {stockCard.unit || '-'}
                   </span>
                 </div>

@@ -162,7 +162,96 @@ class PurchaseService:
             )
 
         if submit_immediately:
-            cls.submit_purchase(purchase, created_by=created_by)
+            return cls.submit_purchase(purchase, created_by=created_by)
+
+        return purchase
+
+    @classmethod
+    @transaction.atomic
+    def update_purchase(
+        cls,
+        purchase: Purchase,
+        supplier: Supplier,
+        items_data: List[Dict[str, Any]],
+        purchase_date: Optional[date] = None,
+        discount_amount: Decimal = Decimal("0.00"),
+        tax_amount: Decimal = Decimal("0.00"),
+        paid_amount: Decimal = Decimal("0.00"),
+        payment_method: Optional[PaymentMethod] = None,
+        payment_account: Optional[Account] = None,
+        supplier_invoice_number: Optional[str] = None,
+        supplier_invoice_file: Optional[str] = None,
+        notes: str = "",
+        submit_immediately: bool = False,
+        created_by=None,
+    ) -> Purchase:
+        """
+        Updates an existing DRAFT purchase order and optionally submits it.
+        """
+        if purchase.status != PurchaseStatus.DRAFT:
+            raise ValidationError("Only DRAFT purchase orders can be edited.")
+
+        if not items_data:
+            raise ValidationError("A purchase order must contain at least one product item.")
+
+        if purchase_date is None:
+            purchase_date = timezone.now().date()
+
+        # Calculate totals
+        subtotal = Decimal("0.00")
+        for item in items_data:
+            qty = Decimal(str(item["quantity"]))
+            rate = Decimal(str(item["purchase_rate"]))
+            if qty <= 0:
+                raise ValidationError("Product quantity must be greater than zero.")
+            if rate < 0:
+                raise ValidationError("Purchase rate cannot be negative.")
+            subtotal += (qty * rate)
+
+        grand_total = subtotal - Decimal(str(discount_amount)) + Decimal(str(tax_amount))
+        paid = Decimal(str(paid_amount))
+
+        if paid > grand_total:
+            raise ValidationError("Paid amount cannot exceed grand total.")
+
+        purchase.supplier = supplier
+        purchase.date = purchase_date
+        purchase.subtotal = subtotal
+        purchase.discount_amount = discount_amount
+        purchase.tax_amount = tax_amount
+        purchase.grand_total = grand_total
+        purchase.initial_paid_amount = paid
+        purchase.paid_amount = paid
+        purchase.payment_method = payment_method
+        purchase.payment_account = payment_account
+        if supplier_invoice_number is not None:
+            purchase.supplier_invoice_number = supplier_invoice_number
+        if supplier_invoice_file:
+            purchase.supplier_invoice_file = supplier_invoice_file
+        purchase.notes = notes
+        purchase.save()
+
+        # Re-create line items
+        purchase.items.all().delete()
+        for item in items_data:
+            prod = item["product"]
+            if isinstance(prod, int):
+                prod = Product.objects.get(pk=prod)
+
+            qty = Decimal(str(item["quantity"]))
+            rate = Decimal(str(item["purchase_rate"]))
+            line_subtotal = qty * rate
+
+            PurchaseItem.objects.create(
+                purchase=purchase,
+                product=prod,
+                quantity=qty,
+                purchase_rate=rate,
+                subtotal=line_subtotal,
+            )
+
+        if submit_immediately:
+            return cls.submit_purchase(purchase, created_by=created_by)
 
         return purchase
 
@@ -395,12 +484,11 @@ class PurchaseService:
         Outstanding = Total Purchases (SUBMITTED) - Total Upfront Paid - Total Returns (PAYABLE_DEDUCTION) - Total Submitted Payments
         """
         supplier = Supplier.objects.get(pk=supplier_id)
-
         purchases = Purchase.objects.filter(
             supplier=supplier,
             status=PurchaseStatus.SUBMITTED,
         )
-        total_purchased = sum(p.grand_total for p in purchases) or Decimal("0.00")
+        total_purchased = (supplier.opening_balance or Decimal("0.00")) + (sum(p.grand_total for p in purchases) or Decimal("0.00"))
         total_upfront_paid = sum(p.initial_paid_amount for p in purchases) or Decimal("0.00")
 
         returns = PurchaseReturn.objects.filter(
@@ -471,12 +559,12 @@ class PurchaseService:
     @transaction.atomic
     def submit_supplier_payment(cls, payment: SupplierPayment, user=None) -> SupplierPayment:
         """
-        Submits a supplier payment voucher and creates general ledger double-entry posting:
-        - Debit: 2010 Accounts Payable
-        - Credit: Payment Account (1010 Cash in Hand / 1020 Main Bank)
+        Submits and posts a supplier payment voucher to the General Ledger.
+        - Debit: Accounts Payable (2010)
+        - Credit: Cash/Bank Account (payment.payment_account)
         """
         if payment.status == SupplierPaymentStatus.SUBMITTED:
-            raise ValidationError(f"Supplier payment [{payment.payment_number}] is already submitted.")
+            return payment
         if payment.status == SupplierPaymentStatus.CANCELLED:
             raise ValidationError(f"Cannot submit cancelled supplier payment [{payment.payment_number}].")
 
@@ -602,22 +690,23 @@ class PurchaseService:
         """
         supplier = Supplier.objects.get(pk=supplier_id)
 
-        # 1. Calculate Opening Balance prior to start_date
-        opening_purchases = Decimal("0.00")
+        # 1. Calculate opening balance before start_date
+        base_opening = supplier.opening_balance or Decimal("0.00")
+        opening_purchases = base_opening
         opening_upfront_paid = Decimal("0.00")
         opening_returns = Decimal("0.00")
         opening_payments = Decimal("0.00")
 
         if start_date:
             prior_purchases = Purchase.objects.filter(supplier=supplier, status=PurchaseStatus.SUBMITTED, date__lt=start_date)
-            opening_purchases = sum(p.grand_total for p in prior_purchases) or Decimal("0.00")
-            opening_upfront_paid = sum(p.initial_paid_amount for p in prior_purchases) or Decimal("0.00")
+            opening_purchases += (sum(p.grand_total for p in prior_purchases) or Decimal("0.00"))
+            opening_upfront_paid += (sum(p.initial_paid_amount for p in prior_purchases) or Decimal("0.00"))
 
             prior_returns = PurchaseReturn.objects.filter(supplier=supplier, refund_method=RefundMethod.PAYABLE_DEDUCTION, date__lt=start_date)
-            opening_returns = sum(r.total_amount for r in prior_returns) or Decimal("0.00")
+            opening_returns += (sum(r.total_amount for r in prior_returns) or Decimal("0.00"))
 
             prior_payments = SupplierPayment.objects.filter(supplier=supplier, status=SupplierPaymentStatus.SUBMITTED, date__lt=start_date)
-            opening_payments = sum(pay.amount for pay in prior_payments) or Decimal("0.00")
+            opening_payments += (sum(pay.amount for pay in prior_payments) or Decimal("0.00"))
 
         opening_balance = max(Decimal("0.00"), opening_purchases - opening_upfront_paid - opening_returns - opening_payments)
 

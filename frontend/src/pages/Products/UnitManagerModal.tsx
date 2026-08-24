@@ -68,7 +68,6 @@ export const UnitManagerModal: React.FC<UnitManagerModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Units of Measurement"
-      subtitle="Define stock counting units (e.g. Piece, Box, Pack, Kilogram, Liter)."
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {error && (

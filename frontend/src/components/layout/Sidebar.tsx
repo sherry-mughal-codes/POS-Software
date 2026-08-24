@@ -599,6 +599,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.id)}
+                    title={group.title}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -625,6 +626,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         {group.icon}
                       </span>
                       <span
+                        title={group.title}
                         style={{
                           fontSize: '0.75rem',
                           fontWeight: 700,
@@ -668,6 +670,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <button
                             key={item.id}
                             onClick={() => onSelectTab(item.id)}
+                            title={item.name}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -702,6 +705,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 {item.icon}
                               </span>
                               <span
+                                title={item.name}
                                 style={{
                                   fontSize: '0.8125rem',
                                   fontWeight: isSelected ? 700 : 500,

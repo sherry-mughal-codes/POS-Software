@@ -170,8 +170,7 @@ export const TransactionSimulatorTab: React.FC<TransactionSimulatorTabProps> = (
         {/* Form Card */}
         <Card
           title="Transaction Parameters"
-          subtitle="Configure event details to dispatch to AccountingService"
-          icon={<Zap size={20} />}
+          icon={<Zap size={16} />}
         >
           {error && (
             <div style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.8125rem' }}>
@@ -270,8 +269,7 @@ export const TransactionSimulatorTab: React.FC<TransactionSimulatorTabProps> = (
         {/* Result Card */}
         <Card
           title="Generated Journal Voucher"
-          subtitle="Real-time double-entry outcome from AccountingService"
-          icon={<Layers size={20} />}
+          icon={<Layers size={16} />}
           action={result && <Badge variant="success">Posted & Balanced</Badge>}
         >
           {!result ? (

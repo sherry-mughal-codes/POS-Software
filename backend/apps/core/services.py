@@ -53,9 +53,9 @@ class DashboardService:
             end_d = start_d
             label = f"Yesterday ({start_d.strftime('%d-%b-%Y')})"
         elif period == "this_week":
-            # Monday as start of week
+            # Monday as start of week to Sunday as end of week (full 7-day calendar week)
             start_d = today - timedelta(days=today.weekday())
-            end_d = today
+            end_d = start_d + timedelta(days=6)
             label = f"This Week ({start_d.strftime('%d-%b')} – {end_d.strftime('%d-%b-%Y')})"
         elif period == "last_week":
             start_d = today - timedelta(days=today.weekday() + 7)

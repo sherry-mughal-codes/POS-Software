@@ -24,7 +24,11 @@ const formatMoney = (val: number | string | undefined | null): string => {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-export const InventoryReportTab: React.FC = () => {
+interface InventoryReportTabProps {
+  refreshTrigger?: number;
+}
+
+export const InventoryReportTab: React.FC<InventoryReportTabProps> = ({ refreshTrigger }) => {
   const [report, setReport] = useState<ComprehensiveInventoryReport | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -64,7 +68,7 @@ export const InventoryReportTab: React.FC = () => {
 
   useEffect(() => {
     fetchReport();
-  }, [fetchReport]);
+  }, [fetchReport, refreshTrigger]);
 
   const renderStatusBadge = (status: StockStatus) => {
     switch (status) {
@@ -80,25 +84,54 @@ export const InventoryReportTab: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Filter Card */}
-      <Card title="Inventory Report Filters" subtitle="Comprehensive multi-dimensional filtering across dates, categories, and movements" icon={<Filter size={20} />}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
-          <Input
-            label="Date From"
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-          <Input
-            label="Date To"
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
+      <Card title="Inventory Report Filters" icon={<Filter size={16} />}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem', alignItems: 'flex-end' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              Date From
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
+                color: 'var(--text-main)',
+                outline: 'none',
+                fontSize: '0.78125rem',
+              }}
+            />
+          </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              Date To
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
+                color: 'var(--text-main)',
+                outline: 'none',
+                fontSize: '0.78125rem',
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Category
             </label>
             <select
@@ -108,11 +141,11 @@ export const InventoryReportTab: React.FC = () => {
                 width: '100%',
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.625rem',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
                 color: 'var(--text-main)',
                 outline: 'none',
-                fontSize: '0.8125rem',
+                fontSize: '0.78125rem',
               }}
             >
               <option value="">All Categories</option>
@@ -123,7 +156,7 @@ export const InventoryReportTab: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Product
             </label>
             <select
@@ -133,11 +166,11 @@ export const InventoryReportTab: React.FC = () => {
                 width: '100%',
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.625rem',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
                 color: 'var(--text-main)',
                 outline: 'none',
-                fontSize: '0.8125rem',
+                fontSize: '0.78125rem',
               }}
             >
               <option value="">All Products</option>
@@ -148,7 +181,7 @@ export const InventoryReportTab: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Stock Status
             </label>
             <select
@@ -158,11 +191,11 @@ export const InventoryReportTab: React.FC = () => {
                 width: '100%',
                 backgroundColor: 'var(--bg-input)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
-                padding: '0.625rem',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
                 color: 'var(--text-main)',
                 outline: 'none',
-                fontSize: '0.8125rem',
+                fontSize: '0.78125rem',
               }}
             >
               <option value="">All Statuses</option>
@@ -172,22 +205,10 @@ export const InventoryReportTab: React.FC = () => {
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Button variant="primary" icon={<Filter size={14} />} onClick={fetchReport} style={{ flex: 1 }}>
+          <div>
+            <Button variant="primary" icon={<Filter size={13} />} onClick={fetchReport} style={{ width: '100%', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
               Apply
             </Button>
-            <Button
-              variant="outline"
-              icon={<RefreshCw size={14} />}
-              onClick={() => {
-                setStartDate('');
-                setEndDate('');
-                setSelectedCategoryId('');
-                setSelectedProductId('');
-                setSelectedStatus('');
-                setSelectedMovementType('');
-              }}
-            />
           </div>
         </div>
       </Card>

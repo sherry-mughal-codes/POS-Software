@@ -71,7 +71,6 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Product Categories Management"
-      subtitle="Organize items into high-level categories and sub-categories."
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {error && (

@@ -158,13 +158,13 @@ export const SettingsPage: React.FC = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <Button
-            variant="outline"
+            variant="secondary"
             style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             icon={<RefreshCw size={13} />}
             loading={loading}
             onClick={fetchSettings}
           >
-            Reload
+            Refresh
           </Button>
 
           <Button
@@ -257,7 +257,7 @@ export const SettingsPage: React.FC = () => {
       <form onSubmit={handleSave}>
         {/* TAB 1: Store Profile */}
         {activeTab === 'store' && (
-          <Card title="Store Profile & Business Details" subtitle="Primary business identity printed on customer invoices and reports">
+          <Card title="Store Profile & Business Details">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
               {/* Store Logo Section */}
               <div style={{ gridColumn: '1 / -1', padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: '0.5rem' }}>
@@ -488,7 +488,7 @@ export const SettingsPage: React.FC = () => {
 
         {/* TAB 2: POS & Receipts */}
         {activeTab === 'pos' && (
-          <Card title="POS Register & Receipt Customization" subtitle="Control register invoice numbers, tax rates, and customer receipt text">
+          <Card title="POS Register & Receipt Customization">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
@@ -566,7 +566,7 @@ export const SettingsPage: React.FC = () => {
 
         {/* TAB 3: Inventory */}
         {activeTab === 'inventory' && (
-          <Card title="Inventory & Stock Control Thresholds" subtitle="Configure automated warnings and safe stock levels">
+          <Card title="Inventory & Stock Control Thresholds">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
@@ -590,7 +590,6 @@ export const SettingsPage: React.FC = () => {
         {activeTab === 'accounting' && (
           <Card
             title="Chart of Accounts General Ledger Defaults"
-            subtitle="Select the active transacting accounts (with an active ledger) used for automatic double-entry journal postings"
           >
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
               {/* Cash Account */}
@@ -787,7 +786,7 @@ export const SettingsPage: React.FC = () => {
 
         {/* TAB 5: System Diagnostics */}
         {activeTab === 'system' && (
-          <Card title="System Diagnostics & Backup" subtitle="Application environment and configuration export">
+          <Card title="System Diagnostics & Backup">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: '0.5rem', border: '1px solid var(--border-subtle)' }}>

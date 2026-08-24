@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, CheckCircle2, XCircle, Sparkles, Trash2 } from 'lucide-react';
+import { Plus, Search, CheckCircle2, XCircle, Sparkles, Trash2, BookOpen } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
@@ -207,18 +207,18 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
   const realTimeTotalEquity = baseEquityTotal + netOperatingProfit;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Controls & Filter Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.625rem' }}>
+        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
           {accountTypes.map((t) => (
             <button
               key={t.key}
               onClick={() => setSelectedType(t.key)}
               style={{
-                padding: '0.5rem 0.875rem',
-                borderRadius: '0.5rem',
-                fontSize: '0.8125rem',
+                padding: '0.35rem 0.75rem',
+                borderRadius: '0.375rem',
+                fontSize: '0.78125rem',
                 fontWeight: 600,
                 border: 'none',
                 backgroundColor: selectedType === t.key ? 'var(--primary-400)' : 'var(--bg-card)',
@@ -232,13 +232,13 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <div style={{ position: 'relative', width: '220px' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{ position: 'relative', width: '200px' }}>
             <Search
-              size={16}
+              size={13}
               style={{
                 position: 'absolute',
-                left: '0.75rem',
+                left: '0.65rem',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 color: 'var(--text-subtle)',
@@ -251,12 +251,12 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 width: '100%',
-                padding: '0.5rem 0.75rem 0.5rem 2.25rem',
+                padding: '0.35rem 0.65rem 0.35rem 1.9rem',
                 backgroundColor: 'var(--bg-card)',
                 border: '1px solid var(--border-medium)',
-                borderRadius: '0.5rem',
+                borderRadius: '0.375rem',
                 color: 'var(--text-main)',
-                fontSize: '0.8125rem',
+                fontSize: '0.78125rem',
                 outline: 'none',
               }}
             />
@@ -264,7 +264,8 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
 
           <Button
             variant="primary"
-            icon={<Plus size={16} />}
+            icon={<Plus size={14} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
             onClick={handleOpenModal}
           >
             Add Account
@@ -359,10 +360,10 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                     </td>
 
                     {/* Actions */}
-                    <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end', alignItems: 'center' }}>
                         {isHeader ? (
-                          <span style={{ fontSize: '0.71875rem', color: 'var(--text-subtle)', fontStyle: 'italic' }}>
+                          <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontStyle: 'italic' }}>
                             Organization Header
                           </span>
                         ) : (
@@ -370,29 +371,28 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                             {acc.code !== '3010' && (
                               <Button
                                 variant="outline"
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem', borderColor: 'rgba(56, 189, 248, 0.4)', color: 'var(--primary-400)' }}
+                                icon={<Sparkles size={13} />}
+                                style={{ padding: '0.25rem 0.45rem', borderColor: 'rgba(56, 189, 248, 0.4)', color: 'var(--primary-400)' }}
                                 onClick={() => handleOpenOpeningModal(acc)}
-                              >
-                                Set Opening Bal
-                              </Button>
+                                title="Set Initial Opening Balance"
+                              />
                             )}
                             <Button
                               variant="outline"
-                              style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
+                              icon={<BookOpen size={13} />}
+                              style={{ padding: '0.25rem 0.45rem' }}
                               onClick={() => onSelectAccountForLedger(acc.id)}
-                            >
-                              View Ledger
-                            </Button>
+                              title="View Account General Ledger"
+                            />
                             {!acc.is_system && (
                               <Button
                                 variant="outline"
+                                icon={<Trash2 size={13} />}
                                 title="Delete Account"
-                                style={{ padding: '0.25rem 0.45rem', fontSize: '0.71875rem', borderColor: 'rgba(239, 68, 68, 0.35)', color: 'var(--danger)' }}
+                                style={{ padding: '0.25rem 0.45rem', borderColor: 'rgba(239, 68, 68, 0.35)', color: 'var(--danger)' }}
                                 onClick={() => handleDeleteAccount(acc)}
                                 disabled={deletingId === acc.id}
-                              >
-                                <Trash2 size={13} />
-                              </Button>
+                              />
                             )}
                           </>
                         )}
@@ -472,7 +472,6 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Add New Account to Chart of Accounts"
-        subtitle="Create custom general ledger accounts for revenue, expenses, or assets."
       >
         {formError && (
           <div style={{
@@ -578,7 +577,6 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
         isOpen={!!openingModalAccount}
         onClose={() => !openingSaving && setOpeningModalAccount(null)}
         title={`Set Opening Balance: [${openingModalAccount?.code}] ${openingModalAccount?.name}`}
-        subtitle="Post opening funds. System will automatically credit/debit Owner's Capital (3010) to maintain balanced equity."
       >
         {openingError && (
           <div style={{

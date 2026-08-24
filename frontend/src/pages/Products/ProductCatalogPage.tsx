@@ -207,13 +207,13 @@ export const ProductCatalogPage: React.FC = () => {
       {/* Filter & View Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         {/* Category Chips */}
-        <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem', flex: 1 }}>
+        <div style={{ display: 'flex', gap: '0.35rem', overflowX: 'auto', paddingBottom: '0.25rem', flex: 1 }}>
           <button
             onClick={() => setSelectedCategory('ALL')}
             style={{
-              padding: '0.5rem 0.875rem',
-              borderRadius: '0.5rem',
-              fontSize: '0.8125rem',
+              padding: '0.3rem 0.65rem',
+              borderRadius: '0.375rem',
+              fontSize: '0.75rem',
               fontWeight: 600,
               border: '1px solid',
               borderColor: selectedCategory === 'ALL' ? 'var(--primary-400)' : 'var(--border-subtle)',
@@ -230,9 +230,9 @@ export const ProductCatalogPage: React.FC = () => {
               key={c.id}
               onClick={() => setSelectedCategory(c.id.toString())}
               style={{
-                padding: '0.5rem 0.875rem',
-                borderRadius: '0.5rem',
-                fontSize: '0.8125rem',
+                padding: '0.3rem 0.65rem',
+                borderRadius: '0.375rem',
+                fontSize: '0.75rem',
                 fontWeight: 600,
                 border: '1px solid',
                 borderColor: selectedCategory === c.id.toString() ? 'var(--primary-400)' : 'var(--border-subtle)',
@@ -248,13 +248,13 @@ export const ProductCatalogPage: React.FC = () => {
         </div>
 
         {/* Search, Status & View Toggle */}
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <div style={{ width: '220px' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{ width: '200px' }}>
             <Input
               placeholder="Search product, SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search size={14} />}
+              icon={<Search size={13} />}
             />
           </div>
 
@@ -264,11 +264,11 @@ export const ProductCatalogPage: React.FC = () => {
             style={{
               backgroundColor: 'var(--bg-input)',
               border: '1px solid var(--border-medium)',
-              borderRadius: '0.5rem',
-              padding: '0.625rem',
+              borderRadius: '0.375rem',
+              padding: '0.35rem 0.6rem',
               color: 'var(--text-main)',
               outline: 'none',
-              fontSize: '0.8125rem',
+              fontSize: '0.78125rem',
             }}
           >
             <option value="ALL">All Status</option>
@@ -464,18 +464,17 @@ export const ProductCatalogPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.35rem' }}>
                   <Button
                     variant="outline"
-                    icon={<Edit2 size={11} />}
-                    style={{ flex: 1, padding: '0.2rem 0.4rem', fontSize: '0.6875rem' }}
+                    icon={<Edit2 size={12} />}
+                    title="Edit Product"
+                    style={{ flex: 1, padding: '0.25rem 0.4rem' }}
                     onClick={() => handleOpenEditModal(p)}
-                  >
-                    Edit
-                  </Button>
+                  />
                   <Button
                     variant="outline"
-                    icon={<Power size={11} />}
-                    title={p.is_active ? 'Deactivate item' : 'Activate item'}
+                    icon={<Power size={12} />}
+                    title={p.is_active ? 'Deactivate Product' : 'Activate Product'}
                     style={{
-                      padding: '0.2rem 0.45rem',
+                      padding: '0.25rem 0.45rem',
                       color: p.is_active ? 'var(--warning)' : 'var(--success)',
                       borderColor: p.is_active ? 'var(--warning-border)' : 'var(--success-border)',
                     }}
@@ -556,18 +555,22 @@ export const ProductCatalogPage: React.FC = () => {
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
                         <Button
                           variant="outline"
-                          style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+                          icon={<Edit2 size={13} />}
+                          title="Edit Product"
+                          style={{ padding: '0.25rem 0.45rem' }}
                           onClick={() => handleOpenEditModal(p)}
-                        >
-                          Edit
-                        </Button>
+                        />
                         <Button
                           variant="outline"
-                          style={{ padding: '0.2rem 0.4rem', fontSize: '0.6875rem' }}
+                          icon={<Power size={13} />}
+                          title={p.is_active ? 'Deactivate Product' : 'Activate Product'}
+                          style={{
+                            padding: '0.25rem 0.45rem',
+                            color: p.is_active ? 'var(--warning)' : 'var(--success)',
+                            borderColor: p.is_active ? 'var(--warning-border)' : 'var(--success-border)',
+                          }}
                           onClick={() => handleToggleStatus(p)}
-                        >
-                          {p.is_active ? 'Deactivate' : 'Activate'}
-                        </Button>
+                        />
                       </div>
                     </td>
                   </tr>

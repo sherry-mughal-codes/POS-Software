@@ -505,6 +505,17 @@ export const EmployeesDashboardPage: React.FC = () => {
 
   const departments = Array.from(new Set(employees.map((e) => e.department).filter(Boolean)));
 
+  const handleRefreshAll = () => {
+    fetchEmployees();
+    if (activeTab === 'attendance') {
+      fetchAttendance();
+    } else if (activeTab === 'payroll') {
+      fetchSalarySlips();
+    } else if (activeTab === 'reports') {
+      fetchPayrollReport();
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Compact Header Bar */}
@@ -516,6 +527,16 @@ export const EmployeesDashboardPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <Button
+            variant="secondary"
+            icon={<RefreshCw size={13} />}
+            loading={employeesLoading || attendanceLoading || payrollLoading || reportsLoading}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+            onClick={handleRefreshAll}
+          >
+            Refresh
+          </Button>
+
           {activeTab === 'attendance' && (
             <Button variant="primary" icon={<Clock size={14} />} style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }} onClick={handleOpenMarkAttendance}>
               Mark Attendance
@@ -641,9 +662,9 @@ export const EmployeesDashboardPage: React.FC = () => {
 
       {/* TAB 1: EMPLOYEES MASTER */}
       {activeTab === 'employees' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {/* Filters Bar */}
-          <Card title="Employee Directory Filters" subtitle="Filter by department, role, or active status" icon={<Users size={18} />}>
+          <Card title="Employee Directory Filters" icon={<Users size={16} />}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: '220px' }}>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
@@ -705,7 +726,7 @@ export const EmployeesDashboardPage: React.FC = () => {
           </Card>
 
           {/* Employees Table */}
-          <Card title={`Registered Staff Profiles (${filteredEmployees.length})`} subtitle="Master personnel roster with base wage configuration" icon={<Briefcase size={18} />}>
+          <Card title={`Registered Staff Profiles (${filteredEmployees.length})`} icon={<Briefcase size={16} />}>
             {employeesLoading ? (
               <LoadingSpinner label="Loading staff profiles..." />
             ) : (
@@ -820,9 +841,9 @@ export const EmployeesDashboardPage: React.FC = () => {
 
       {/* TAB 2: ATTENDANCE TRACKER */}
       {activeTab === 'attendance' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {/* Attendance Controls */}
-          <Card title="Attendance Date & Filter" subtitle="Daily time card logs and working hours calculation" icon={<Clock size={18} />}>
+          <Card title="Attendance Date & Filter" icon={<Clock size={16} />}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
@@ -870,7 +891,7 @@ export const EmployeesDashboardPage: React.FC = () => {
           </Card>
 
           {/* Attendance Table */}
-          <Card title={`Attendance Logs for ${attendanceDate} (${attendanceRecords.length})`} subtitle="Check-in/out timestamps and automatic working hours tracking" icon={<Clock size={18} />}>
+          <Card title={`Attendance Logs for ${attendanceDate} (${attendanceRecords.length})`} icon={<Clock size={16} />}>
             {attendanceLoading ? (
               <LoadingSpinner label="Loading attendance records..." />
             ) : (
@@ -953,9 +974,9 @@ export const EmployeesDashboardPage: React.FC = () => {
 
       {/* TAB 3: PAYROLL & SALARY SLIPS */}
       {activeTab === 'payroll' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {/* Period Selector Card */}
-          <Card title="Payroll Period Filter" subtitle="Monthly salary calculation and accrual vouchers" icon={<Receipt size={18} />}>
+          <Card title="Payroll Period Filter" icon={<Receipt size={16} />}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
@@ -1008,7 +1029,7 @@ export const EmployeesDashboardPage: React.FC = () => {
           </Card>
 
           {/* Salary Slips Table */}
-          <Card title={`Salary Slips for ${MONTHS.find((m) => m.value === payrollMonth)?.label} ${payrollYear} (${salarySlips.length})`} subtitle="Double-entry accrued salary payables and disbursement payments" icon={<Receipt size={18} />}>
+          <Card title={`Salary Slips for ${MONTHS.find((m) => m.value === payrollMonth)?.label} ${payrollYear} (${salarySlips.length})`} icon={<Receipt size={16} />}>
             {payrollLoading ? (
               <LoadingSpinner label="Loading salary slips..." />
             ) : (
@@ -1093,11 +1114,9 @@ export const EmployeesDashboardPage: React.FC = () => {
                                   variant="primary"
                                   icon={<Send size={12} />}
                                   onClick={() => handleSubmitSlip(slip.id)}
-                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                  style={{ padding: '0.25rem 0.45rem', fontSize: '0.75rem' }}
                                   title="Submit & Accrue to Ledger"
-                                >
-                                  Submit
-                                </Button>
+                                />
                               )}
 
                               {slip.status === 'SUBMITTED' && slip.payable_amount > 0 && (
@@ -1105,11 +1124,9 @@ export const EmployeesDashboardPage: React.FC = () => {
                                   variant="primary"
                                   icon={<DollarSign size={12} />}
                                   onClick={() => handleOpenDisbursePayment(slip)}
-                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--success)', borderColor: 'var(--success)' }}
+                                  style={{ padding: '0.25rem 0.45rem', fontSize: '0.75rem', backgroundColor: 'var(--success)', borderColor: 'var(--success)' }}
                                   title="Disburse Payment"
-                                >
-                                  Pay
-                                </Button>
+                                />
                               )}
 
                               <Button
@@ -1144,55 +1161,55 @@ export const EmployeesDashboardPage: React.FC = () => {
 
       {/* TAB 4: HR & PAYROLL REPORTS */}
       {activeTab === 'reports' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {reportsLoading ? (
             <LoadingSpinner label="Generating reports..." />
           ) : payrollReport ? (
             <>
               {/* Summary KPIs */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Net Payroll</span>
-                    <DollarSign size={18} style={{ color: 'var(--primary-400)' }} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.625rem' }}>
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Net Payroll</span>
+                    <DollarSign size={15} style={{ color: 'var(--primary-400)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(payrollReport.summary.total_net_salary)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     For {MONTHS.find((m) => m.value === payrollMonth)?.label} {payrollYear}
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Disbursed / Paid</span>
-                    <CheckCircle size={18} style={{ color: 'var(--success)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Disbursed / Paid</span>
+                    <CheckCircle size={15} style={{ color: 'var(--success)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(payrollReport.summary.total_paid)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Cleared via Cash/Bank
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Outstanding Salary Payable</span>
-                    <AlertTriangle size={18} style={{ color: 'var(--danger)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Outstanding Salary Payable</span>
+                    <AlertTriangle size={15} style={{ color: 'var(--danger)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(payrollReport.summary.total_outstanding_payable)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                     Accrued in Account [2030]
                   </div>
                 </div>
               </div>
 
               {/* Detailed Breakdown */}
-              <Card title="Monthly Payroll Breakdown" subtitle={`Detailed staff salary components for ${MONTHS.find((m) => m.value === payrollMonth)?.label} ${payrollYear}`} icon={<BarChart3 size={18} />}>
+              <Card title="Monthly Payroll Breakdown" icon={<BarChart3 size={16} />}>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
                     <thead>

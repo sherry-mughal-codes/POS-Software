@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Truck,
   Plus,
-  Search,
   Phone,
   Mail,
   MapPin,
@@ -16,7 +15,6 @@ import {
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { SupplierModal } from './SupplierModal';
 import { Supplier } from '../../types/contact';
@@ -98,101 +96,119 @@ export const SuppliersPage: React.FC = () => {
       {/* Compact Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)', margin: 0 }}>
             Suppliers & Vendors
           </h2>
         </div>
 
-        <Button
-          variant="primary"
-          icon={<Plus size={14} />}
-          style={{
-            background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-            fontWeight: 700,
-            padding: '0.25rem 0.55rem',
-            fontSize: '0.75rem',
-          }}
-          onClick={handleOpenAdd}
-        >
-          Register Supplier
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Button
+            variant="outline"
+            icon={<RefreshCw size={13} />}
+            loading={loading}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+            onClick={fetchSuppliers}
+            title="Refresh Supplier Data"
+          >
+            Refresh
+          </Button>
+
+          <Button
+            variant="primary"
+            icon={<Plus size={13} />}
+            style={{
+              background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+              fontWeight: 700,
+              padding: '0.25rem 0.55rem',
+              fontSize: '0.75rem',
+            }}
+            onClick={handleOpenAdd}
+          >
+            Register Supplier
+          </Button>
+        </div>
       </div>
 
-      {/* Metrics Grid */}
+      {/* Standardized Metrics Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
-        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Suppliers</span>
-            <Truck size={15} style={{ color: 'var(--primary-400)' }} />
+            <Truck size={14} style={{ color: 'var(--primary-400)' }} />
           </div>
-          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
             {totalCount}
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Active vendors & distributors</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Active Suppliers</span>
-            <CheckCircle2 size={15} style={{ color: 'var(--success)' }} />
+            <CheckCircle2 size={14} style={{ color: 'var(--success)' }} />
           </div>
-          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
             {activeCount}
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Eligible for Purchase Orders</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Tax / NTN Registered</span>
-            <FileText size={15} style={{ color: '#a5b4fc' }} />
+            <FileText size={14} style={{ color: '#a5b4fc' }} />
           </div>
-          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#a5b4fc', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#a5b4fc', fontFamily: 'var(--font-mono)' }}>
             {taxRegisteredCount}
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>NTN / STRN on file</div>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: 1, maxWidth: '500px' }}>
-          <div style={{ flex: 1, minWidth: '240px' }}>
-            <Input
-              placeholder="Search company, contact, phone, or NTN..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search size={14} />}
-            />
-          </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+      {/* Standardized Filter & Search Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ flex: 1, minWidth: '220px', maxWidth: '380px' }}>
+          <input
+            type="text"
+            placeholder="Search company, contact, phone, or NTN..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{
+              width: '100%',
               backgroundColor: 'var(--bg-input)',
               border: '1px solid var(--border-medium)',
-              borderRadius: '0.5rem',
-              padding: '0.625rem',
+              borderRadius: '0.375rem',
+              padding: '0.35rem 0.5rem',
               color: 'var(--text-main)',
+              fontSize: '0.75rem',
               outline: 'none',
-              fontSize: '0.8125rem',
             }}
-          >
-            <option value="ALL">All Status</option>
-            <option value="ACTIVE">Active Only</option>
-            <option value="INACTIVE">Inactive Only</option>
-          </select>
+          />
         </div>
 
-        <Button variant="secondary" icon={<RefreshCw size={14} />} onClick={fetchSuppliers} />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+          style={{
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '0.375rem',
+            padding: '0.35rem 0.5rem',
+            color: 'var(--text-main)',
+            outline: 'none',
+            fontSize: '0.75rem',
+          }}
+        >
+          <option value="ALL">All Status</option>
+          <option value="ACTIVE">Active Only</option>
+          <option value="INACTIVE">Inactive Only</option>
+        </select>
       </div>
 
       {/* Supplier Table Card */}
       <Card
         title="Distributors & Suppliers Directory"
-        subtitle={`${filteredSuppliers.length} suppliers registered`}
-        icon={<Truck size={20} />}
+        icon={<Truck size={18} />}
       >
         {loading ? (
           <LoadingSpinner label="Loading supplier master records..." />
@@ -314,18 +330,17 @@ export const SuppliersPage: React.FC = () => {
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
                         <Button
                           variant="outline"
-                          icon={<Edit2 size={11} />}
-                          style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+                          icon={<Edit2 size={12} />}
+                          style={{ padding: '0.25rem 0.45rem' }}
+                          title="Edit Supplier Details"
                           onClick={() => handleOpenEdit(supp)}
-                        >
-                          Edit
-                        </Button>
+                        />
                         <Button
                           variant="outline"
-                          icon={<Power size={11} />}
+                          icon={<Power size={12} />}
                           title={supp.is_active ? 'Deactivate supplier' : 'Reactivate supplier'}
                           style={{
-                            padding: '0.2rem 0.4rem',
+                            padding: '0.25rem 0.45rem',
                             color: supp.is_active ? 'var(--warning)' : 'var(--success)',
                             borderColor: supp.is_active ? 'var(--warning-border)' : 'var(--success-border)',
                           }}

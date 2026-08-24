@@ -14,6 +14,8 @@ import {
   Banknote,
   Send,
   Edit2,
+  Wallet,
+  CreditCard,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
@@ -230,6 +232,15 @@ export const ExpensesDashboardPage: React.FC = () => {
     }
   };
 
+  const handleRefreshAll = () => {
+    fetchInitialData();
+    if (activeTab === 'expenses') {
+      fetchExpenses();
+    } else {
+      fetchReport();
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Compact Header Bar */}
@@ -241,6 +252,15 @@ export const ExpensesDashboardPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <Button
+            variant="secondary"
+            icon={<RefreshCw size={13} />}
+            loading={expensesLoading || reportLoading}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+            onClick={handleRefreshAll}
+          >
+            Refresh
+          </Button>
           <Button
             variant="primary"
             icon={<Plus size={14} />}
@@ -302,22 +322,22 @@ export const ExpensesDashboardPage: React.FC = () => {
 
       {/* TAB 1: EXPENSES LIST */}
       {activeTab === 'expenses' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {/* Filters Bar */}
-          <Card title="Expenses Filters" subtitle="Filter by expense category, payment source, status or date range" icon={<Filter size={18} />}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
+          <Card title="Expenses Filters" icon={<Filter size={16} />}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem', alignItems: 'flex-end' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                   Search Expense / Receipt
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <Search size={14} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
+                  <Search size={13} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
                   <input
                     type="text"
                     placeholder="EXP-2026-00001 or Bill ref..."
                     value={expenseSearch}
                     onChange={(e) => setExpenseSearch(e.target.value)}
-                    style={{ width: '100%', padding: '0.45rem 0.5rem 0.45rem 2rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                    style={{ width: '100%', padding: '0.35rem 0.65rem 0.35rem 1.9rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.78125rem', outline: 'none' }}
                   />
                 </div>
               </div>
@@ -329,7 +349,7 @@ export const ExpensesDashboardPage: React.FC = () => {
                 <select
                   value={expenseAccountFilter}
                   onChange={(e) => setExpenseAccountFilter(e.target.value)}
-                  style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.45rem 0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                  style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.35rem 0.6rem', color: 'var(--text-main)', fontSize: '0.78125rem', outline: 'none' }}
                 >
                   <option value="">All Categories</option>
                   {expenseAccounts.map((a) => (
@@ -347,7 +367,7 @@ export const ExpensesDashboardPage: React.FC = () => {
                 <select
                   value={expensePaymentFilter}
                   onChange={(e) => setExpensePaymentFilter(e.target.value)}
-                  style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.45rem 0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                  style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.35rem 0.6rem', color: 'var(--text-main)', fontSize: '0.78125rem', outline: 'none' }}
                 >
                   <option value="">All Payment Accounts</option>
                   {paymentAccounts.map((a) => (
@@ -365,7 +385,7 @@ export const ExpensesDashboardPage: React.FC = () => {
                 <select
                   value={expenseStatusFilter}
                   onChange={(e) => setExpenseStatusFilter(e.target.value)}
-                  style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.45rem 0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                  style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.35rem 0.6rem', color: 'var(--text-main)', fontSize: '0.78125rem', outline: 'none' }}
                 >
                   <option value="">All Statuses</option>
                   <option value="SUBMITTED">Submitted (Posted)</option>
@@ -374,28 +394,16 @@ export const ExpensesDashboardPage: React.FC = () => {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="primary" icon={<Filter size={13} />} onClick={fetchExpenses} style={{ flex: 1 }}>
+              <div>
+                <Button variant="primary" icon={<Filter size={13} />} onClick={fetchExpenses} style={{ width: '100%', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
                   Apply
                 </Button>
-                <Button
-                  variant="outline"
-                  icon={<RefreshCw size={13} />}
-                  onClick={() => {
-                    setExpenseSearch('');
-                    setExpenseAccountFilter('');
-                    setExpensePaymentFilter('');
-                    setExpenseStatusFilter('');
-                    setExpenseDateFrom('');
-                    setExpenseDateTo('');
-                  }}
-                />
               </div>
             </div>
           </Card>
 
           {/* Expenses Table */}
-          <Card title={`Operational Expense Records (${expenses.length})`} subtitle="Double-entry integrated operational disbursement ledger" icon={<Receipt size={18} />}>
+          <Card title={`Operational Expense Records (${expenses.length})`} icon={<Receipt size={16} />}>
             {expensesLoading ? (
               <LoadingSpinner label="Loading expenses..." />
             ) : (
@@ -475,23 +483,23 @@ export const ExpensesDashboardPage: React.FC = () => {
                             )}
                           </td>
 
-                          <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
+                          <td style={{ padding: '0.45rem 0.6rem', textAlign: 'center' }}>
                             <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
                               {exp.status === 'DRAFT' && (
                                 <>
                                   <Button
                                     variant="primary"
-                                    icon={<Send size={12} />}
+                                    icon={<Send size={13} />}
                                     onClick={() => handleSubmitDraftExpense(exp.id)}
-                                    title="Submit & Post to Ledger"
-                                  >
-                                    Submit
-                                  </Button>
+                                    style={{ padding: '0.25rem 0.45rem' }}
+                                    title="Submit & Post to General Ledger"
+                                  />
                                   <Button
                                     variant="outline"
-                                    icon={<Edit2 size={12} />}
+                                    icon={<Edit2 size={13} />}
                                     onClick={() => handleOpenEditExpense(exp)}
-                                    title="Edit Draft"
+                                    style={{ padding: '0.25rem 0.45rem' }}
+                                    title="Edit Draft Expense"
                                   />
                                 </>
                               )}
@@ -499,12 +507,11 @@ export const ExpensesDashboardPage: React.FC = () => {
                               {exp.status === 'SUBMITTED' && (
                                 <Button
                                   variant="outline"
-                                  icon={<RotateCcw size={12} />}
+                                  icon={<RotateCcw size={13} />}
                                   onClick={() => handleOpenCancelModal(exp)}
+                                  style={{ padding: '0.25rem 0.45rem' }}
                                   title="Cancel Expense & Reverse Ledger"
-                                >
-                                  Cancel
-                                </Button>
+                                />
                               )}
                             </div>
                           </td>
@@ -521,10 +528,10 @@ export const ExpensesDashboardPage: React.FC = () => {
 
       {/* TAB 2: EXPENSE ANALYTICS & REPORT */}
       {activeTab === 'reports' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           {/* Date Filter Bar */}
-          <Card title="Analytics Filters" subtitle="Analyze expenses by reporting period" icon={<Filter size={18} />}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <Card title="Analytics Filters" icon={<Filter size={16} />}>
+            <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                   Date From
@@ -533,7 +540,7 @@ export const ExpensesDashboardPage: React.FC = () => {
                   type="date"
                   value={reportDateFrom}
                   onChange={(e) => setReportDateFrom(e.target.value)}
-                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.45rem 0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.35rem 0.6rem', color: 'var(--text-main)', fontSize: '0.78125rem', outline: 'none' }}
                 />
               </div>
 
@@ -545,90 +552,82 @@ export const ExpensesDashboardPage: React.FC = () => {
                   type="date"
                   value={reportDateTo}
                   onChange={(e) => setReportDateTo(e.target.value)}
-                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.45rem 0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.35rem 0.6rem', color: 'var(--text-main)', fontSize: '0.78125rem', outline: 'none' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="primary" icon={<Filter size={13} />} onClick={fetchReport}>
-                  Generate Report
+              <div>
+                <Button variant="primary" icon={<Filter size={13} />} onClick={fetchReport} style={{ width: '100%', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
+                  Generate Analytics
                 </Button>
-                <Button
-                  variant="outline"
-                  icon={<RefreshCw size={13} />}
-                  onClick={() => {
-                    setReportDateFrom('');
-                    setReportDateTo('');
-                  }}
-                />
               </div>
             </div>
           </Card>
 
+          {/* KPI Analytics Cards */}
           {reportLoading ? (
-            <LoadingSpinner label="Generating expense report..." />
+            <LoadingSpinner label="Compiling financial expense analytics..." />
           ) : reportData ? (
             <>
-              {/* KPI Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Total Posted Expenses</span>
-                    <DollarSign size={18} style={{ color: 'var(--danger)' }} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem' }}>
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Total Expenses</span>
+                    <DollarSign size={15} style={{ color: 'var(--danger)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(reportData.summary.total_expenses)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    {reportData.summary.submitted_count} Submitted Transactions
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                    Across {reportData.summary.expense_count} posted transactions
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Cash Drawer Expenses</span>
-                    <Banknote size={18} style={{ color: 'var(--warning)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Cash Outflow</span>
+                    <Wallet size={15} style={{ color: 'var(--warning)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(reportData.summary.cash_expenses)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Paid from Cash Accounts
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                    Paid via Cash In Hand
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Bank Account Expenses</span>
-                    <Building size={18} style={{ color: 'var(--primary-400)' }} />
+                <div className="glass-card" style={{ padding: '0.625rem 0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>Bank Outflow</span>
+                    <CreditCard size={15} style={{ color: 'var(--primary-400)' }} />
                   </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
                     Rs. {formatMoney(reportData.summary.bank_expenses)}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Paid via Bank Transfers / Cheques
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                    Paid via Bank Transfers / Cards
                   </div>
                 </div>
               </div>
 
               {/* Category Breakdown Cards */}
-              <Card title="Category Breakdown" subtitle="Distribution of expenses across standard Chart of Accounts" icon={<BarChart3 size={18} />}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <Card title="Category Breakdown" icon={<BarChart3 size={16} />}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {Object.entries(reportData.summary.account_breakdown).map(([catName, amt]) => (
                     <div
                       key={catName}
                       style={{
-                        padding: '0.75rem 1rem',
+                        padding: '0.5rem 0.75rem',
                         backgroundColor: 'var(--bg-card)',
                         border: '1px solid var(--border-subtle)',
-                        borderRadius: '0.5rem',
+                        borderRadius: '0.375rem',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.25rem',
-                        minWidth: '180px',
+                        gap: '0.15rem',
+                        minWidth: '150px',
                       }}
                     >
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{catName}</span>
+                      <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600 }}>{catName}</span>
                       <span style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-main)' }}>
                         Rs. {formatMoney(amt)}
                       </span>
