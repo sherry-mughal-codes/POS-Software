@@ -401,14 +401,19 @@ class PayrollService:
 
         payment_method = data.get("payment_method", "CASH")
         payment_account = data.get("payment_account")
-        if not payment_account:
-            if payment_method == "BANK":
+        if isinstance(payment_account, int):
+            payment_account = Account.objects.get(pk=payment_account)
+
+        # Strictly ensure Bank account for BANK/CHEQUE and Cash account for CASH
+        if payment_method in ["BANK", "CHEQUE"]:
+            if not payment_account or payment_account.code.startswith("101") or (payment_account.parent and payment_account.parent.code == "1010"):
                 payment_account = Account.objects.filter(code="1021").first() or Account.objects.filter(parent__code="1020").first() or Account.objects.filter(code="1020").first()
-            else:
+        elif payment_method == "CASH":
+            if not payment_account or payment_account.code.startswith("102") or (payment_account.parent and payment_account.parent.code == "1020"):
                 payment_account = Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
 
-        if payment_account.account_type != AccountType.ASSET:
-            raise ValidationError(f"Payment account '{payment_account.name}' must be an Asset (Cash/Bank) account.")
+        if not payment_account or payment_account.account_type != AccountType.ASSET:
+            raise ValidationError(f"A valid Cash/Bank asset account is required for salary disbursement.")
 
         payment_date = data.get("date") or timezone.now().date()
         payment_number = SalaryPayment.generate_payment_number(payment_date)

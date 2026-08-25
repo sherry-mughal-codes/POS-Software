@@ -79,3 +79,45 @@ class SystemSetting(models.Model):
             defaults={"value": str(value), "group": group, "description": description},
         )
 
+
+class BackupLog(models.Model):
+    """
+    Tracks all local and cloud database backup operations and restores.
+    """
+    TYPE_CHOICES = [
+        ("MANUAL", "Manual Backup"),
+        ("AUTOMATIC_DAILY", "Daily Scheduled Backup"),
+        ("IMPORT_RESTORE", "Imported / Restored Backup"),
+    ]
+    STATUS_CHOICES = [
+        ("LOCAL_ONLY", "Saved Locally (.sql)"),
+        ("DROPBOX_SYNCED", "Saved Locally & Synced to Dropbox"),
+        ("FAILED", "Backup Failed"),
+        ("RESTORED", "Database Restored from Backup"),
+    ]
+
+    filename = models.CharField(max_length=255, db_index=True)
+    file_path = models.CharField(max_length=500)
+    file_size_bytes = models.BigIntegerField(default=0)
+    backup_type = models.CharField(max_length=30, choices=TYPE_CHOICES, default="MANUAL")
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="LOCAL_ONLY")
+    dropbox_path = models.CharField(max_length=500, blank=True, null=True)
+    error_message = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="backups_created",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Backup Log"
+        verbose_name_plural = "Backup Logs"
+
+    def __str__(self):
+        return f"{self.filename} ({self.status}) - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+

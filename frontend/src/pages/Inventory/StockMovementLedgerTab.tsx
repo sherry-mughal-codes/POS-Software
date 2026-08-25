@@ -3,7 +3,6 @@ import {
   History,
   Search,
   Filter,
-  RefreshCw,
   ArrowUpRight,
   ArrowDownLeft,
   Calendar,

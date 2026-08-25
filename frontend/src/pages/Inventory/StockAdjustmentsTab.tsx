@@ -141,16 +141,19 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header with New Adjustment CTA */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-            Stock Adjustments & Audit
-          </h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Action Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-main)' }}>
+          Stock Adjustments & Audit Log
         </div>
 
-        <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenCreateModal}>
+        <Button
+          variant="primary"
+          icon={<Plus size={14} />}
+          style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem' }}
+          onClick={handleOpenCreateModal}
+        >
           Record Stock Adjustment
         </Button>
       </div>

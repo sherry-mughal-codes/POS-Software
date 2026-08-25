@@ -125,11 +125,12 @@ class DashboardView(APIView):
 class SystemSettingsView(APIView):
     """
     Enterprise System & Store Configuration API.
-    GET: Returns all system settings as key-value pairs and grouped categories.
+    GET: Returns all system settings as key-value pairs, grouped categories, and dynamic document sequences.
     POST / PUT: Updates configuration values.
     """
     def get(self, request, *args, **kwargs):
         from apps.core.models import SystemSetting
+        from apps.core.sequences import DocumentSequenceService
         settings_qs = SystemSetting.objects.all()
 
         settings_dict = {}
@@ -146,9 +147,12 @@ class SystemSettingsView(APIView):
                 "updated_at": s.updated_at.isoformat() if s.updated_at else None,
             })
 
+        document_sequences = DocumentSequenceService.get_all_sequences_info()
+
         return Response({
             "settings": settings_dict,
             "grouped": grouped,
+            "document_sequences": document_sequences,
         }, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
@@ -161,7 +165,10 @@ class SystemSettingsView(APIView):
         updated_keys = []
         for key, val in payload.items():
             if val is not None:
-                SystemSetting.objects.filter(key=key).update(value=str(val), updated_at=timezone.now())
+                SystemSetting.objects.update_or_create(
+                    key=key,
+                    defaults={"value": str(val), "updated_at": timezone.now()}
+                )
                 updated_keys.append(key)
 
         # Audit logging
@@ -176,5 +183,174 @@ class SystemSettingsView(APIView):
 
         # Return updated settings
         return self.get(request, *args, **kwargs)
+
+
+class BackupListView(APIView):
+    """
+    Database Backup Management API.
+    GET: Returns all backup history logs, local files, and auto-backup state.
+    POST: Triggers on-demand pg_dump database backup and Dropbox sync.
+    """
+    def get(self, request, *args, **kwargs):
+        from apps.core.backup_service import BackupService
+        from apps.core.models import SystemSetting
+
+        # Check and trigger daily auto backup if due
+        BackupService.check_and_run_daily_auto_backup()
+
+        history = BackupService.get_backup_history()
+        return Response({
+            "backups": history,
+            "auto_backup_enabled": SystemSetting.get_setting("auto_backup_enabled", "true").lower() == "true",
+            "auto_backup_time": SystemSetting.get_setting("auto_backup_time", "02:00"),
+            "backup_retention_days": int(SystemSetting.get_setting("backup_retention_days", "30") or "30"),
+            "dropbox_backup_enabled": SystemSetting.get_setting("dropbox_backup_enabled", "false").lower() == "true",
+            "dropbox_access_token_set": bool(SystemSetting.get_setting("dropbox_access_token", "").strip()),
+            "dropbox_folder_path": SystemSetting.get_setting("dropbox_folder_path", "/ApexPOS_Backups"),
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        from apps.core.backup_service import BackupService
+        notes = request.data.get("notes", "")
+        res = BackupService.create_database_backup(
+            backup_type="MANUAL",
+            user=request.user if request.user and request.user.is_authenticated else None,
+            notes=notes,
+        )
+        if res.get("success"):
+            return Response(res, status=status.HTTP_201_CREATED)
+        return Response(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class BackupDownloadView(APIView):
+    """
+    Directly streams and downloads a .sql backup file to the client browser.
+    """
+    def get(self, request, backup_id, *args, **kwargs):
+        import os
+        from django.http import FileResponse, Http404
+        from apps.core.models import BackupLog
+
+        try:
+            log_entry = BackupLog.objects.get(pk=backup_id)
+        except BackupLog.DoesNotExist:
+            raise Http404("Backup record not found.")
+
+        if not os.path.exists(log_entry.file_path):
+            return Response({"detail": "Physical backup file not found on server disk."}, status=status.HTTP_404_NOT_FOUND)
+
+        response = FileResponse(open(log_entry.file_path, "rb"), content_type="application/sql")
+        response["Content-Disposition"] = f'attachment; filename="{log_entry.filename}"'
+        return response
+
+
+class BackupDeleteView(APIView):
+    """
+    Deletes a local backup .sql file and its log record.
+    """
+    def delete(self, request, backup_id, *args, **kwargs):
+        import os
+        from apps.core.models import BackupLog, AuditLog
+
+        try:
+            log_entry = BackupLog.objects.get(pk=backup_id)
+        except BackupLog.DoesNotExist:
+            return Response({"detail": "Backup not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        filename = log_entry.filename
+        if os.path.exists(log_entry.file_path):
+            try:
+                os.remove(log_entry.file_path)
+            except OSError:
+                pass
+
+        log_entry.delete()
+
+        username = request.user.username if request.user and request.user.is_authenticated else "admin"
+        AuditLog.objects.create(
+            user=request.user if request.user and request.user.is_authenticated else None,
+            username=username,
+            action="BACKUP_DELETED",
+            resource="DatabaseBackup",
+            details={"filename": filename}
+        )
+
+        return Response({"success": True, "detail": f"Backup {filename} deleted successfully."}, status=status.HTTP_200_OK)
+
+
+class BackupRestoreView(APIView):
+    """
+    Database Disaster Recovery / Import Endpoint.
+    Accepts single .sql, multiple .sql files, .zip archive, or backup_id and executes restore.
+    """
+    def post(self, request, *args, **kwargs):
+        from apps.core.backup_service import BackupService
+        from apps.core.models import BackupLog
+
+        uploaded_files = request.FILES.getlist("files")
+        single_file = request.FILES.get("file")
+        backup_id = request.data.get("backup_id")
+
+        if uploaded_files and len(uploaded_files) > 1:
+            res = BackupService.restore_database_batch(
+                files_or_zip=uploaded_files,
+                user=request.user if request.user and request.user.is_authenticated else None,
+            )
+            if res.get("success"):
+                return Response(res, status=status.HTTP_200_OK)
+            return Response(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        target = single_file or (uploaded_files[0] if uploaded_files else None)
+        if not target and not backup_id:
+            return Response({"detail": "Please provide .sql backup file(s) or a backup_id."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not target and backup_id:
+            try:
+                log_entry = BackupLog.objects.get(pk=backup_id)
+                target = log_entry.file_path
+            except BackupLog.DoesNotExist:
+                return Response({"detail": "Specified backup record does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+        if target and hasattr(target, "name") and target.name.lower().endswith(".zip"):
+            res = BackupService.restore_database_batch(
+                files_or_zip=[target],
+                user=request.user if request.user and request.user.is_authenticated else None,
+            )
+        else:
+            res = BackupService.restore_database(
+                file_content_or_path=target,
+                user=request.user if request.user and request.user.is_authenticated else None,
+            )
+
+        if res.get("success"):
+            return Response(res, status=status.HTTP_200_OK)
+        return Response(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class BackupDropboxSyncView(APIView):
+    """
+    Manually syncs a specific local backup to Dropbox cloud storage.
+    """
+    def post(self, request, backup_id, *args, **kwargs):
+        from apps.core.backup_service import BackupService
+        res = BackupService.sync_single_backup_to_dropbox(backup_id)
+        if res.get("success"):
+            return Response(res, status=status.HTTP_200_OK)
+        return Response(res, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DropboxTestConnectionView(APIView):
+    """
+    Tests Dropbox API connection and retrieves account/space information.
+    """
+    def post(self, request, *args, **kwargs):
+        from apps.core.backup_service import BackupService
+        token = request.data.get("access_token")
+        res = BackupService.test_dropbox_connection(token=token)
+        if res.get("success"):
+            return Response(res, status=status.HTTP_200_OK)
+        return Response(res, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 

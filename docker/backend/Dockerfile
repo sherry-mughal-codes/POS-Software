@@ -6,10 +6,11 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install system dependencies needed for compiling postgresql/C packages and health check tools
+# Install system dependencies needed for compiling postgresql/C packages, health check tools, and db dump/restore
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
+    postgresql-client \
     netcat-traditional \
     curl \
     && apt-get clean \

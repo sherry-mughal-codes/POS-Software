@@ -242,17 +242,13 @@ class DashboardService:
         customers_with_balance = 0
         top_debtors = []
 
-        customer_dues_map = {
-            row["customer_id"]: row["total_due"]
-            for row in Sale.objects.filter(status=SaleStatus.COMPLETED, due_amount__gt=0)
-            .values("customer_id")
-            .annotate(total_due=Coalesce(Sum("due_amount"), Value(Decimal("0.00")), output_field=DecimalField()))
-        }
+        from apps.contacts.services import CustomerReceivableService
 
-        all_customers = Customer.objects.filter(is_active=True, is_walkin=False).values("id", "customer_id", "name", "phone", "opening_balance")
+        all_customers = Customer.objects.filter(is_active=True, is_walkin=False).values("id", "customer_id", "name", "phone")
         customer_balances = []
         for cust in all_customers:
-            out_bal = (cust["opening_balance"] or Decimal("0.00")) + customer_dues_map.get(cust["id"], Decimal("0.00"))
+            info = CustomerReceivableService.get_customer_outstanding(cust["id"])
+            out_bal = info["outstanding_balance"]
             if out_bal > Decimal("0.00"):
                 customers_with_balance += 1
                 total_ar += out_bal
@@ -501,34 +497,52 @@ class DashboardService:
         top_by_revenue = sorted(top_by_qty, key=lambda x: x["revenue"], reverse=True)[:10]
 
         # -------------------------------------------------------------
-        # 11. PAYMENT METHODS BREAKDOWN
+        # 11. PAYMENT METHODS BREAKDOWN (Tender-Level Settlements)
         # -------------------------------------------------------------
-        # Break down by CASH, CARD, CREDIT, SPLIT
-        pay_distribution = []
-        pay_methods = [
-            (PaymentMethodType.CASH, "Cash"),
-            (PaymentMethodType.CARD, "Card / POS Terminal"),
-            (PaymentMethodType.CREDIT, "Customer Credit / AR"),
-            (PaymentMethodType.SPLIT, "Split / Multi-Payment"),
+        from apps.sales.models import SalePayment
+
+        # 1. Sum up explicit split payment items within the period
+        split_payments_qs = SalePayment.objects.filter(sale__in=sales_base)
+        split_by_method = {
+            row["payment_method"]: row["total"]
+            for row in split_payments_qs.values("payment_method")
+            .annotate(total=Coalesce(Sum("amount"), Value(Decimal("0.00")), output_field=DecimalField()))
+        }
+
+        # 2. Sum up non-split sales (single payment method sales)
+        non_split_sales = sales_base.filter(payments__isnull=True)
+        non_split_by_method = {
+            row["payment_method"]: row["total"]
+            for row in non_split_sales.values("payment_method")
+            .annotate(total=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField()))
+        }
+
+        cash_amount = split_by_method.get(PaymentMethodType.CASH, Decimal("0.00")) + non_split_by_method.get(PaymentMethodType.CASH, Decimal("0.00"))
+        card_amount = split_by_method.get(PaymentMethodType.CARD, Decimal("0.00")) + non_split_by_method.get(PaymentMethodType.CARD, Decimal("0.00"))
+        credit_amount = split_by_method.get(PaymentMethodType.CREDIT, Decimal("0.00")) + non_split_by_method.get(PaymentMethodType.CREDIT, Decimal("0.00"))
+
+        total_settled = cash_amount + card_amount + credit_amount
+
+        pay_distribution = [
+            {
+                "method_code": PaymentMethodType.CASH,
+                "method_name": "Cash",
+                "amount": float(cash_amount),
+                "percentage": round((float(cash_amount) / float(total_settled) * 100), 1) if total_settled > Decimal("0.00") else 0.0,
+            },
+            {
+                "method_code": PaymentMethodType.CARD,
+                "method_name": "Card / POS Terminal",
+                "amount": float(card_amount),
+                "percentage": round((float(card_amount) / float(total_settled) * 100), 1) if total_settled > Decimal("0.00") else 0.0,
+            },
+            {
+                "method_code": PaymentMethodType.CREDIT,
+                "method_name": "Customer Credit / AR",
+                "amount": float(credit_amount),
+                "percentage": round((float(credit_amount) / float(total_settled) * 100), 1) if total_settled > Decimal("0.00") else 0.0,
+            },
         ]
-
-        total_breakdown_amount = Decimal("0.00")
-        method_buckets = {}
-        for code, label in pay_methods:
-            m_sum = sales_base.filter(payment_method=code).aggregate(
-                t=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField())
-            )["t"] or Decimal("0.00")
-            method_buckets[code] = {"label": label, "amount": m_sum}
-            total_breakdown_amount += m_sum
-
-        for code, data in method_buckets.items():
-            pct = round((float(data["amount"]) / float(total_breakdown_amount) * 100), 1) if total_breakdown_amount > Decimal("0.00") else 0.0
-            pay_distribution.append({
-                "method_code": code,
-                "method_name": data["label"],
-                "amount": float(data["amount"]),
-                "percentage": pct,
-            })
 
         # -------------------------------------------------------------
         # 12. CASHIER PERFORMANCE MATRIX

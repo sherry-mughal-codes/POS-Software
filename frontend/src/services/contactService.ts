@@ -140,4 +140,41 @@ export const contactService = {
     const response = await apiClient.get<{ next_id: string }>('/suppliers/next-id/');
     return response.data;
   },
+
+  // Bulk Import Endpoints
+  async bulkImportCustomers(rowsOrFormData: any[] | FormData): Promise<any> {
+    if (rowsOrFormData instanceof FormData) {
+      const response = await apiClient.post('/customers/bulk-import/', rowsOrFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    }
+    const response = await apiClient.post('/customers/bulk-import/', rowsOrFormData);
+    return response.data;
+  },
+
+  async downloadCustomerTemplate(): Promise<Blob> {
+    const response = await apiClient.get('/customers/import-template/', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  async bulkImportSuppliers(rowsOrFormData: any[] | FormData): Promise<any> {
+    if (rowsOrFormData instanceof FormData) {
+      const response = await apiClient.post('/suppliers/bulk-import/', rowsOrFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    }
+    const response = await apiClient.post('/suppliers/bulk-import/', rowsOrFormData);
+    return response.data;
+  },
+
+  async downloadSupplierTemplate(): Promise<Blob> {
+    const response = await apiClient.get('/suppliers/import-template/', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };

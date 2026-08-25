@@ -1,7 +1,7 @@
-"""
-API views for Customers, Suppliers, and Customer Payments.
-"""
-
+import io
+import csv
+import openpyxl
+from django.http import HttpResponse
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -90,6 +90,98 @@ class CustomerViewSet(viewsets.ModelViewSet):
     def next_id(self, request):
         """Generates the next sequential customer identifier (e.g. CUS-0001, CUS-0002)."""
         return Response({"next_id": Customer.generate_customer_id()})
+
+    @action(detail=False, methods=["post"], url_path="bulk-import")
+    def bulk_import(self, request):
+        """
+        Imports bulk customers from uploaded Excel/CSV file or JSON rows payload.
+        """
+        rows = []
+        file_obj = request.FILES.get("file")
+
+        if file_obj:
+            filename = file_obj.name.lower()
+            if filename.endswith(".xlsx") or filename.endswith(".xls"):
+                try:
+                    wb = openpyxl.load_workbook(file_obj, data_only=True)
+                    ws = wb.active
+                    headers = [str(cell.value or "").strip().lower() for cell in ws[1]]
+
+                    field_map = {}
+                    for idx, h in enumerate(headers):
+                        if "code" in h or "id" in h:
+                            field_map["customer_id"] = idx
+                        elif "name" in h or "client" in h or "customer" in h:
+                            field_map["name"] = idx
+                        elif "phone" in h or "mobile" in h or "contact" in h or "cell" in h:
+                            field_map["phone"] = idx
+                        elif "email" in h or "mail" in h:
+                            field_map["email"] = idx
+                        elif "address" in h or "city" in h or "location" in h:
+                            field_map["address"] = idx
+                        elif "credit" in h or "allow" in h or "eligible" in h:
+                            field_map["credit_enabled"] = idx
+                        elif "open" in h or "balance" in h or "receivable" in h:
+                            field_map["opening_balance"] = idx
+                        elif "note" in h or "remark" in h or "desc" in h:
+                            field_map["notes"] = idx
+
+                    for row_cells in ws.iter_rows(min_row=2, values_only=True):
+                        if not any(row_cells):
+                            continue
+                        row_dict = {}
+                        for field_name, col_idx in field_map.items():
+                            val = row_cells[col_idx] if col_idx < len(row_cells) else None
+                            row_dict[field_name] = str(val).strip() if val is not None else ""
+                        if row_dict.get("name"):
+                            rows.append(row_dict)
+                except Exception as e:
+                    return Response({"detail": f"Failed to parse Excel file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            elif filename.endswith(".csv"):
+                try:
+                    content = file_obj.read().decode("utf-8-sig")
+                    reader = csv.DictReader(io.StringIO(content))
+                    for r in reader:
+                        cleaned = {k.strip().lower(): v for k, v in r.items() if k}
+                        rows.append({
+                            "name": cleaned.get("customer name") or cleaned.get("name") or cleaned.get("client name") or "",
+                            "customer_id": cleaned.get("customer code") or cleaned.get("customer_id") or cleaned.get("code") or "",
+                            "phone": cleaned.get("phone number") or cleaned.get("phone") or cleaned.get("mobile") or "",
+                            "email": cleaned.get("email address") or cleaned.get("email") or "",
+                            "address": cleaned.get("billing address") or cleaned.get("address") or "",
+                            "credit_enabled": cleaned.get("credit allowed") or cleaned.get("credit_enabled") or "yes",
+                            "opening_balance": cleaned.get("opening balance") or cleaned.get("opening_balance") or 0,
+                            "notes": cleaned.get("notes") or cleaned.get("remarks") or "",
+                        })
+                except Exception as e:
+                    return Response({"detail": f"Failed to parse CSV file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"detail": "Unsupported file format. Please upload .xlsx, .xls, or .csv"}, status=status.HTTP_400_BAD_REQUEST)
+        elif isinstance(request.data, list):
+            rows = request.data
+        elif isinstance(request.data.get("items"), list):
+            rows = request.data.get("items")
+        elif isinstance(request.data.get("customers"), list):
+            rows = request.data.get("customers")
+
+        if not rows:
+            return Response({"detail": "No valid customer rows found to import."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = CustomerReceivableService.bulk_import_customers(rows, created_by=request.user)
+        return Response(result, status=status.HTTP_200_OK if result["created_count"] > 0 else status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=["get"], url_path="import-template")
+    def import_template(self, request):
+        """
+        Downloads styled sample Excel template for bulk customer imports.
+        """
+        excel_bytes = CustomerReceivableService.generate_customer_excel_template()
+        response = HttpResponse(
+            excel_bytes,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="Customer_Bulk_Import_Template.xlsx"'
+        return response
 
     @action(detail=False, methods=["get"], url_path="walkin")
     def walkin(self, request):
@@ -201,6 +293,101 @@ class SupplierViewSet(viewsets.ModelViewSet):
     def next_id(self, request):
         """Generates the next sequential supplier identifier (e.g. SUP-000001)."""
         return Response({"next_id": Supplier.generate_supplier_id()})
+
+    @action(detail=False, methods=["post"], url_path="bulk-import")
+    def bulk_import(self, request):
+        """
+        Imports bulk suppliers from uploaded Excel/CSV file or JSON rows payload.
+        """
+        rows = []
+        file_obj = request.FILES.get("file")
+
+        if file_obj:
+            filename = file_obj.name.lower()
+            if filename.endswith(".xlsx") or filename.endswith(".xls"):
+                try:
+                    wb = openpyxl.load_workbook(file_obj, data_only=True)
+                    ws = wb.active
+                    headers = [str(cell.value or "").strip().lower() for cell in ws[1]]
+
+                    field_map = {}
+                    for idx, h in enumerate(headers):
+                        if "code" in h or "id" in h:
+                            field_map["supplier_id"] = idx
+                        elif "company" in h or "business" in h or "firm" in h or "vendor" in h:
+                            field_map["company_name"] = idx
+                        elif "contact" in h or "person" in h or "name" in h:
+                            field_map["name"] = idx
+                        elif "phone" in h or "mobile" in h or "tel" in h or "cell" in h:
+                            field_map["phone"] = idx
+                        elif "email" in h or "mail" in h:
+                            field_map["email"] = idx
+                        elif "address" in h or "city" in h or "factory" in h or "office" in h:
+                            field_map["address"] = idx
+                        elif "tax" in h or "ntn" in h or "strn" in h:
+                            field_map["tax_id"] = idx
+                        elif "open" in h or "balance" in h or "payable" in h:
+                            field_map["opening_balance"] = idx
+                        elif "note" in h or "remark" in h or "term" in h or "desc" in h:
+                            field_map["notes"] = idx
+
+                    for row_cells in ws.iter_rows(min_row=2, values_only=True):
+                        if not any(row_cells):
+                            continue
+                        row_dict = {}
+                        for field_name, col_idx in field_map.items():
+                            val = row_cells[col_idx] if col_idx < len(row_cells) else None
+                            row_dict[field_name] = str(val).strip() if val is not None else ""
+                        if row_dict.get("name") or row_dict.get("company_name"):
+                            rows.append(row_dict)
+                except Exception as e:
+                    return Response({"detail": f"Failed to parse Excel file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            elif filename.endswith(".csv"):
+                try:
+                    content = file_obj.read().decode("utf-8-sig")
+                    reader = csv.DictReader(io.StringIO(content))
+                    for r in reader:
+                        cleaned = {k.strip().lower(): v for k, v in r.items() if k}
+                        rows.append({
+                            "company_name": cleaned.get("company / business name") or cleaned.get("company name") or cleaned.get("company") or "",
+                            "name": cleaned.get("contact person name") or cleaned.get("contact person") or cleaned.get("name") or "",
+                            "supplier_id": cleaned.get("supplier code") or cleaned.get("supplier_id") or cleaned.get("code") or "",
+                            "phone": cleaned.get("phone number") or cleaned.get("phone") or cleaned.get("mobile") or "",
+                            "email": cleaned.get("email address") or cleaned.get("email") or "",
+                            "address": cleaned.get("office / factory address") or cleaned.get("address") or "",
+                            "tax_id": cleaned.get("tax / ntn / strn") or cleaned.get("tax_id") or cleaned.get("ntn") or "",
+                            "opening_balance": cleaned.get("opening payable balance") or cleaned.get("opening_balance") or 0,
+                            "notes": cleaned.get("notes / payment terms") or cleaned.get("notes") or "",
+                        })
+                except Exception as e:
+                    return Response({"detail": f"Failed to parse CSV file: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"detail": "Unsupported file format. Please upload .xlsx, .xls, or .csv"}, status=status.HTTP_400_BAD_REQUEST)
+        elif isinstance(request.data, list):
+            rows = request.data
+        elif isinstance(request.data.get("items"), list):
+            rows = request.data.get("items")
+        elif isinstance(request.data.get("suppliers"), list):
+            rows = request.data.get("suppliers")
+
+        if not rows:
+            return Response({"detail": "No valid supplier rows found to import."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = CustomerReceivableService.bulk_import_suppliers(rows, created_by=request.user)
+        return Response(result, status=status.HTTP_200_OK if result["created_count"] > 0 else status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=["get"], url_path="import-template")
+    def import_template(self, request):
+        """
+        Downloads styled sample Excel template for bulk supplier imports.
+        """
+        excel_bytes = CustomerReceivableService.generate_supplier_excel_template()
+        response = HttpResponse(
+            excel_bytes,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="Supplier_Bulk_Import_Template.xlsx"'
+        return response
 
     @action(detail=True, methods=["post"], url_path="toggle-status")
     def toggle_status(self, request, pk=None):

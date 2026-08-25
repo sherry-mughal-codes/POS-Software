@@ -11,12 +11,14 @@ import {
   RefreshCw,
   FileText,
   CheckCircle2,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { SupplierModal } from './SupplierModal';
+import { SupplierBulkImportModal } from './SupplierBulkImportModal';
 import { Supplier } from '../../types/contact';
 import { contactService } from '../../services/contactService';
 
@@ -32,6 +34,7 @@ export const SuppliersPage: React.FC = () => {
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -111,6 +114,15 @@ export const SuppliersPage: React.FC = () => {
             title="Refresh Supplier Data"
           >
             Refresh
+          </Button>
+
+          <Button
+            variant="secondary"
+            icon={<FileSpreadsheet size={13} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+            onClick={() => setIsBulkImportModalOpen(true)}
+          >
+            Import Bulk
           </Button>
 
           <Button
@@ -361,6 +373,12 @@ export const SuppliersPage: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         supplierToEdit={editingSupplier}
         onSaved={fetchSuppliers}
+      />
+
+      <SupplierBulkImportModal
+        isOpen={isBulkImportModalOpen}
+        onClose={() => setIsBulkImportModalOpen(false)}
+        onSuccess={fetchSuppliers}
       />
     </div>
   );

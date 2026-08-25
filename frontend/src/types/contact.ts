@@ -31,7 +31,14 @@ export interface Supplier {
   created_at: string;
   updated_at: string;
 }
-
+export interface ContactBulkImportResult {
+  total_rows: number;
+  created_count: number;
+  skipped_count: number;
+  errors: string[];
+  created_customers?: any[];
+  created_suppliers?: any[];
+}
 export interface CustomerFilterParams {
   search?: string;
   credit_enabled?: boolean;

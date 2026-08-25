@@ -10,8 +10,6 @@ import {
   CheckCircle,
   AlertTriangle,
   RotateCcw,
-  Building,
-  Banknote,
   Send,
   Edit2,
   Wallet,
@@ -233,7 +231,6 @@ export const ExpensesDashboardPage: React.FC = () => {
   };
 
   const handleRefreshAll = () => {
-    fetchInitialData();
     if (activeTab === 'expenses') {
       fetchExpenses();
     } else {
@@ -392,6 +389,30 @@ export const ExpensesDashboardPage: React.FC = () => {
                   <option value="DRAFT">Draft</option>
                   <option value="CANCELLED">Cancelled</option>
                 </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Date From
+                </label>
+                <input
+                  type="date"
+                  value={expenseDateFrom}
+                  onChange={(e) => setExpenseDateFrom(e.target.value)}
+                  style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.35rem 0.6rem', color: 'var(--text-main)', fontSize: '0.78125rem', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Date To
+                </label>
+                <input
+                  type="date"
+                  value={expenseDateTo}
+                  onChange={(e) => setExpenseDateTo(e.target.value)}
+                  style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.35rem 0.6rem', color: 'var(--text-main)', fontSize: '0.78125rem', outline: 'none' }}
+                />
               </div>
 
               <div>
@@ -579,7 +600,7 @@ export const ExpensesDashboardPage: React.FC = () => {
                     Rs. {formatMoney(reportData.summary.total_expenses)}
                   </div>
                   <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
-                    Across {reportData.summary.expense_count} posted transactions
+                    Across {reportData.summary.total_records} posted transactions
                   </div>
                 </div>
 

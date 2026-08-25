@@ -165,45 +165,6 @@ export const ProductCatalogPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Barcode Quick Scanner Simulator Bar */}
-      <div className="glass-card" style={{ padding: '0.5rem 0.75rem' }}>
-        <form onSubmit={handleBarcodeLookup} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary-400)', fontWeight: 600, fontSize: '0.78125rem' }}>
-            <Scan size={15} />
-            <span>Barcode Lookup:</span>
-          </div>
-          <div style={{ flex: 1, minWidth: '240px', maxWidth: '400px' }}>
-            <Input
-              placeholder="Scan or type barcode (e.g. 5449000000996)..."
-              value={barcodeInput}
-              onChange={(e) => setBarcodeInput(e.target.value)}
-            />
-          </div>
-          <Button type="submit" variant="secondary" icon={<Search size={14} />}>
-            Lookup
-          </Button>
-          {scannedProduct && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              backgroundColor: 'var(--success-bg)',
-              padding: '0.375rem 0.75rem',
-              borderRadius: '0.375rem',
-              border: '1px solid var(--success-border)',
-              fontSize: '0.8125rem',
-            }}>
-              <strong style={{ color: 'var(--success)' }}>Scanned:</strong>
-              <span>[{scannedProduct.sku}] {scannedProduct.name}</span>
-              <strong style={{ color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(scannedProduct.selling_price)}</strong>
-            </div>
-          )}
-          {scanError && (
-            <span style={{ fontSize: '0.8125rem', color: 'var(--danger)' }}>{scanError}</span>
-          )}
-        </form>
-      </div>
-
       {/* Filter & View Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         {/* Category Chips */}

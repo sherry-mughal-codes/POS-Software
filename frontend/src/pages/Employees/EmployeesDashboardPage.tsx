@@ -14,6 +14,7 @@ import {
   RotateCcw,
   BarChart3,
   Printer,
+  Sliders,
   Clock,
   Briefcase,
   Send,
@@ -35,6 +36,7 @@ import { Account } from '../../types/accounting';
 import { employeeService } from '../../services/employeeService';
 import { accountingService } from '../../services/accountingService';
 import { useSettings } from '../../context/SettingsContext';
+import { printPayrollSlip } from '../../utils/printPayrollSlip';
 
 const formatErrorMessage = (err: any): string => {
   const data = err?.response?.data;
@@ -74,7 +76,7 @@ const MONTHS = [
 ];
 
 export const EmployeesDashboardPage: React.FC = () => {
-  const { currencySymbol } = useSettings();
+  const { currencySymbol, companyName, companyPhone } = useSettings();
   const [activeTab, setActiveTab] = useState<'employees' | 'attendance' | 'payroll' | 'reports'>('employees');
 
   // Accounts master data
@@ -167,6 +169,7 @@ export const EmployeesDashboardPage: React.FC = () => {
 
   // View / Print Slip Modal
   const [viewingSlip, setViewingSlip] = useState<SalarySlip | null>(null);
+  const [slipPaperWidth, setSlipPaperWidth] = useState<'80mm' | '58mm'>('80mm');
 
   // Cancel Modal
   const [cancelTarget, setCancelTarget] = useState<{ type: 'slip' | 'payment'; id: number; number: string; amount: number } | null>(null);
@@ -418,8 +421,9 @@ export const EmployeesDashboardPage: React.FC = () => {
   const handleOpenDisbursePayment = (slip: SalarySlip) => {
     setDisburseSlipTarget(slip);
     setDisburseAmount(slip.payable_amount.toString());
-    setDisburseMethod(slip.employee_name ? 'CASH' : 'CASH');
-    setDisburseAccountId(paymentAccounts[0]?.id || 0);
+    setDisburseMethod('CASH');
+    const cashAccs = paymentAccounts.filter((a) => a.code.startsWith('101') || a.parent_code === '1010');
+    setDisburseAccountId(cashAccs[0]?.id || paymentAccounts[0]?.id || 0);
     setDisburseReference('');
     setDisburseNotes('');
     setDisburseError(null);
@@ -512,7 +516,7 @@ export const EmployeesDashboardPage: React.FC = () => {
     } else if (activeTab === 'payroll') {
       fetchSalarySlips();
     } else if (activeTab === 'reports') {
-      fetchPayrollReport();
+      fetchReports();
     }
   };
 
@@ -1757,7 +1761,18 @@ export const EmployeesDashboardPage: React.FC = () => {
                 </label>
                 <select
                   value={disburseMethod}
-                  onChange={(e) => setDisburseMethod(e.target.value as EmployeePaymentMethodKind)}
+                  onChange={(e) => {
+                    const newMethod = e.target.value as EmployeePaymentMethodKind;
+                    setDisburseMethod(newMethod);
+                    const validAccounts = paymentAccounts.filter((a) =>
+                      newMethod === 'CASH'
+                        ? a.code.startsWith('101') || a.parent_code === '1010'
+                        : a.code.startsWith('102') || a.parent_code === '1020'
+                    );
+                    if (validAccounts.length > 0) {
+                      setDisburseAccountId(validAccounts[0].id);
+                    }
+                  }}
                   style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
                 >
                   <option value="CASH">Cash</option>
@@ -1827,75 +1842,215 @@ export const EmployeesDashboardPage: React.FC = () => {
         <Modal
           isOpen={!!viewingSlip}
           onClose={() => setViewingSlip(null)}
-          title={`Salary Slip — ${viewingSlip.slip_number}`}
-          maxWidth="560px"
+          title={`Salary Slip Voucher: ${viewingSlip.slip_number}`}
+          maxWidth="500px"
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ borderBottom: '2px solid var(--border-medium)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>ApexPOS Retail Financial Core</h3>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Official Monthly Pay Slip</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <code style={{ fontWeight: 800, color: 'var(--primary-400)' }}>{viewingSlip.slip_number}</code>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>Period: {viewingSlip.payroll_period}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Thermal Width Switcher */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: 'var(--bg-app)',
+              padding: '0.5rem 0.75rem',
+              borderRadius: '0.5rem',
+              border: '1px solid var(--border-subtle)',
+            }}>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <Sliders size={14} /> Slip Width:
+              </span>
+              <div style={{ display: 'flex', gap: '0.375rem' }}>
+                <button
+                  onClick={() => setSlipPaperWidth('80mm')}
+                  style={{
+                    padding: '0.25rem 0.625rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderRadius: '0.375rem',
+                    border: '1px solid',
+                    borderColor: slipPaperWidth === '80mm' ? 'var(--primary-400)' : 'var(--border-subtle)',
+                    backgroundColor: slipPaperWidth === '80mm' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                    color: slipPaperWidth === '80mm' ? 'var(--primary-400)' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  80mm (Standard)
+                </button>
+                <button
+                  onClick={() => setSlipPaperWidth('58mm')}
+                  style={{
+                    padding: '0.25rem 0.625rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderRadius: '0.375rem',
+                    border: '1px solid',
+                    borderColor: slipPaperWidth === '58mm' ? 'var(--primary-400)' : 'var(--border-subtle)',
+                    backgroundColor: slipPaperWidth === '58mm' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                    color: slipPaperWidth === '58mm' ? 'var(--primary-400)' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  58mm (Small)
+                </button>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.8125rem' }}>
-              <div><strong>Employee Name:</strong> {viewingSlip.employee_name}</div>
-              <div><strong>Employee ID:</strong> {viewingSlip.employee_code}</div>
-              <div><strong>Job Title:</strong> {viewingSlip.job_title}</div>
-              <div><strong>Department:</strong> {viewingSlip.department}</div>
+            {/* Printable Slip Paper Preview */}
+            <div
+              id="salary-thermal-slip"
+              className="pos-thermal-receipt"
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#111827',
+                padding: '1.25rem 1rem',
+                borderRadius: '0.5rem',
+                fontFamily: "'Courier New', Courier, monospace",
+                fontSize: slipPaperWidth === '58mm' ? '0.72rem' : '0.8125rem',
+                lineHeight: 1.35,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+                width: '100%',
+                maxWidth: slipPaperWidth === '58mm' ? '320px' : '400px',
+                margin: '0 auto',
+              }}
+            >
+              {/* Store Header */}
+              <div style={{ textAlign: 'center', marginBottom: '0.75rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.625rem' }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 900, margin: '0 0 0.25rem 0', letterSpacing: '0.05em' }}>
+                  {companyName || 'ApexPOS Retail'}
+                </h3>
+                <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>Human Resources & Payroll Core</div>
+                {companyPhone && <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>Tel: {companyPhone}</div>}
+                <div style={{
+                  fontSize: '0.875rem',
+                  fontWeight: 900,
+                  letterSpacing: '0.1em',
+                  marginTop: '0.35rem',
+                  textTransform: 'uppercase',
+                  color: '#0f172a',
+                }}>
+                  === SALARY PAY SLIP ===
+                </div>
+              </div>
+
+              {/* Meta details */}
+              <div style={{ fontSize: '0.75rem', marginBottom: '0.75rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.625rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Slip #: <strong>{viewingSlip.slip_number}</strong></span>
+                  <span>Period: <strong>{viewingSlip.payroll_period}</strong></span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.15rem' }}>
+                  <span>Date: <strong>{viewingSlip.date}</strong></span>
+                  <span>Status: <strong>{viewingSlip.status_display || viewingSlip.status}</strong></span>
+                </div>
+                <div style={{ marginTop: '0.25rem' }}>
+                  <span>Staff: <strong>{viewingSlip.employee_name}</strong> ({viewingSlip.employee_code})</span>
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: '#4b5563', marginTop: '0.1rem' }}>
+                  {viewingSlip.job_title} • {viewingSlip.department}
+                </div>
+              </div>
+
+              {/* Earnings & Deductions Breakdown */}
+              <div style={{ marginBottom: '0.75rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid #111827', paddingBottom: '0.2rem', marginBottom: '0.35rem' }}>
+                  Earnings & Deductions
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.15rem 0', fontSize: '0.75rem' }}>
+                  <span>Basic Base Salary:</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>Rs. {formatMoney(viewingSlip.basic_salary)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.15rem 0', fontSize: '0.75rem', color: '#16a34a' }}>
+                  <span>Allowances / Bonus (+):</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>+ Rs. {formatMoney(viewingSlip.allowances)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.15rem 0', fontSize: '0.75rem', color: '#dc2626' }}>
+                  <span>Deductions / Absences (-):</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>- Rs. {formatMoney(viewingSlip.deductions)}</span>
+                </div>
+              </div>
+
+              {/* NET PAYABLE HIGHLIGHT */}
+              <div style={{ borderTop: '1px solid #111827', borderBottom: '1px solid #111827', padding: '0.4rem 0', margin: '0.35rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <strong style={{ fontSize: '0.875rem', color: '#111827' }}>NET PAYABLE:</strong>
+                <strong style={{ fontSize: '1.125rem', fontFamily: 'monospace', color: '#15803d' }}>
+                  Rs. {formatMoney(viewingSlip.net_salary)}
+                </strong>
+              </div>
+
+              {/* Payment Summary */}
+              <div style={{ fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', margin: '0.4rem 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
+                  <span>Amount Disbursed:</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>Rs. {formatMoney(viewingSlip.paid_amount)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: viewingSlip.payable_amount > 0 ? '#b45309' : '#15803d' }}>
+                  <span>Remaining Unpaid:</span>
+                  <span style={{ fontFamily: 'monospace' }}>Rs. {formatMoney(viewingSlip.payable_amount)}</span>
+                </div>
+                {viewingSlip.journal_entry_number && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', color: '#6b7280', marginTop: '0.15rem' }}>
+                    <span>GL Accrual JE:</span>
+                    <span style={{ fontFamily: 'monospace' }}>{viewingSlip.journal_entry_number}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Disbursement Log */}
+              {viewingSlip.payments && viewingSlip.payments.length > 0 && (
+                <div style={{ marginTop: '0.5rem', borderTop: '1px dashed #9ca3af', paddingTop: '0.35rem' }}>
+                  <div style={{ fontSize: '0.6875rem', fontWeight: 700, marginBottom: '0.2rem' }}>Payment Vouchers:</div>
+                  {viewingSlip.payments.map((p) => (
+                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', padding: '0.1rem 0' }}>
+                      <span>{p.payment_number} ({p.date}):</span>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#16a34a' }}>Rs. {formatMoney(p.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Dual Signature Blocks */}
+              <div style={{ marginTop: '1.5rem', paddingTop: '0.5rem', borderTop: '1px dashed #9ca3af' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', color: '#374151' }}>
+                  <div style={{ textAlign: 'center', width: '45%' }}>
+                    <div style={{ borderBottom: '1px solid #111827', marginBottom: '0.25rem', height: '1.25rem' }}></div>
+                    <strong>Prepared By</strong>
+                  </div>
+                  <div style={{ textAlign: 'center', width: '45%' }}>
+                    <div style={{ borderBottom: '1px solid #111827', marginBottom: '0.25rem', height: '1.25rem' }}></div>
+                    <strong>Staff Signature</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slip Footer */}
+              <div style={{ textAlign: 'center', marginTop: '0.75rem', fontSize: '0.625rem', color: '#6b7280' }}>
+                <div>System Generated • ApexPOS HR Core</div>
+                <div>Printed: {new Date().toLocaleString()}</div>
+              </div>
             </div>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', border: '1px solid var(--border-subtle)' }}>
-              <tbody>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-card)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Basic Salary Rate</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(viewingSlip.basic_salary)}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--success)' }}>Allowances / Overtime (+)</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>+ Rs. {formatMoney(viewingSlip.allowances)}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--danger)' }}>Deductions / Unexcused Absences (-)</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>- Rs. {formatMoney(viewingSlip.deductions)}</td>
-                </tr>
-                <tr style={{ borderBottom: '2px solid var(--border-medium)', backgroundColor: 'var(--bg-card)' }}>
-                  <td style={{ padding: '0.625rem 0.75rem', fontWeight: 800, fontSize: '0.875rem' }}>Net Payable Amount</td>
-                  <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.9375rem' }}>
-                    Rs. {formatMoney(viewingSlip.net_salary)}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-muted)' }}>Amount Disbursed to Date</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)', fontWeight: 700 }}>
-                    Rs. {formatMoney(viewingSlip.paid_amount)}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-muted)' }}>Remaining Unpaid Balance</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: viewingSlip.payable_amount > 0 ? 'var(--danger)' : 'var(--success)', fontWeight: 700 }}>
-                    Rs. {formatMoney(viewingSlip.payable_amount)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            {viewingSlip.journal_entry_number && (
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>
-                Linked General Ledger Accrual: <strong>{viewingSlip.journal_entry_number}</strong>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
-              <Button variant="outline" onClick={() => window.print()} icon={<Printer size={14} />}>
-                Print Salary Slip
-              </Button>
-              <Button variant="primary" onClick={() => setViewingSlip(null)}>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Button variant="outline" onClick={() => setViewingSlip(null)}>
                 Close
+              </Button>
+
+              <Button
+                variant="primary"
+                icon={<Printer size={16} />}
+                onClick={() =>
+                  printPayrollSlip(viewingSlip, {
+                    paperWidth: slipPaperWidth,
+                    storeName: companyName || 'ApexPOS Retail',
+                    phone: companyPhone,
+                  })
+                }
+                style={{
+                  background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                  fontWeight: 700,
+                }}
+              >
+                Print Salary Slip ({slipPaperWidth})
               </Button>
             </div>
           </div>

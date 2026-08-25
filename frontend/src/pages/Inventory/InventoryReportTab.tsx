@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   BarChart3,
   Filter,
-  RefreshCw,
   DollarSign,
   Package,
   Layers,
@@ -11,7 +10,6 @@ import {
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ComprehensiveInventoryReport, StockStatus } from '../../types/inventory';
@@ -202,6 +200,33 @@ export const InventoryReportTab: React.FC<InventoryReportTabProps> = ({ refreshT
               <option value="IN_STOCK">In Stock</option>
               <option value="LOW_STOCK">Low Stock</option>
               <option value="OUT_OF_STOCK">Out of Stock</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              Movement Type
+            </label>
+            <select
+              value={selectedMovementType}
+              onChange={(e) => setSelectedMovementType(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.35rem 0.6rem',
+                color: 'var(--text-main)',
+                outline: 'none',
+                fontSize: '0.78125rem',
+              }}
+            >
+              <option value="">All Movement Types</option>
+              <option value="SALE">Sale</option>
+              <option value="PURCHASE">Purchase</option>
+              <option value="RETURN_IN">Sales Return</option>
+              <option value="RETURN_OUT">Purchase Return</option>
+              <option value="ADJUSTMENT">Adjustment</option>
             </select>
           </div>
 

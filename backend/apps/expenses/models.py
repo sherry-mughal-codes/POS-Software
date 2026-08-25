@@ -83,19 +83,8 @@ class Expense(models.Model):
 
     @classmethod
     def generate_expense_number(cls, target_date=None):
-        """Generates sequential format: EXP-YYYY-XXXXX"""
-        year = target_date.year if target_date else timezone.now().year
-        prefix = f"EXP-{year}-"
-        last_exp = cls.objects.filter(expense_number__startswith=prefix).order_by("-expense_number").first()
-        if last_exp:
-            try:
-                last_seq = int(last_exp.expense_number.split("-")[-1])
-                new_seq = last_seq + 1
-            except (ValueError, IndexError):
-                new_seq = 1
-        else:
-            new_seq = 1
-        return f"{prefix}{new_seq:05d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("expense")
 
 
 class TransferStatus(models.TextChoices):

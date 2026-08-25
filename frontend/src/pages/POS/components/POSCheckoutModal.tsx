@@ -213,6 +213,9 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
     if (!isNaN(credNum)) {
       const rem = Math.max(0, grandTotal - credNum - cNum);
       setSplitCard(rem === 0 ? '0' : Number(rem.toFixed(2)).toString());
+    } else if (val === '') {
+      const rem = Math.max(0, grandTotal - cNum);
+      setSplitCard(rem === 0 ? '0' : Number(rem.toFixed(2)).toString());
     }
   };
 

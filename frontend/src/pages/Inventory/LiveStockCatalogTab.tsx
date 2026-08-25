@@ -243,15 +243,6 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
               <option value="OUT_OF_STOCK">Out of Stock</option>
             </select>
           </div>
-
-          <Button
-            variant="primary"
-            icon={<SlidersHorizontal size={13} />}
-            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-            onClick={() => onOpenAdjustmentModal()}
-          >
-            New Stock Adjustment
-          </Button>
         </div>
 
         {/* Table */}

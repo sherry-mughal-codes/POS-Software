@@ -31,23 +31,10 @@ class InventoryService:
     @classmethod
     def generate_adjustment_number(cls) -> str:
         """
-        Generates sequential adjustment identifier (e.g. ADJ-2026-00001).
+        Generates sequential adjustment identifier based on system prefix and start sequence.
         """
-        year = timezone.now().year
-        prefix = f"ADJ-{year}-"
-        last_adj = (
-            StockAdjustment.objects.filter(adjustment_number__startswith=prefix)
-            .order_by("-adjustment_number")
-            .first()
-        )
-        if last_adj:
-            try:
-                seq = int(last_adj.adjustment_number.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = 1
-        else:
-            seq = 1
-        return f"{prefix}{seq:05d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("stock_adjustment")
 
     @classmethod
     def get_product_stock(cls, product_id: int, lock: bool = False) -> Decimal:
@@ -207,15 +194,18 @@ class InventoryService:
         # Validation & preparation
         validated_items = []
         for row in items_data:
-            prod_id = row.get("product")
+            prod_id = row.get("product") or row.get("product_id")
+            if not prod_id:
+                raise ValidationError("Product ID is required for each adjustment item.")
             prod = Product.objects.select_for_update().get(pk=prod_id)
             current_stock = cls.get_product_stock(prod.id)
             wac = Decimal(str(StockMovement.get_weighted_average_cost(prod.id)))
 
-            qty_diff = Decimal(str(row.get("difference_quantity", 0)))
+            raw_qty = row.get("difference_quantity") if row.get("difference_quantity") is not None else row.get("quantity")
+            qty_diff = Decimal(str(raw_qty or 0))
             if qty_diff <= Decimal("0.00"):
                 # If user passed actual_stock instead:
-                if "actual_stock" in row:
+                if "actual_stock" in row and row.get("actual_stock") is not None:
                     actual = Decimal(str(row["actual_stock"]))
                     diff = actual - current_stock
                     qty_diff = abs(diff)

@@ -5,6 +5,8 @@ import {
   PieChart,
   Filter,
   Search,
+  Printer,
+  Download,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -336,6 +338,26 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
             <PieChart size={16} />
             <span>Balance Sheet</span>
           </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button
+            variant="outline"
+            icon={<Printer size={14} />}
+            onClick={handlePrint}
+            style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+          >
+            Print Report
+          </Button>
+
+          <Button
+            variant="outline"
+            icon={<Download size={14} />}
+            onClick={handleExportCSV}
+            style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+          >
+            Export CSV
+          </Button>
         </div>
       </div>
 

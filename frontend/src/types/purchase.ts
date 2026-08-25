@@ -196,6 +196,7 @@ export interface SupplierPayablesReport {
 export interface PurchaseReportSummary {
   total_orders: number;
   total_purchases: number;
+  opening_balance?: number;
   total_paid: number;
   total_payable: number;
   total_returned: number;

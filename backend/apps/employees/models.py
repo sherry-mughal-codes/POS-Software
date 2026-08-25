@@ -112,17 +112,8 @@ class Employee(models.Model):
 
     @classmethod
     def generate_employee_id(cls):
-        """Generates sequential ID: EMP-00001"""
-        prefix = "EMP-"
-        last = cls.objects.filter(employee_id__startswith=prefix).order_by("-employee_id").first()
-        if last:
-            try:
-                seq = int(last.employee_id.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = cls.objects.count() + 1
-        else:
-            seq = cls.objects.count() + 1
-        return f"{prefix}{seq:05d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("employee")
 
 
 class Attendance(models.Model):
@@ -303,18 +294,8 @@ class SalarySlip(models.Model):
 
     @classmethod
     def generate_slip_number(cls, target_date=None):
-        """Generates sequential slip number: SAL-YYYY-XXXXX"""
-        year = target_date.year if target_date else timezone.now().year
-        prefix = f"SAL-{year}-"
-        last = cls.objects.filter(slip_number__startswith=prefix).order_by("-slip_number").first()
-        if last:
-            try:
-                seq = int(last.slip_number.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = 1
-        else:
-            seq = 1
-        return f"{prefix}{seq:05d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("salary_slip")
 
 
 class SalaryPayment(models.Model):

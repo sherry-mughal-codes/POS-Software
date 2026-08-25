@@ -9,6 +9,7 @@ import {
   Building,
   FileText,
   Download,
+  Printer,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -17,6 +18,7 @@ import { Modal } from '../../components/common/Modal';
 import { Purchase, PurchaseItem } from '../../types/purchase';
 import { purchaseService } from '../../services/purchaseService';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { PurchaseOrderSlipModal } from './PurchaseOrderSlipModal';
 
 interface PurchaseListTabProps {
   purchases: Purchase[];
@@ -51,6 +53,9 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
 
   // Detail Modal
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
+
+  // Print Slip Modal
+  const [slipTarget, setSlipTarget] = useState<Purchase | null>(null);
 
   // Cancellation Modal
   const [cancelTarget, setCancelTarget] = useState<Purchase | null>(null);
@@ -225,6 +230,14 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                           style={{ padding: '0.25rem 0.45rem' }}
                           title="View Order Details"
                           onClick={() => setSelectedPurchase(p)}
+                        />
+
+                        <Button
+                          variant="outline"
+                          icon={<Printer size={12} />}
+                          style={{ padding: '0.25rem 0.45rem', color: 'var(--primary-400)', borderColor: 'var(--primary-400)' }}
+                          title="Print Purchase Order Slip"
+                          onClick={() => setSlipTarget(p)}
                         />
 
                         {p.status === 'DRAFT' && (
@@ -418,9 +431,32 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                 Notes: {selectedPurchase.notes}
               </div>
             )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+              <Button
+                variant="primary"
+                icon={<Printer size={14} />}
+                onClick={() => setSlipTarget(selectedPurchase)}
+                style={{
+                  background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  padding: '0.35rem 0.75rem',
+                }}
+              >
+                Print Purchase Slip
+              </Button>
+            </div>
           </div>
         </Modal>
       )}
+
+      {/* Printable Purchase Order Slip Modal */}
+      <PurchaseOrderSlipModal
+        isOpen={!!slipTarget}
+        onClose={() => setSlipTarget(null)}
+        purchase={slipTarget}
+      />
 
       {/* Cancel Confirmation Modal with Optional Dropdown + Custom Field */}
       {cancelTarget && (

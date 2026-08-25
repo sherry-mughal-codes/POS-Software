@@ -41,43 +41,15 @@ class SalesService:
 
     @classmethod
     def generate_invoice_number(cls) -> str:
-        """Generates consecutive invoice serial: INV-YYYY-00001."""
-        year = timezone.now().year
-        prefix = f"INV-{year}-"
-        last_sale = (
-            Sale.objects.filter(invoice_number__startswith=prefix)
-            .order_by("-invoice_number")
-            .first()
-        )
-        if last_sale:
-            try:
-                last_seq = int(last_sale.invoice_number.split("-")[-1])
-                new_seq = last_seq + 1
-            except ValueError:
-                new_seq = 1
-        else:
-            new_seq = 1
-        return f"{prefix}{new_seq:05d}"
+        """Generates consecutive invoice serial based on system prefix and start sequence."""
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("invoice")
 
     @classmethod
     def generate_return_number(cls) -> str:
-        """Generates consecutive sales return serial: RET-YYYY-00001."""
-        year = timezone.now().year
-        prefix = f"RET-{year}-"
-        last_ret = (
-            SalesReturn.objects.filter(return_number__startswith=prefix)
-            .order_by("-return_number")
-            .first()
-        )
-        if last_ret:
-            try:
-                last_seq = int(last_ret.return_number.split("-")[-1])
-                new_seq = last_seq + 1
-            except ValueError:
-                new_seq = 1
-        else:
-            new_seq = 1
-        return f"{prefix}{new_seq:05d}"
+        """Generates consecutive sales return serial based on system prefix and start sequence."""
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("sales_return")
 
     @classmethod
     @transaction.atomic

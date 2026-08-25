@@ -54,18 +54,8 @@ class Customer(models.Model):
 
     @classmethod
     def generate_customer_id(cls):
-        """Generates sequential ID formatted as CUS-0001, CUS-0002, etc."""
-        prefix = "CUS-"
-        max_seq = 0
-        for c in cls.objects.filter(customer_id__startswith=prefix):
-            try:
-                num = int(c.customer_id[len(prefix):])
-                if num < 900000 and num > max_seq:
-                    max_seq = num
-            except (ValueError, TypeError):
-                continue
-        next_seq = max_seq + 1 if max_seq > 0 else (cls.objects.count() + 1)
-        return f"{prefix}{next_seq:04d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("customer")
 
     def clean(self):
         # Enforce that Walk-in customer cannot have credit enabled
@@ -118,17 +108,8 @@ class Supplier(models.Model):
 
     @classmethod
     def generate_supplier_id(cls):
-        """Generates sequential ID formatted as SUP-000001"""
-        prefix = "SUP-"
-        last = cls.objects.filter(supplier_id__startswith=prefix).order_by("-id").first()
-        if last:
-            try:
-                seq = int(last.supplier_id.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = cls.objects.count() + 1
-        else:
-            seq = cls.objects.count() + 1
-        return f"{prefix}{seq:06d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("supplier")
 
     def __str__(self):
         company = f" ({self.company_name})" if self.company_name else ""
@@ -247,16 +228,5 @@ class CustomerPayment(models.Model):
 
     @classmethod
     def generate_payment_number(cls, target_date=None):
-        """Generates sequential format: PAY-YYYY-XXXXX"""
-        year = target_date.year if target_date else timezone.now().year
-        prefix = f"PAY-{year}-"
-        last_pay = cls.objects.filter(payment_number__startswith=prefix).order_by("-payment_number").first()
-        if last_pay:
-            try:
-                last_seq = int(last_pay.payment_number.split("-")[-1])
-                new_seq = last_seq + 1
-            except (ValueError, IndexError):
-                new_seq = 1
-        else:
-            new_seq = 1
-        return f"{prefix}{new_seq:05d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("customer_payment")

@@ -35,45 +35,18 @@ class PurchaseService:
 
     @staticmethod
     def generate_purchase_number() -> str:
-        year = timezone.now().year
-        prefix = f"PUR-{year}-"
-        last = Purchase.objects.filter(purchase_number__startswith=prefix).order_by("-id").first()
-        if last:
-            try:
-                seq = int(last.purchase_number.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = Purchase.objects.count() + 1
-        else:
-            seq = Purchase.objects.count() + 1
-        return f"{prefix}{seq:05d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("purchase_order")
 
     @staticmethod
     def generate_return_number() -> str:
-        year = timezone.now().year
-        prefix = f"PRTN-{year}-"
-        last = PurchaseReturn.objects.filter(return_number__startswith=prefix).order_by("-id").first()
-        if last:
-            try:
-                seq = int(last.return_number.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = PurchaseReturn.objects.count() + 1
-        else:
-            seq = PurchaseReturn.objects.count() + 1
-        return f"{prefix}{seq:05d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("purchase_return")
 
     @staticmethod
     def generate_payment_number() -> str:
-        year = timezone.now().year
-        prefix = f"SPAY-{year}-"
-        last = SupplierPayment.objects.filter(payment_number__startswith=prefix).order_by("-id").first()
-        if last:
-            try:
-                seq = int(last.payment_number.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = SupplierPayment.objects.count() + 1
-        else:
-            seq = SupplierPayment.objects.count() + 1
-        return f"{prefix}{seq:05d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("supplier_payment")
 
     @classmethod
     @transaction.atomic
@@ -928,8 +901,7 @@ class PurchaseService:
         submitted_qs = list(qs.filter(status=PurchaseStatus.SUBMITTED))
 
         total_grand = sum(p.grand_total for p in submitted_qs) or Decimal("0.00")
-        total_paid = sum(p.paid_amount for p in submitted_qs) or Decimal("0.00")
-        total_payable = sum(p.payable_amount for p in submitted_qs) or Decimal("0.00")
+        total_upfront_paid = sum(p.initial_paid_amount for p in submitted_qs) or Decimal("0.00")
 
         # Purchase returns
         returns_qs = PurchaseReturn.objects.all()
@@ -943,9 +915,32 @@ class PurchaseService:
         total_returns = returns_qs.aggregate(t=models.Sum("total_amount"))["t"] or Decimal("0.00")
         net_purchases = max(Decimal("0.00"), total_grand - total_returns)
 
+        # Supplier opening payables & voucher payments
+        suppliers_qs = Supplier.objects.filter(is_active=True)
+        if supplier_id:
+            suppliers_qs = suppliers_qs.filter(pk=supplier_id)
+
+        total_opening = sum(s.opening_balance for s in suppliers_qs) or Decimal("0.00")
+
+        pay_qs = SupplierPayment.objects.filter(supplier__in=suppliers_qs, status=SupplierPaymentStatus.SUBMITTED)
+        if start_date:
+            pay_qs = pay_qs.filter(date__gte=start_date)
+        if end_date:
+            pay_qs = pay_qs.filter(date__lte=end_date)
+
+        total_voucher_payments = pay_qs.aggregate(t=models.Sum("amount"))["t"] or Decimal("0.00")
+        total_paid = total_upfront_paid + total_voucher_payments
+
+        # Total outstanding payables for suppliers
+        total_payable = Decimal("0.00")
+        for s in suppliers_qs:
+            stmt = PurchaseService.get_supplier_statement(s.id, start_date=start_date, end_date=end_date)
+            total_payable += Decimal(str(stmt["summary"]["closing_payable"]))
+
         return {
             "total_orders": total_orders,
             "total_purchases": float(total_grand),
+            "opening_balance": float(total_opening),
             "total_paid": float(total_paid),
             "total_payable": float(total_payable),
             "total_returned": float(total_returns),

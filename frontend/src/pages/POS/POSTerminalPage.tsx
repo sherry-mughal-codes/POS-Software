@@ -106,7 +106,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
 
       // Default to walk-in customer
       const walkin = custList?.find((c) => c.is_walkin) || custList?.[0];
-      if (walkin && selectedCustomerId === 0) {
+      if (walkin && (selectedCustomerId === 0 || !custList.some((c) => c.id === selectedCustomerId))) {
         setSelectedCustomerId(walkin.id);
       }
     } catch {

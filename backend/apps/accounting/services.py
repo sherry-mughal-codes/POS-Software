@@ -27,23 +27,9 @@ class AccountingService:
 
     @staticmethod
     def generate_entry_number() -> str:
-        """Generates sequential entry number e.g. JE-2026-00001."""
-        year = timezone.now().year
-        prefix = f"JE-{year}-"
-        last_entry = (
-            JournalEntry.objects.filter(entry_number__startswith=prefix)
-            .order_by("-id")
-            .first()
-        )
-        if last_entry:
-            try:
-                last_seq = int(last_entry.entry_number.split("-")[-1])
-                new_seq = last_seq + 1
-            except (ValueError, IndexError):
-                new_seq = 1
-        else:
-            new_seq = 1
-        return f"{prefix}{new_seq:05d}"
+        """Generates sequential entry number based on system prefix and start sequence."""
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("journal_entry")
 
     @classmethod
     @transaction.atomic

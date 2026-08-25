@@ -307,17 +307,6 @@ class SupplierPayment(models.Model):
 
     @classmethod
     def generate_payment_number(cls, target_date=None) -> str:
-        """Generates sequential format: SUP-PAY-YYYY-XXXXX"""
-        year = target_date.year if target_date else timezone.now().year
-        prefix = f"SUP-PAY-{year}-"
-        last_pay = cls.objects.filter(payment_number__startswith=prefix).order_by("-payment_number").first()
-        if last_pay:
-            try:
-                last_seq = int(last_pay.payment_number.split("-")[-1])
-                new_seq = last_seq + 1
-            except (ValueError, IndexError):
-                new_seq = cls.objects.count() + 1
-        else:
-            new_seq = 1
-        return f"{prefix}{new_seq:05d}"
+        from apps.core.sequences import DocumentSequenceService
+        return DocumentSequenceService.generate_next_number("supplier_payment")
 

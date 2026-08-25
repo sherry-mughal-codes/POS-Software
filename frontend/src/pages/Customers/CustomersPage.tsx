@@ -19,6 +19,7 @@ import {
   BarChart3,
   Printer,
   TrendingDown,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -26,6 +27,7 @@ import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { CustomerModal } from './CustomerModal';
+import { CustomerBulkImportModal } from './CustomerBulkImportModal';
 import {
   Customer,
   CustomerPayment,
@@ -71,6 +73,7 @@ export const CustomersPage: React.FC = () => {
   // Modals state
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
 
   // Record Payment Modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -343,6 +346,15 @@ export const CustomersPage: React.FC = () => {
             onClick={() => handleOpenPaymentModal()}
           >
             Record Payment
+          </Button>
+
+          <Button
+            variant="secondary"
+            icon={<FileSpreadsheet size={14} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+            onClick={() => setIsBulkImportModalOpen(true)}
+          >
+            Import Bulk
           </Button>
 
           <Button
@@ -1483,6 +1495,15 @@ export const CustomersPage: React.FC = () => {
         onClose={() => setIsCustomerModalOpen(false)}
         customerToEdit={editingCustomer}
         onSaved={fetchCustomers}
+      />
+
+      {/* Customer Bulk Import Modal */}
+      <CustomerBulkImportModal
+        isOpen={isBulkImportModalOpen}
+        onClose={() => setIsBulkImportModalOpen(false)}
+        onSuccess={() => {
+          fetchCustomers();
+        }}
       />
     </div>
   );
