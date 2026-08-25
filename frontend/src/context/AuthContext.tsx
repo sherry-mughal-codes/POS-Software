@@ -49,17 +49,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [initializeAuth]);
 
   const login = async (username: string, password: string): Promise<LoginResponse> => {
-    setIsLoading(true);
-    try {
-      const response = await authService.login(username, password);
-      localStorage.setItem('apexpos_token', response.access);
-      localStorage.setItem('apexpos_refresh', response.refresh);
-      setToken(response.access);
-      setUser(response.user);
-      return response;
-    } finally {
-      setIsLoading(false);
-    }
+    const response = await authService.login(username, password);
+    localStorage.setItem('apexpos_token', response.access);
+    localStorage.setItem('apexpos_refresh', response.refresh);
+    setToken(response.access);
+    setUser(response.user);
+    return response;
   };
 
   const logout = async (): Promise<void> => {

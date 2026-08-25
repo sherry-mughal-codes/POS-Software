@@ -3,6 +3,7 @@ import { Shield, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useAuth } from '../../hooks/useAuth';
+import { formatErrorMessage } from '../../utils/formatError';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -23,7 +24,7 @@ export const LoginPage: React.FC = () => {
     try {
       await login(username.trim(), password);
     } catch (err: any) {
-      setError(err?.message || 'Invalid username or password.');
+      setError(formatErrorMessage(err, 'Invalid username or password. Please verify your login credentials.'));
     } finally {
       setLoading(false);
     }
