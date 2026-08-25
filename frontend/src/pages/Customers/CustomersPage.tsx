@@ -1408,8 +1408,16 @@ export const CustomersPage: React.FC = () => {
                           <td style={{ padding: '0.5rem 0.625rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: row.debit > 0 ? 'var(--text-main)' : 'var(--text-subtle)' }}>
                             {row.debit > 0 ? `Rs. ${formatMoney(row.debit)}` : '-'}
                           </td>
-                          <td style={{ padding: '0.5rem 0.625rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: row.credit > 0 ? 'var(--success)' : 'var(--text-subtle)' }}>
-                            {row.credit > 0 ? `Rs. ${formatMoney(row.credit)}` : '-'}
+                          <td style={{ padding: '0.5rem 0.625rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: row.credit > 0 ? (row.type === 'RETURN' ? 'var(--info)' : 'var(--success)') : 'var(--text-subtle)' }}>
+                            {row.credit > 0 ? (
+                              row.type === 'RETURN' ? (
+                                <span title="Cash refund paid to customer at counter">
+                                  Rs. {formatMoney(row.credit)} <span style={{ fontSize: '0.6875rem', fontWeight: 600 }}>(Refund)</span>
+                                </span>
+                              ) : (
+                                `Rs. ${formatMoney(row.credit)}`
+                              )
+                            ) : '-'}
                           </td>
                           <td style={{ padding: '0.5rem 0.625rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: row.running_balance > 0 ? 'var(--danger)' : 'var(--success)' }}>
                             Rs. {formatMoney(row.running_balance)}

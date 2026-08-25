@@ -181,6 +181,7 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
     ],
+    "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
 }
 
 # SimpleJWT Authentication Configuration (Persistent Shift / POS Terminal Session)

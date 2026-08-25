@@ -109,13 +109,16 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        employee_id = self.request.query_params.get("employee")
+        employee_id = self.request.query_params.get("employee") or self.request.query_params.get("employee_id")
+        date_param = self.request.query_params.get("date")
         date_from = self.request.query_params.get("date_from")
         date_to = self.request.query_params.get("date_to")
         status_param = self.request.query_params.get("status")
 
         if employee_id:
             qs = qs.filter(employee_id=employee_id)
+        if date_param:
+            qs = qs.filter(date=date_param)
         if date_from:
             qs = qs.filter(date__gte=date_from)
         if date_to:

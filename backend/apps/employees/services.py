@@ -385,9 +385,20 @@ class PayrollService:
         if isinstance(salary_slip, int):
             salary_slip = SalarySlip.objects.get(pk=salary_slip)
 
-        if salary_slip.status != SalarySlipStatus.SUBMITTED:
+        if salary_slip.payable_amount <= Decimal("0.00") or salary_slip.is_fully_paid:
             raise ValidationError(
-                f"Salary payments can only be made against SUBMITTED salary slips (current status: {salary_slip.status})."
+                f"This salary slip ({salary_slip.slip_number}) is already fully paid. Duplicate disbursement is not permitted for this employee."
+            )
+
+        if salary_slip.status == SalarySlipStatus.DRAFT:
+            # Auto-submit draft salary slip so that general ledger accrual is posted prior to disbursement
+            salary_slip = cls.submit_salary_slip(salary_slip, user)
+        elif salary_slip.status == SalarySlipStatus.PAID and salary_slip.payable_amount > Decimal("0.00"):
+            salary_slip.status = SalarySlipStatus.SUBMITTED
+            salary_slip.save(update_fields=["status"])
+        elif salary_slip.status != SalarySlipStatus.SUBMITTED:
+            raise ValidationError(
+                f"Salary payments cannot be processed against {salary_slip.status} salary slips."
             )
 
         amount = Decimal(str(data.get("amount", "0")))
@@ -396,7 +407,7 @@ class PayrollService:
 
         if amount > salary_slip.payable_amount:
             raise ValidationError(
-                f"Disbursement amount (Rs. {amount:,.2f}) exceeds remaining unpaid salary (Rs. {salary_slip.payable_amount:,.2f})."
+                f"Disbursement amount (Rs. {amount:,.2f}) exceeds remaining unpaid salary balance of Rs. {salary_slip.payable_amount:,.2f}."
             )
 
         payment_method = data.get("payment_method", "CASH")

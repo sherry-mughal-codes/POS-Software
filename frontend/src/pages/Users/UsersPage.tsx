@@ -24,23 +24,7 @@ import { userService } from '../../services/userService';
 import { User, Role, CreateUserData, UpdateUserData } from '../../types/auth';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../context/SettingsContext';
-
-const formatErrorMessage = (err: any): string => {
-  const data = err?.response?.data;
-  if (!data) return err?.message || 'Operation failed';
-  if (typeof data === 'string') return data;
-  if (data.detail) return data.detail;
-  if (typeof data === 'object') {
-    return Object.entries(data)
-      .map(([field, msgs]) => {
-        const label = field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ');
-        const text = Array.isArray(msgs) ? msgs.join(', ') : String(msgs);
-        return `${label}: ${text}`;
-      })
-      .join(' | ');
-  }
-  return err?.message || 'Operation failed';
-};
+import { formatErrorMessage } from '../../utils/formatError';
 
 export const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();

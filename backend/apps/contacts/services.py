@@ -437,7 +437,8 @@ class CustomerReceivableService:
                 "reference": ev["reference"],
                 "description": ev["description"],
                 "debit": float(dr) if ev["type"] == "SALE" else 0.0,
-                "credit": float(cr) if ev["type"] == "PAYMENT" else 0.0,
+                "credit": float(cr) if ev["type"] in ["PAYMENT", "RETURN"] else 0.0,
+                "returned_amount": float(cr) if ev["type"] == "RETURN" else 0.0,
                 "running_balance": float(running_balance),
             })
 

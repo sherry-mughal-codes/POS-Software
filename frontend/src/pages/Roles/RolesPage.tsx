@@ -197,74 +197,93 @@ export const RolesPage: React.FC = () => {
   const selectedRole = roles.find((r) => r.id === selectedRoleId);
   const selectedUserObj = users.find((u) => u.id === selectedUserId);
 
-  // Group permissions by category
-  const categorizedPermissions = permissions.reduce<Record<string, Permission[]>>((acc, perm) => {
-    let category = 'System & Core';
-    const c = perm.codename.toLowerCase();
+  // Standard business module ordering
+  const MODULE_ORDER = [
+    'Point of Sale (POS) & Sales',
+    'Purchases & Payables',
+    'Customers & Receivables',
+    'Products & Inventory',
+    'Expenses & Cash Transfers',
+    'Accounting & General Ledger',
+    'Employees & Payroll (HR)',
+    'User Administration & Security',
+    'System Settings & Config',
+  ];
+
+  // Group permissions accurately by business module
+  const rawCategorizedPermissions = permissions.reduce<Record<string, Permission[]>>((acc, perm) => {
+    let category = 'System Settings & Config';
+    const app = perm.app_label?.toLowerCase() || '';
+    const code = perm.codename.toLowerCase();
 
     if (
-      c.includes('role') ||
-      c.includes('group') ||
-      c.includes('permission')
+      app === 'sales' ||
+      code.includes('pos') ||
+      code.includes('discount') ||
+      code.includes('drawer') ||
+      code.includes('register') ||
+      code.includes('sale')
     ) {
-      category = 'Role Management & Permissions';
+      category = 'Point of Sale (POS) & Sales';
     } else if (
-      c.includes('user') ||
-      c.includes('profile')
+      app === 'purchases' ||
+      code.includes('purchase') ||
+      code.includes('supplierpayment') ||
+      (app === 'contacts' && code.includes('supplier'))
     ) {
-      category = 'User Management';
+      category = 'Purchases & Payables';
     } else if (
-      c.includes('audit')
+      app === 'contacts' ||
+      code.includes('customer') ||
+      code.includes('receivable')
     ) {
-      category = 'Security Audit Logs';
+      category = 'Customers & Receivables';
     } else if (
-      c.includes('employee') ||
-      c.includes('salary') ||
-      c.includes('attendance') ||
-      c.includes('payroll')
-    ) {
-      category = 'Employees & Payroll (HR)';
-    } else if (
-      c.includes('pos') ||
-      c.includes('sale') ||
-      c.includes('drawer') ||
-      c.includes('register') ||
-      c.includes('discount')
-    ) {
-      category = 'POS & Register Operations';
-    } else if (
-      c.includes('product') ||
-      c.includes('stock') ||
-      c.includes('cost') ||
-      c.includes('inventory') ||
-      c.includes('category') ||
-      c.includes('unit')
+      app === 'products' ||
+      app === 'inventory' ||
+      code.includes('product') ||
+      code.includes('stock') ||
+      code.includes('category') ||
+      code.includes('unit') ||
+      code.includes('cost_price')
     ) {
       category = 'Products & Inventory';
     } else if (
-      c.includes('purchase') ||
-      c.includes('payable') ||
-      c.includes('supplier')
+      app === 'expenses' ||
+      code.includes('expense') ||
+      code.includes('transfer')
     ) {
-      category = 'Purchasing & Payables';
+      category = 'Expenses & Cash Transfers';
     } else if (
-      c.includes('expense') ||
-      c.includes('transfer')
+      app === 'accounting' ||
+      code.includes('financial_report') ||
+      code.includes('account') ||
+      code.includes('journal') ||
+      code.includes('paymentmethod')
     ) {
-      category = 'Expense Management';
+      category = 'Accounting & General Ledger';
     } else if (
-      c.includes('customer') ||
-      c.includes('receivable') ||
-      c.includes('financial') ||
-      c.includes('report') ||
-      c.includes('account') ||
-      c.includes('paymentmethod')
+      app === 'employees' ||
+      code.includes('employee') ||
+      code.includes('salary') ||
+      code.includes('attendance') ||
+      code.includes('payroll')
     ) {
-      category = 'Financial & Accounting Reports';
+      category = 'Employees & Payroll (HR)';
     } else if (
-      c.includes('setting')
+      app === 'users' ||
+      code.includes('user') ||
+      code.includes('role') ||
+      code.includes('group') ||
+      code.includes('permission') ||
+      code.includes('audit')
     ) {
-      category = 'System Settings';
+      category = 'User Administration & Security';
+    } else if (
+      app === 'core' ||
+      code.includes('setting')
+    ) {
+      category = 'System Settings & Config';
     }
 
     if (!acc[category]) {
@@ -273,6 +292,19 @@ export const RolesPage: React.FC = () => {
     acc[category].push(perm);
     return acc;
   }, {});
+
+  // Maintain clean, fixed module order
+  const categorizedPermissions: Record<string, Permission[]> = {};
+  MODULE_ORDER.forEach((mod) => {
+    if (rawCategorizedPermissions[mod] && rawCategorizedPermissions[mod].length > 0) {
+      categorizedPermissions[mod] = rawCategorizedPermissions[mod];
+    }
+  });
+  Object.keys(rawCategorizedPermissions).forEach((k) => {
+    if (!categorizedPermissions[k]) {
+      categorizedPermissions[k] = rawCategorizedPermissions[k];
+    }
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>

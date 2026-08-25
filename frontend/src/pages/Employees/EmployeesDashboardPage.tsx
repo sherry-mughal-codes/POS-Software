@@ -37,23 +37,7 @@ import { employeeService } from '../../services/employeeService';
 import { accountingService } from '../../services/accountingService';
 import { useSettings } from '../../context/SettingsContext';
 import { printPayrollSlip } from '../../utils/printPayrollSlip';
-
-const formatErrorMessage = (err: any): string => {
-  const data = err?.response?.data;
-  if (!data) return err?.message || 'Operation failed';
-  if (typeof data === 'string') return data;
-  if (data.detail) return data.detail;
-  if (typeof data === 'object') {
-    return Object.entries(data)
-      .map(([field, msgs]) => {
-        const label = field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ');
-        const text = Array.isArray(msgs) ? msgs.join(', ') : String(msgs);
-        return `${label}: ${text}`;
-      })
-      .join(' | ');
-  }
-  return err?.message || 'Operation failed';
-};
+import { formatErrorMessage } from '../../utils/formatError';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -94,6 +78,7 @@ export const EmployeesDashboardPage: React.FC = () => {
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState('');
+  const [attendanceEmployeeFilter, setAttendanceEmployeeFilter] = useState<string | number>('');
 
   // 3. Payroll State
   const [salarySlips, setSalarySlips] = useState<SalarySlip[]>([]);
@@ -208,13 +193,14 @@ export const EmployeesDashboardPage: React.FC = () => {
       const data = await employeeService.getAttendance({
         date_from: attendanceDate || undefined,
         date_to: attendanceDate || undefined,
+        employee: attendanceEmployeeFilter ? Number(attendanceEmployeeFilter) : undefined,
         status: attendanceStatusFilter || undefined,
       });
       setAttendanceRecords(data || []);
     } finally {
       setAttendanceLoading(false);
     }
-  }, [attendanceDate, attendanceStatusFilter]);
+  }, [attendanceDate, attendanceStatusFilter, attendanceEmployeeFilter]);
 
   // Fetch Payroll Slips
   const fetchSalarySlips = useCallback(async () => {
@@ -366,13 +352,21 @@ export const EmployeesDashboardPage: React.FC = () => {
 
   // Salary Slip Form Handlers
   const handleOpenCreateSlip = () => {
-    const firstEmp = employees.find((e) => e.is_active) || employees[0];
+    // Select first active employee who does NOT already have an active/submitted slip for this month
+    const unpaidEmp = employees.find((e) => {
+      if (!e.is_active) return false;
+      const hasActiveSlip = salarySlips.some(
+        (s) => s.employee === e.id && s.month === payrollMonth && s.year === payrollYear && s.status !== 'CANCELLED'
+      );
+      return !hasActiveSlip;
+    }) || employees.find((e) => e.is_active) || employees[0];
+
     setSlipFormData({
-      employee: firstEmp?.id || 0,
+      employee: unpaidEmp?.id || 0,
       month: payrollMonth,
       year: payrollYear,
       date: new Date().toISOString().split('T')[0],
-      basic_salary: firstEmp?.basic_salary ? firstEmp.basic_salary.toString() : '',
+      basic_salary: unpaidEmp?.basic_salary ? unpaidEmp.basic_salary.toString() : '',
       allowances: '0',
       deductions: '0',
       notes: '',
@@ -531,15 +525,17 @@ export const EmployeesDashboardPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '0.4rem' }}>
-          <Button
-            variant="secondary"
-            icon={<RefreshCw size={13} />}
-            loading={employeesLoading || attendanceLoading || payrollLoading || reportsLoading}
-            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-            onClick={handleRefreshAll}
-          >
-            Refresh
-          </Button>
+          {activeTab !== 'attendance' && (
+            <Button
+              variant="secondary"
+              icon={<RefreshCw size={13} />}
+              loading={employeesLoading || attendanceLoading || payrollLoading || reportsLoading}
+              style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
+              onClick={handleRefreshAll}
+            >
+              Refresh
+            </Button>
+          )}
 
           {activeTab === 'attendance' && (
             <Button variant="primary" icon={<Clock size={14} />} style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }} onClick={handleOpenMarkAttendance}>
@@ -863,6 +859,24 @@ export const EmployeesDashboardPage: React.FC = () => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Filter by Employee
+                </label>
+                <select
+                  value={attendanceEmployeeFilter}
+                  onChange={(e) => setAttendanceEmployeeFilter(e.target.value)}
+                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.45rem 0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                >
+                  <option value="">All Employees</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      [{emp.employee_id}] {emp.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                   Status
                 </label>
                 <select
@@ -882,15 +896,6 @@ export const EmployeesDashboardPage: React.FC = () => {
               <Button variant="primary" icon={<Search size={13} />} onClick={fetchAttendance}>
                 Search
               </Button>
-
-              <Button
-                variant="outline"
-                icon={<RefreshCw size={13} />}
-                onClick={() => {
-                  setAttendanceDate(new Date().toISOString().split('T')[0]);
-                  setAttendanceStatusFilter('');
-                }}
-              />
             </div>
           </Card>
 
@@ -1123,7 +1128,7 @@ export const EmployeesDashboardPage: React.FC = () => {
                                 />
                               )}
 
-                              {slip.status === 'SUBMITTED' && slip.payable_amount > 0 && (
+                              {(slip.status === 'SUBMITTED' || slip.status === 'DRAFT') && slip.payable_amount > 0 && (
                                 <Button
                                   variant="primary"
                                   icon={<DollarSign size={12} />}
@@ -1570,7 +1575,7 @@ export const EmployeesDashboardPage: React.FC = () => {
 
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              Select Employee *
+              Select Unpaid Employee (Current Month) *
             </label>
             <select
               value={slipFormData.employee}
@@ -1585,15 +1590,30 @@ export const EmployeesDashboardPage: React.FC = () => {
               required
               style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
             >
-              <option value={0} disabled>Select an employee...</option>
+              <option value={0} disabled>Select an unpaid employee...</option>
               {employees
                 .filter((e) => e.is_active)
+                .filter((e) => {
+                  // Strictly show only employees who DO NOT have an active/submitted slip for this month & year
+                  const hasSlip = salarySlips.some(
+                    (s) => s.employee === e.id && s.month === slipFormData.month && s.year === slipFormData.year && s.status !== 'CANCELLED'
+                  );
+                  return !hasSlip;
+                })
                 .map((e) => (
                   <option key={e.id} value={e.id}>
                     [{e.employee_id}] {e.full_name} — Base: Rs. {formatMoney(e.basic_salary)}
                   </option>
                 ))}
             </select>
+            {employees
+              .filter((e) => e.is_active)
+              .filter((e) => !salarySlips.some((s) => s.employee === e.id && s.month === slipFormData.month && s.year === slipFormData.year && s.status !== 'CANCELLED'))
+              .length === 0 && (
+              <div style={{ fontSize: '0.6875rem', color: 'var(--success)', marginTop: '0.25rem', fontWeight: 600 }}>
+                ✓ All active employees have already had salary slips generated for {MONTHS.find((m) => m.value === slipFormData.month)?.label} {slipFormData.year}.
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>

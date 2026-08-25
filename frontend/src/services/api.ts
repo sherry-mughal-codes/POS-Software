@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { formatErrorMessage } from '../utils/formatError';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -118,7 +119,8 @@ apiClient.interceptors.response.use(
     }
 
     const customError = {
-      message: error.response?.data?.detail || error.message || 'An unexpected error occurred.',
+      message: formatErrorMessage(error),
+      detail: formatErrorMessage(error),
       status: error.response?.status,
       data: error.response?.data,
       isNetworkError: !error.response,
