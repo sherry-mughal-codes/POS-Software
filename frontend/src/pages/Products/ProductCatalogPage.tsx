@@ -23,6 +23,7 @@ import { ProductModal } from './ProductModal';
 import { CategoryManagerModal } from './CategoryManagerModal';
 import { UnitManagerModal } from './UnitManagerModal';
 import { BulkImportModal } from './BulkImportModal';
+import { getProductImageUrl } from '../../utils/imageUrl';
 import { Product, Category, Unit } from '../../types/product';
 import { productService } from '../../services/productService';
 import { useSettings } from '../../context/SettingsContext';
@@ -306,9 +307,9 @@ export const ProductCatalogPage: React.FC = () => {
               <div>
                 {/* Image & Header */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                  {p.image_url ? (
+                  {p.image || p.image_url ? (
                     <img
-                      src={p.image_url}
+                      src={getProductImageUrl(p.image || p.image_url)}
                       alt={p.name}
                       style={{
                         width: '36px',

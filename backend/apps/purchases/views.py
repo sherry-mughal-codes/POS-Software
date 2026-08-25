@@ -171,6 +171,7 @@ class PurchaseReturnViewSet(viewsets.ModelViewSet):
                 purchase=purchase,
                 items_to_return=data["items"],
                 refund_method=data.get("refund_method", "PAYABLE_DEDUCTION"),
+                payment_account=data.get("payment_account"),
                 notes=data.get("notes", ""),
                 created_by=request.user,
             )

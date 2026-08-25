@@ -139,6 +139,8 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
     original_purchase_number = serializers.CharField(source="original_purchase.purchase_number", read_only=True)
     supplier_name = serializers.CharField(source="supplier.name", read_only=True)
     supplier_company = serializers.CharField(source="supplier.company_name", read_only=True)
+    payment_account_name = serializers.CharField(source="payment_account.name", read_only=True)
+    payment_account_code = serializers.CharField(source="payment_account.code", read_only=True)
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     total_amount = serializers.DecimalField(max_digits=14, decimal_places=2, coerce_to_string=False)
 
@@ -155,6 +157,9 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
             "date",
             "total_amount",
             "refund_method",
+            "payment_account",
+            "payment_account_name",
+            "payment_account_code",
             "notes",
             "created_by_username",
             "items",
@@ -164,7 +169,11 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
 
 class PurchaseReturnCreateSerializer(serializers.Serializer):
     purchase_id = serializers.IntegerField(required=True)
-    refund_method = serializers.ChoiceField(choices=["PAYABLE_DEDUCTION", "CASH_REFUND"], default="PAYABLE_DEDUCTION")
+    refund_method = serializers.ChoiceField(
+        choices=["PAYABLE_DEDUCTION", "CASH", "BANK", "CHEQUE", "CASH_REFUND"],
+        default="PAYABLE_DEDUCTION",
+    )
+    payment_account = serializers.IntegerField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True)
     items = serializers.ListField(child=serializers.DictField(), required=True)
 

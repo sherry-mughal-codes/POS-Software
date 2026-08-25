@@ -51,6 +51,7 @@ export const purchaseService = {
   async createPurchaseReturn(data: {
     purchase_id: number;
     refund_method: string;
+    payment_account?: number;
     notes?: string;
     items: { purchase_item_id: number; quantity: number }[];
   }): Promise<PurchaseReturn> {

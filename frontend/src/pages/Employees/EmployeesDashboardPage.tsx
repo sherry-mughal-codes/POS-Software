@@ -739,7 +739,6 @@ export const EmployeesDashboardPage: React.FC = () => {
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Job Title & Dept</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Contact</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Basic Salary (Rs.)</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Disbursement Mode</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>System Login</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
@@ -748,7 +747,7 @@ export const EmployeesDashboardPage: React.FC = () => {
                   <tbody>
                     {filteredEmployees.length === 0 ? (
                       <tr>
-                        <td colSpan={9} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <td colSpan={8} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                           No employees found. Click "Register Employee" to add one.
                         </td>
                       </tr>
@@ -781,15 +780,6 @@ export const EmployeesDashboardPage: React.FC = () => {
 
                           <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--text-main)' }}>
                             Rs. {formatMoney(emp.basic_salary)}
-                          </td>
-
-                          <td style={{ padding: '0.625rem 0.75rem' }}>
-                            <Badge variant="phase">{emp.payment_method}</Badge>
-                            {emp.bank_name && (
-                              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.125rem' }}>
-                                {emp.bank_name}
-                              </div>
-                            )}
                           </td>
 
                           <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
@@ -1370,61 +1360,18 @@ export const EmployeesDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Disbursement Mode
-              </label>
-              <select
-                value={employeeFormData.payment_method}
-                onChange={(e) => setEmployeeFormData({ ...employeeFormData, payment_method: e.target.value as EmployeePaymentMethodKind })}
-                style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-              >
-                <option value="CASH">Cash</option>
-                <option value="BANK">Bank Transfer</option>
-                <option value="CHEQUE">Cheque</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Email Address
-              </label>
-              <input
-                type="email"
-                placeholder="staff@apexpos.local"
-                value={employeeFormData.email}
-                onChange={(e) => setEmployeeFormData({ ...employeeFormData, email: e.target.value })}
-                style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-              />
-            </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              Email Address
+            </label>
+            <input
+              type="email"
+              placeholder="staff@apexpos.local"
+              value={employeeFormData.email}
+              onChange={(e) => setEmployeeFormData({ ...employeeFormData, email: e.target.value })}
+              style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+            />
           </div>
-
-          {employeeFormData.payment_method === 'BANK' && (
-            <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: '0.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Bank Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Meezan Bank, HBL"
-                  value={employeeFormData.bank_name}
-                  onChange={(e) => setEmployeeFormData({ ...employeeFormData, bank_name: e.target.value })}
-                  style={{ width: '100%', padding: '0.45rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Account Number / IBAN</label>
-                <input
-                  type="text"
-                  placeholder="PK00MEZN..."
-                  value={employeeFormData.bank_account_number}
-                  onChange={(e) => setEmployeeFormData({ ...employeeFormData, bank_account_number: e.target.value })}
-                  style={{ width: '100%', padding: '0.45rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-                />
-              </div>
-            </div>
-          )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
             <Button variant="outline" onClick={() => setIsEmployeeModalOpen(false)} disabled={employeeSubmitting}>

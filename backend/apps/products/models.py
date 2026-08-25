@@ -165,12 +165,13 @@ class Product(models.Model):
     @property
     def profit_margin_amount(self) -> Decimal:
         """Returns gross margin per unit: Selling Price - Purchase Price."""
-        return self.selling_price - self.purchase_price
+        return Decimal(str(self.selling_price)) - Decimal(str(self.purchase_price))
 
     @property
     def profit_margin_percentage(self) -> float:
         """Returns markup/margin percentage."""
-        if self.selling_price > 0:
-            margin = (self.profit_margin_amount / self.selling_price) * Decimal("100.0")
+        sp = Decimal(str(self.selling_price))
+        if sp > Decimal("0.00"):
+            margin = (self.profit_margin_amount / sp) * Decimal("100.0")
             return round(float(margin), 1)
         return 0.0

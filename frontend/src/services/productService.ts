@@ -13,12 +13,24 @@ export const productService = {
     return response.data;
   },
 
-  async createProduct(data: Partial<Product>): Promise<Product> {
+  async createProduct(data: FormData | Partial<Product>): Promise<Product> {
+    if (data instanceof FormData) {
+      const response = await apiClient.post<Product>('/products/', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    }
     const response = await apiClient.post<Product>('/products/', data);
     return response.data;
   },
 
-  async updateProduct(id: number, data: Partial<Product>): Promise<Product> {
+  async updateProduct(id: number, data: FormData | Partial<Product>): Promise<Product> {
+    if (data instanceof FormData) {
+      const response = await apiClient.patch<Product>(`/products/${id}/`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    }
     const response = await apiClient.patch<Product>(`/products/${id}/`, data);
     return response.data;
   },

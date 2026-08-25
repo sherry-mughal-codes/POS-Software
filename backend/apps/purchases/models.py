@@ -134,6 +134,9 @@ class PurchaseItem(models.Model):
 
 class RefundMethod(models.TextChoices):
     PAYABLE_DEDUCTION = "PAYABLE_DEDUCTION", "Deduct from Supplier Payable"
+    CASH = "CASH", "Cash Refund"
+    BANK = "BANK", "Bank Transfer Refund"
+    CHEQUE = "CHEQUE", "Cheque Refund"
     CASH_REFUND = "CASH_REFUND", "Immediate Cash / Bank Refund"
 
 
@@ -164,6 +167,14 @@ class PurchaseReturn(models.Model):
         max_length=30,
         choices=RefundMethod.choices,
         default=RefundMethod.PAYABLE_DEDUCTION,
+    )
+    payment_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="purchase_returns",
+        help_text="Receiving Cash/Bank Asset Account if refund taken in cash or bank transfer",
     )
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(

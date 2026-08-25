@@ -17,5 +17,11 @@ export default defineConfig({
     watch: {
       usePolling: true, // Needed for hot reloading inside Docker on Windows/WSL
     },
+    proxy: {
+      '/media': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   },
 });

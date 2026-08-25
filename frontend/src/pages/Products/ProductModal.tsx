@@ -1,5 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Image as ImageIcon, AlertCircle, Package } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Sparkles,
+  Image as ImageIcon,
+  AlertCircle,
+  Package,
+  Upload,
+  X,
+  Link,
+  CheckCircle2,
+} from 'lucide-react';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -25,6 +34,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   onSaved,
 }) => {
   const { currencySymbol } = useSettings();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [sku, setSku] = useState('');
   const [name, setName] = useState('');
   const [barcode, setBarcode] = useState('');
@@ -35,7 +46,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [openingStock, setOpeningStock] = useState('0');
   const [minStockLevel, setMinStockLevel] = useState('10');
   const [doNotMaintainStock, setDoNotMaintainStock] = useState(false);
+
+  // Image Upload / URL states
+  const [imageMode, setImageMode] = useState<'UPLOAD' | 'URL'>('UPLOAD');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
 
@@ -45,6 +63,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setError(null);
+      setImageFile(null);
+
       if (productToEdit) {
         setSku(productToEdit.sku);
         setName(productToEdit.name);
@@ -56,7 +76,21 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setOpeningStock(productToEdit.current_stock ? productToEdit.current_stock.toString() : '0');
         setMinStockLevel(productToEdit.min_stock_level ? productToEdit.min_stock_level.toString() : '10');
         setDoNotMaintainStock(productToEdit.maintain_stock === false);
-        setImageUrl(productToEdit.image_url || '');
+
+        if (productToEdit.image) {
+          setImageMode('UPLOAD');
+          setImagePreview(productToEdit.image);
+          setImageUrl('');
+        } else if (productToEdit.image_url) {
+          setImageMode('URL');
+          setImagePreview(productToEdit.image_url);
+          setImageUrl(productToEdit.image_url);
+        } else {
+          setImageMode('UPLOAD');
+          setImagePreview(null);
+          setImageUrl('');
+        }
+
         setDescription(productToEdit.description || '');
         setIsActive(productToEdit.is_active);
       } else {
@@ -69,6 +103,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setOpeningStock('0');
         setMinStockLevel('10');
         setDoNotMaintainStock(false);
+        setImageMode('UPLOAD');
+        setImagePreview(null);
         setImageUrl('');
         setDescription('');
         setIsActive(true);
@@ -89,6 +125,32 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const marginAmount = sPrice - pPrice;
   const marginPercent = sPrice > 0 ? ((marginAmount / sPrice) * 100).toFixed(1) : '0.0';
 
+  const handleFileChange = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPG, PNG, WebP, GIF, SVG).');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image size exceeds maximum limit of 10MB.');
+      return;
+    }
+
+    setError(null);
+    setImageFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
+
+  const handleClearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setImageUrl('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sku || !name || !categoryId || !unitId) {
@@ -99,31 +161,65 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     setSaving(true);
     setError(null);
 
-    const payload: any = {
-      sku: sku.trim(),
-      name: name.trim(),
-      barcode: barcode.trim() || null,
-      category: parseInt(categoryId, 10),
-      unit: parseInt(unitId, 10),
-      purchase_price: pPrice,
-      selling_price: sPrice,
-      min_stock_level: doNotMaintainStock ? 0 : (parseFloat(minStockLevel) || 10),
-      maintain_stock: !doNotMaintainStock,
-      image_url: imageUrl.trim() || null,
-      description: description.trim() || null,
-      is_active: isActive,
-    };
-
-    if (!productToEdit && !doNotMaintainStock) {
-      payload.opening_stock = parseFloat(openingStock) || 0;
-    }
-
     try {
-      if (productToEdit) {
-        await productService.updateProduct(productToEdit.id, payload);
+      if (imageFile) {
+        // Send multipart FormData when an image file is uploaded from computer
+        const formData = new FormData();
+        formData.append('sku', sku.trim());
+        formData.append('name', name.trim());
+        if (barcode.trim()) formData.append('barcode', barcode.trim());
+        formData.append('category', categoryId);
+        formData.append('unit', unitId);
+        formData.append('purchase_price', pPrice.toString());
+        formData.append('selling_price', sPrice.toString());
+        formData.append('min_stock_level', (doNotMaintainStock ? 0 : (parseFloat(minStockLevel) || 10)).toString());
+        formData.append('maintain_stock', (!doNotMaintainStock).toString());
+        formData.append('image', imageFile);
+        if (imageUrl.trim()) formData.append('image_url', imageUrl.trim());
+        if (description.trim()) formData.append('description', description.trim());
+        formData.append('is_active', isActive.toString());
+
+        if (!productToEdit && !doNotMaintainStock) {
+          formData.append('opening_stock', (parseFloat(openingStock) || 0).toString());
+        }
+
+        if (productToEdit) {
+          await productService.updateProduct(productToEdit.id, formData);
+        } else {
+          await productService.createProduct(formData);
+        }
       } else {
-        await productService.createProduct(payload);
+        // Send JSON payload
+        const payload: any = {
+          sku: sku.trim(),
+          name: name.trim(),
+          barcode: barcode.trim() || null,
+          category: parseInt(categoryId, 10),
+          unit: parseInt(unitId, 10),
+          purchase_price: pPrice,
+          selling_price: sPrice,
+          min_stock_level: doNotMaintainStock ? 0 : (parseFloat(minStockLevel) || 10),
+          maintain_stock: !doNotMaintainStock,
+          image_url: imageMode === 'URL' && imageUrl.trim() ? imageUrl.trim() : null,
+          description: description.trim() || null,
+          is_active: isActive,
+        };
+
+        if (!imagePreview && productToEdit?.image) {
+          payload.image = null;
+        }
+
+        if (!productToEdit && !doNotMaintainStock) {
+          payload.opening_stock = parseFloat(openingStock) || 0;
+        }
+
+        if (productToEdit) {
+          await productService.updateProduct(productToEdit.id, payload);
+        } else {
+          await productService.createProduct(payload);
+        }
       }
+
       onSaved();
       onClose();
     } catch (err: any) {
@@ -201,18 +297,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 padding: '0.625rem',
                 color: 'var(--text-main)',
                 outline: 'none',
+                fontSize: '0.8125rem',
               }}
             >
+              <option value="">-- Select Category --</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  [{c.code}] {c.parent_name ? `${c.parent_name} > ` : ''}{c.name}
+                  {c.name}
                 </option>
               ))}
             </select>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-            <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)' }}>Stock Unit *</label>
+            <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)' }}>Unit of Measure *</label>
             <select
               value={unitId}
               onChange={(e) => setUnitId(e.target.value)}
@@ -224,8 +322,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 padding: '0.625rem',
                 color: 'var(--text-main)',
                 outline: 'none',
+                fontSize: '0.8125rem',
               }}
             >
+              <option value="">-- Select Unit --</option>
               {units.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name} ({u.short_code})
@@ -235,57 +335,60 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </div>
         </div>
 
-        {/* Row 4: Pricing & Margin Calculator */}
+        {/* Row 4: Pricing & Margin Panel */}
         <div style={{
           backgroundColor: 'var(--bg-app)',
           padding: '1rem',
           borderRadius: '0.625rem',
           border: '1px solid var(--border-subtle)',
         }}>
-          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-            Default Reference Pricing & Margin ({currencySymbol || 'Rs.'})
+          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Sparkles size={15} color="var(--primary-400)" />
+            <span>Pricing & Profit Margin</span>
           </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <Input
-              label={`Initial Purchase Cost (${currencySymbol || 'Rs.'})`}
+              label={`Purchase Rate (${currencySymbol || 'Rs.'})`}
               type="number"
-              step="0.01"
+              step="any"
               min="0"
               value={purchasePrice}
               onChange={(e) => setPurchasePrice(e.target.value)}
-              helperText="Auto-updates when purchase orders are submitted."
+              helperText="Cost basis for COGS valuation."
             />
             <Input
-              label={`Selling Price (${currencySymbol || 'Rs.'}) *`}
+              label={`Retail Selling Price (${currencySymbol || 'Rs.'}) *`}
               type="number"
-              step="0.01"
+              step="any"
               min="0"
               value={sellingPrice}
               onChange={(e) => setSellingPrice(e.target.value)}
               required
-              helperText="Retail sales price at POS checkout."
+              helperText="Default checkout unit price at POS."
             />
           </div>
 
-          {/* Live Margin Indicator */}
           <div style={{
             marginTop: '0.75rem',
-            padding: '0.625rem 0.875rem',
-            backgroundColor: marginAmount >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)',
-            border: `1px solid ${marginAmount >= 0 ? 'var(--success-border)' : 'var(--danger-border)'}`,
+            padding: '0.5rem 0.75rem',
+            backgroundColor: 'var(--bg-elevated)',
             borderRadius: '0.375rem',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             fontSize: '0.8125rem',
+            border: '1px solid var(--border-subtle)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: marginAmount >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-              <Sparkles size={14} />
-              <span>Gross Profit Margin: <strong>{currencySymbol || 'Rs.'} {marginAmount.toFixed(2)}</strong></span>
+            <span style={{ color: 'var(--text-muted)' }}>Estimated Margin:</span>
+            <div style={{ display: 'flex', gap: '0.75rem', fontWeight: 700 }}>
+              <span style={{ color: marginAmount >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                {marginAmount >= 0 ? '+' : ''}{currencySymbol || 'Rs.'} {marginAmount.toFixed(2)}
+              </span>
+              <span style={{ color: parseFloat(marginPercent) >= 0 ? 'var(--primary-400)' : 'var(--danger)' }}>
+                ({marginPercent}%)
+              </span>
             </div>
-            <strong style={{ color: marginAmount >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-              {marginPercent}% Markup
-            </strong>
           </div>
         </div>
 
@@ -361,29 +464,204 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           )}
         </div>
 
-        {/* Row 5: Image URL & Preview */}
-        <div>
-          <Input
-            label="Product Image URL"
-            placeholder="https://images.unsplash.com/..."
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            icon={<ImageIcon size={14} />}
+        {/* Row 6: Product Image (Upload from Computer / Gallery or HTTPS URL) */}
+        <div style={{
+          backgroundColor: 'var(--bg-app)',
+          padding: '1rem',
+          borderRadius: '0.625rem',
+          border: '1px solid var(--border-subtle)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <ImageIcon size={15} color="var(--primary-400)" />
+              <span>Product Image</span>
+            </label>
+
+            {/* Mode Toggle */}
+            <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'var(--bg-elevated)', padding: '0.2rem', borderRadius: '0.375rem', border: '1px solid var(--border-subtle)' }}>
+              <button
+                type="button"
+                onClick={() => setImageMode('UPLOAD')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: '0.25rem 0.6rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: imageMode === 'UPLOAD' ? 'var(--primary-500)' : 'transparent',
+                  color: imageMode === 'UPLOAD' ? '#ffffff' : 'var(--text-muted)',
+                }}
+              >
+                <Upload size={12} />
+                <span>Upload from Computer</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageMode('URL')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: '0.25rem 0.6rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: imageMode === 'URL' ? 'var(--primary-500)' : 'transparent',
+                  color: imageMode === 'URL' ? '#ffffff' : 'var(--text-muted)',
+                }}
+              >
+                <Link size={12} />
+                <span>Web URL</span>
+              </button>
+            </div>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png, image/jpeg, image/jpg, image/webp, image/gif, image/svg+xml"
+            style={{ display: 'none' }}
+            onChange={(e) => handleFileChange(e.target.files?.[0])}
           />
-          {imageUrl && (
-            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img
-                src={imageUrl}
-                alt="Preview"
-                style={{ width: '48px', height: '48px', borderRadius: '0.375rem', objectFit: 'cover', border: '1px solid var(--border-medium)' }}
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+
+          {imageMode === 'UPLOAD' ? (
+            <div>
+              {imagePreview ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem',
+                  backgroundColor: 'var(--bg-elevated)',
+                  borderRadius: '0.5rem',
+                  border: '1px solid var(--border-medium)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                    <img
+                      src={imagePreview}
+                      alt="Product Preview"
+                      style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '0.375rem',
+                        objectFit: 'cover',
+                        backgroundColor: 'var(--bg-app)',
+                        border: '1px solid var(--border-subtle)',
+                        flexShrink: 0,
+                      }}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {imageFile ? imageFile.name : (productToEdit?.name || 'Selected Image')}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--success)', marginTop: '0.125rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <CheckCircle2 size={13} />
+                        <span>Ready to display on POS & Catalog</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Change
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', color: 'var(--danger)' }}
+                      onClick={handleClearImage}
+                      icon={<X size={13} />}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    handleFileChange(e.dataTransfer.files?.[0]);
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    border: isDragging ? '2px dashed var(--primary-400)' : '2px dashed var(--border-medium)',
+                    backgroundColor: isDragging ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-elevated)',
+                    borderRadius: '0.5rem',
+                    padding: '1.5rem 1rem',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{
+                    width: '3rem',
+                    height: '3rem',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                    color: 'var(--primary-400)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '0.5rem',
+                  }}>
+                    <Upload size={20} />
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    Click to browse or drag & drop picture from computer
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    PNG, JPG, WebP, GIF, or SVG (Up to 10MB)
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <Input
+                label="Image Web URL (HTTPS)"
+                placeholder="https://images.unsplash.com/photo-..."
+                value={imageUrl}
+                onChange={(e) => {
+                  setImageUrl(e.target.value);
+                  setImagePreview(e.target.value.trim() || null);
+                }}
+                icon={<Link size={14} />}
+                helperText="Paste any direct online image URL."
               />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Image Preview</span>
+              {imageUrl && (
+                <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <img
+                    src={imageUrl}
+                    alt="Preview"
+                    style={{ width: '48px', height: '48px', borderRadius: '0.375rem', objectFit: 'cover', border: '1px solid var(--border-medium)' }}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Online Web Preview</span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Row 6: Description */}
+        {/* Row 7: Description */}
         <Input
           label="Product Description"
           placeholder="Detailed specs or notes..."

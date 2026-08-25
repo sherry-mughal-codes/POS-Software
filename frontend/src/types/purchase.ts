@@ -72,6 +72,8 @@ export interface PurchaseReturnItem {
   subtotal: number;
 }
 
+export type PurchaseReturnRefundMethod = 'PAYABLE_DEDUCTION' | 'CASH' | 'BANK' | 'CHEQUE' | 'CASH_REFUND';
+
 export interface PurchaseReturn {
   id: number;
   return_number: string;
@@ -82,7 +84,10 @@ export interface PurchaseReturn {
   supplier_company?: string;
   date: string;
   total_amount: number;
-  refund_method: 'PAYABLE_DEDUCTION' | 'CASH_REFUND';
+  refund_method: PurchaseReturnRefundMethod;
+  payment_account?: number | null;
+  payment_account_name?: string | null;
+  payment_account_code?: string | null;
   notes?: string | null;
   created_by_username?: string | null;
   items: PurchaseReturnItem[];

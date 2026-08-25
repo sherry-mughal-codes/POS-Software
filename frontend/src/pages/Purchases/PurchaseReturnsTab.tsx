@@ -5,8 +5,10 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
-import { Purchase, PurchaseItem, PurchaseReturn } from '../../types/purchase';
+import { Purchase, PurchaseItem, PurchaseReturn, PurchaseReturnRefundMethod } from '../../types/purchase';
+import { Account } from '../../types/accounting';
 import { purchaseService } from '../../services/purchaseService';
+import { accountingService } from '../../services/accountingService';
 
 interface PurchaseReturnsTabProps {
   returns: PurchaseReturn[];
@@ -27,20 +29,52 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
   onCloseReturnModal,
 }) => {
   const [returnQuantities, setReturnQuantities] = useState<Record<number, number>>({});
-  const [refundMethod, setRefundMethod] = useState<'PAYABLE_DEDUCTION' | 'CASH_REFUND'>('CASH_REFUND');
+  const [refundMethod, setRefundMethod] = useState<PurchaseReturnRefundMethod>('CASH');
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [returnNotes, setReturnNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    accountingService.getAccounts({ is_active: true, leaf_only: true })
+      .then((accs) => setAccounts(accs || []))
+      .catch(() => {});
+  }, []);
+
+  const cashAccounts = accounts.filter(
+    (a) => a.account_type === 'ASSET' && (a.code.startsWith('101') || a.parent_code === '1010')
+  );
+  const bankAccounts = accounts.filter(
+    (a) => a.account_type === 'ASSET' && (a.code.startsWith('102') || a.parent_code === '1020')
+  );
+  const liquidAccounts = [...cashAccounts, ...bankAccounts];
+
+  useEffect(() => {
     if (returnTargetPurchase) {
       if (Number(returnTargetPurchase.paid_amount) > 0) {
-        setRefundMethod('CASH_REFUND');
+        setRefundMethod('CASH');
+        const defaultCash = cashAccounts[0] || liquidAccounts[0];
+        if (defaultCash) setSelectedAccountId(defaultCash.id);
       } else {
         setRefundMethod('PAYABLE_DEDUCTION');
+        setSelectedAccountId(null);
       }
     }
   }, [returnTargetPurchase]);
+
+  const handleRefundMethodChange = (method: PurchaseReturnRefundMethod) => {
+    setRefundMethod(method);
+    if (method === 'PAYABLE_DEDUCTION') {
+      setSelectedAccountId(null);
+    } else if (method === 'CASH') {
+      const def = cashAccounts[0] || liquidAccounts[0];
+      setSelectedAccountId(def ? def.id : null);
+    } else if (method === 'BANK' || method === 'CHEQUE') {
+      const def = bankAccounts[0] || liquidAccounts[0];
+      setSelectedAccountId(def ? def.id : null);
+    }
+  };
 
   const handleQtyChange = (itemId: number, val: number) => {
     setReturnQuantities({
@@ -72,6 +106,11 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
       return;
     }
 
+    if (refundMethod !== 'PAYABLE_DEDUCTION' && !selectedAccountId && liquidAccounts.length > 0) {
+      setError('Please select the receiving Cash or Bank account for this refund.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -79,6 +118,7 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
       await purchaseService.createPurchaseReturn({
         purchase_id: returnTargetPurchase.id,
         refund_method: refundMethod,
+        payment_account: selectedAccountId || undefined,
         notes: returnNotes,
         items: itemsToSubmit,
       });
@@ -147,9 +187,36 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
                       </div>
                     </td>
                     <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
-                      <Badge variant="phase">
-                        {r.refund_method === 'PAYABLE_DEDUCTION' ? 'Payable Reduced' : 'Cash Refund'}
-                      </Badge>
+                      {r.refund_method === 'PAYABLE_DEDUCTION' ? (
+                        <Badge variant="warning">Payable Deduction (AP)</Badge>
+                      ) : r.refund_method === 'BANK' ? (
+                        <div>
+                          <Badge variant="info">Bank Transfer</Badge>
+                          {r.payment_account_name && (
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.125rem' }}>
+                              {r.payment_account_name}
+                            </div>
+                          )}
+                        </div>
+                      ) : r.refund_method === 'CHEQUE' ? (
+                        <div>
+                          <Badge variant="purple">Cheque Refund</Badge>
+                          {r.payment_account_name && (
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.125rem' }}>
+                              {r.payment_account_name}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <Badge variant="success">Cash Refund</Badge>
+                          {r.payment_account_name && (
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.125rem' }}>
+                              {r.payment_account_name}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--success)' }}>
                       Rs. {formatMoney(r.total_amount)}
@@ -188,15 +255,17 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-              Specify the quantities you wish to return to the supplier. The system will decrease inventory stock and deduct the total from your supplier payable balance.
-            </p>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+              Specify the quantities you wish to return to <strong>{returnTargetPurchase.supplier_name}</strong>.
+              Inventory stock will be deducted and the appropriate accounts credited.
+            </div>
 
-            <div style={{ overflowX: 'auto' }}>
+            {/* Item Table */}
+            <div style={{ overflowX: 'auto', border: '1px solid var(--border-medium)', borderRadius: '0.5rem' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
-                    <th style={{ padding: '0.5rem' }}>Product</th>
+                  <tr style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-medium)' }}>
+                    <th style={{ padding: '0.5rem' }}>Item</th>
                     <th style={{ padding: '0.5rem', textAlign: 'right' }}>Purchased</th>
                     <th style={{ padding: '0.5rem', textAlign: 'right' }}>Already Returned</th>
                     <th style={{ padding: '0.5rem', textAlign: 'right' }}>Max Returnable</th>
@@ -241,33 +310,65 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
               </table>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: refundMethod === 'PAYABLE_DEDUCTION' ? '1fr 1fr' : '1fr 1fr 1fr', gap: '0.75rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
-                  Refund / Credit Method
+                  Refund / Settlement Method
                 </label>
                 <select
                   value={refundMethod}
-                  onChange={(e) => setRefundMethod(e.target.value as any)}
+                  onChange={(e) => handleRefundMethodChange(e.target.value as PurchaseReturnRefundMethod)}
                   style={{
                     width: '100%',
                     backgroundColor: 'var(--bg-input)',
                     border: '1px solid var(--border-medium)',
                     borderRadius: '0.5rem',
-                    padding: '0.625rem',
+                    padding: '0.55rem',
                     color: 'var(--text-main)',
                     outline: 'none',
                     fontSize: '0.8125rem',
                   }}
                 >
-                  <option value="PAYABLE_DEDUCTION">Deduct from Supplier Payable (Accounts Payable)</option>
-                  <option value="CASH_REFUND">Immediate Cash / Bank Refund</option>
+                  <option value="PAYABLE_DEDUCTION">Deduct from Supplier Payable (AP - 2010)</option>
+                  <option value="CASH">Cash Refund (Cash in Hand)</option>
+                  <option value="BANK">Bank Transfer Refund (Online / Wire)</option>
+                  <option value="CHEQUE">Cheque Refund</option>
                 </select>
               </div>
 
+              {refundMethod !== 'PAYABLE_DEDUCTION' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                    Receiving Cash/Bank Account (Debit) *
+                  </label>
+                  <select
+                    value={selectedAccountId || ''}
+                    onChange={(e) => setSelectedAccountId(Number(e.target.value) || null)}
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'var(--bg-input)',
+                      border: '1px solid var(--border-medium)',
+                      borderRadius: '0.5rem',
+                      padding: '0.55rem',
+                      color: 'var(--text-main)',
+                      outline: 'none',
+                      fontSize: '0.8125rem',
+                    }}
+                    required
+                  >
+                    <option value="">-- Select Receiving Account --</option>
+                    {liquidAccounts.map((acc) => (
+                      <option key={acc.id} value={acc.id}>
+                        [{acc.code}] {acc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <Input
                 label="Return Reason / Remarks"
-                placeholder="e.g. Expired batch / Damaged packaging"
+                placeholder="e.g. Expired batch / Damaged goods"
                 value={returnNotes}
                 onChange={(e) => setReturnNotes(e.target.value)}
               />

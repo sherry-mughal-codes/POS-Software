@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { InventorySummaryItem } from '../../../types/inventory';
 import { Category } from '../../../types/product';
+import { getProductImageUrl } from '../../../utils/imageUrl';
 
 interface POSProductGridProps {
   products: InventorySummaryItem[];
@@ -184,22 +185,28 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                     overflow: 'hidden',
                   }}
                 >
-                  {p.image_url || p.image ? (
-                    <img
-                      src={p.image_url || p.image}
-                      alt={productName}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                      }}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <Package size={22} style={{ color: isStockFree ? 'var(--primary-400)' : 'var(--text-subtle)' }} />
-                  )}
+                  {(() => {
+                    const resolvedUrl = getProductImageUrl(p.image || p.image_url);
+                    if (resolvedUrl) {
+                      return (
+                        <img
+                          src={resolvedUrl}
+                          alt={productName}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      );
+                    }
+                    return (
+                      <Package size={22} style={{ color: isStockFree ? 'var(--primary-400)' : 'var(--text-subtle)' }} />
+                    );
+                  })()}
 
                   {/* Stock Pill Badge */}
                   <div style={{ position: 'absolute', top: '0.2rem', right: '0.2rem', zIndex: 1 }}>

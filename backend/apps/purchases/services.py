@@ -340,6 +340,7 @@ class PurchaseService:
         purchase: Purchase,
         items_to_return: List[Dict[str, Any]],
         refund_method: str = RefundMethod.PAYABLE_DEDUCTION,
+        payment_account=None,
         notes: str = "",
         created_by=None,
     ) -> PurchaseReturn:
@@ -374,6 +375,20 @@ class PurchaseService:
         if not validated_items:
             raise ValidationError("No valid items to return.")
 
+        # Resolve Accounts
+        inventory_acc = Account.objects.filter(code="1040").first() or Account.objects.get(code="1040")
+        payable_acc = Account.objects.filter(code="2010").first() or Account.objects.get(code="2010")
+
+        if isinstance(payment_account, int):
+            payment_account = Account.objects.get(pk=payment_account)
+
+        if refund_method in [RefundMethod.CASH, RefundMethod.CASH_REFUND]:
+            receiving_acc = payment_account or purchase.payment_account or Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
+        elif refund_method in [RefundMethod.BANK, RefundMethod.CHEQUE]:
+            receiving_acc = payment_account or Account.objects.filter(code="1021").first() or Account.objects.filter(parent__code="1020").first() or Account.objects.filter(code="1020").first()
+        else:
+            receiving_acc = payable_acc
+
         # Create Return Document
         p_return = PurchaseReturn.objects.create(
             return_number=return_number,
@@ -382,13 +397,10 @@ class PurchaseService:
             date=timezone.now().date(),
             total_amount=total_return_amount,
             refund_method=refund_method,
+            payment_account=receiving_acc if refund_method != RefundMethod.PAYABLE_DEDUCTION else None,
             notes=notes,
             created_by=created_by,
         )
-
-        inventory_acc = Account.objects.filter(code="1040").first() or Account.objects.get(code="1040")
-        payable_acc = Account.objects.filter(code="2010").first() or Account.objects.get(code="2010")
-        cash_acc = purchase.payment_account or Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
 
         # Process each returned item
         for p_item, qty, item_total in validated_items:
@@ -416,18 +428,15 @@ class PurchaseService:
                 notes=f"Return from {purchase.purchase_number} to {purchase.supplier.name}",
             )
 
-        # Determine whether to refund Cash/Bank or reduce Accounts Payable:
-        is_cash_refund = (refund_method == RefundMethod.CASH_REFUND)
-
         # Generate Double-Entry Accounting:
-        # Debit: Cash in Hand / Bank (if cash refund) OR Accounts Payable (if payable deduction)
+        # Debit: Cash / Bank (if cash/bank refund) OR Accounts Payable (if payable deduction)
         # Credit: Merchandise Inventory Asset (1040)
         lines = [
             {
-                "account": cash_acc if is_cash_refund else payable_acc,
+                "account": receiving_acc,
                 "debit": total_return_amount,
                 "credit": Decimal("0.00"),
-                "description": f"Purchase Return to {purchase.supplier.name} ({p_return.return_number})",
+                "description": f"Purchase Return from {purchase.supplier.name} via {receiving_acc.name} ({p_return.return_number})",
             },
             {
                 "account": inventory_acc,
@@ -442,7 +451,7 @@ class PurchaseService:
             reference_type=ReferenceType.PURCHASE_RETURN,
             reference_id=p_return.return_number,
             lines=lines,
-            narration=f"Purchase Return: {p_return.return_number} (Ref: {purchase.purchase_number})",
+            narration=f"Purchase Return: {p_return.return_number} (Ref: {purchase.purchase_number}) - Debit {receiving_acc.name} / Credit Inventory",
             created_by=created_by,
         )
 

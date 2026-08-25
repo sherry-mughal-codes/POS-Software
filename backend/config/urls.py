@@ -5,6 +5,8 @@ All API endpoints are versioned under /api/v1/.
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -22,3 +24,7 @@ urlpatterns = [
         path("employees/", include("apps.employees.urls")),
     ])),
 ]
+
+if settings.MEDIA_URL and settings.MEDIA_ROOT:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static("/media/", document_root=settings.MEDIA_ROOT)
