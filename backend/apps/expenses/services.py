@@ -177,8 +177,28 @@ class ExpenseService:
         submitted_qs = qs.filter(status=ExpenseStatus.SUBMITTED)
 
         total_expenses = sum(e.amount for e in submitted_qs) or Decimal("0.00")
-        cash_expenses = sum(e.amount for e in submitted_qs if "cash" in e.payment_account.name.lower() or e.payment_account.code == "1010") or Decimal("0.00")
-        bank_expenses = sum(e.amount for e in submitted_qs if "bank" in e.payment_account.name.lower() or e.payment_account.code in ["1020", "1025"]) or Decimal("0.00")
+        cash_expenses = sum(
+            e.amount for e in submitted_qs
+            if e.payment_account and (
+                (e.payment_account.code.startswith("101") or (e.payment_account.parent and e.payment_account.parent.code == "1010"))
+                and not e.payment_account.code.startswith("102")
+                and "jazz" not in e.payment_account.name.lower()
+                and "easy" not in e.payment_account.name.lower()
+            )
+        ) or Decimal("0.00")
+
+        bank_expenses = sum(
+            e.amount for e in submitted_qs
+            if e.payment_account and (
+                e.payment_account.code.startswith("102")
+                or (e.payment_account.parent and e.payment_account.parent.code == "1020")
+                or "bank" in e.payment_account.name.lower()
+                or "jazz" in e.payment_account.name.lower()
+                or "easy" in e.payment_account.name.lower()
+                or "card" in e.payment_account.name.lower()
+                or "wallet" in e.payment_account.name.lower()
+            )
+        ) or Decimal("0.00")
 
         # Category/Account breakdown
         account_breakdown = {}

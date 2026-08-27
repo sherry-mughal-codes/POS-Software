@@ -18,9 +18,13 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { userService } from '../../services/userService';
 import { Role, Permission, User } from '../../types/auth';
 import { useSettings } from '../../context/SettingsContext';
+import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../context/ToastContext';
 
 export const RolesPage: React.FC = () => {
   const { companyName } = useSettings();
+  const { refreshUser } = useAuth();
+  const { showError, showSuccess } = useToast();
   const [activeSubTab, setActiveSubTab] = useState<'roles' | 'user_scopes'>('roles');
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -129,9 +133,13 @@ export const RolesPage: React.FC = () => {
       setSaveSuccess(true);
       const updatedRoles = await userService.getRoles();
       setRoles(updatedRoles);
+      await refreshUser();
+      window.dispatchEvent(new Event('apexpos_permissions_updated'));
+      showSuccess('Role permissions saved and security permissions updated in real time!', 'Permissions Updated');
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
       setError(err?.message || 'Failed to save role permissions.');
+      showError(err?.message || 'Failed to save role permissions.', 'Role Error');
     } finally {
       setSaving(false);
     }
@@ -157,8 +165,10 @@ export const RolesPage: React.FC = () => {
       setIsCreateRoleModalOpen(false);
       setNewRoleName('');
       setNewRolePermIds([]);
+      showSuccess(`Role "${newRoleName.trim()}" created successfully!`, 'Role Created');
     } catch (err: any) {
       setCreateRoleError(err?.message || 'Failed to create role.');
+      showError(err?.message || 'Failed to create role.', 'Creation Error');
     } finally {
       setCreatingRole(false);
     }
@@ -186,9 +196,12 @@ export const RolesPage: React.FC = () => {
       setUserScopeSuccess(true);
       const updatedUsers = await userService.getUsers();
       setUsers(updatedUsers);
+      await refreshUser();
+      showSuccess('User access scope and role assignments updated in real time!', 'User Updated');
       setTimeout(() => setUserScopeSuccess(false), 3000);
     } catch (err: any) {
       setError(err?.message || 'Failed to update user company scope.');
+      showError(err?.message || 'Failed to update user company scope.', 'Update Error');
     } finally {
       setSavingUserScope(false);
     }

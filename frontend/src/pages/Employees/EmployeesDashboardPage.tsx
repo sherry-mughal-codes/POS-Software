@@ -36,6 +36,7 @@ import { Account } from '../../types/accounting';
 import { employeeService } from '../../services/employeeService';
 import { accountingService } from '../../services/accountingService';
 import { useSettings } from '../../context/SettingsContext';
+import { useToast } from '../../context/ToastContext';
 import { printPayrollSlip } from '../../utils/printPayrollSlip';
 import { formatErrorMessage } from '../../utils/formatError';
 
@@ -60,6 +61,7 @@ const MONTHS = [
 ];
 
 export const EmployeesDashboardPage: React.FC = () => {
+  const { showError, showSuccess } = useToast();
   const { currencySymbol, companyName, companyPhone } = useSettings();
   const [activeTab, setActiveTab] = useState<'employees' | 'attendance' | 'payroll' | 'reports'>('employees');
 
@@ -307,9 +309,10 @@ export const EmployeesDashboardPage: React.FC = () => {
   const handleToggleEmployeeStatus = async (emp: Employee) => {
     try {
       await employeeService.toggleEmployeeStatus(emp.id);
+      showSuccess(`Employee ${emp.full_name} status updated.`, 'Employee Status');
       fetchEmployees();
     } catch (err: any) {
-      alert(err?.response?.data?.detail || err?.message || 'Failed to toggle status.');
+      showError(err?.response?.data?.detail || err?.message || 'Failed to toggle status.', 'Employee Error');
     }
   };
 
@@ -405,9 +408,10 @@ export const EmployeesDashboardPage: React.FC = () => {
   const handleSubmitSlip = async (id: number) => {
     try {
       await employeeService.submitSalarySlip(id);
+      showSuccess('Salary slip posted and finalized successfully!', 'Slip Finalized');
       fetchSalarySlips();
     } catch (err: any) {
-      alert(err?.response?.data?.detail || err?.message || 'Failed to submit salary slip.');
+      showError(err?.response?.data?.detail || err?.message || 'Failed to submit salary slip.', 'Salary Slip Error');
     }
   };
 

@@ -93,8 +93,8 @@ class PurchaseViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         purchase = self.get_object()
-        if purchase.status != "DRAFT":
-            return Response({"detail": "Only DRAFT purchase orders can be edited."}, status=status.HTTP_400_BAD_REQUEST)
+        if purchase.status not in ["DRAFT", "CANCELLED"]:
+            return Response({"detail": "Only DRAFT or CANCELLED purchase orders can be edited."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = PurchaseCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

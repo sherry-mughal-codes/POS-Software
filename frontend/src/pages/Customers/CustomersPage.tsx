@@ -43,6 +43,7 @@ import {
 import { Account } from '../../types/accounting';
 import { contactService } from '../../services/contactService';
 import { accountingService } from '../../services/accountingService';
+import { useToast } from '../../context/ToastContext';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -50,6 +51,7 @@ const formatMoney = (val: number | string | undefined | null): string => {
 };
 
 export const CustomersPage: React.FC = () => {
+  const { showError, showSuccess } = useToast();
   const [activeTab, setActiveTab] = useState<'customers' | 'payments' | 'receivables'>('customers');
 
   // Customer List State
@@ -192,9 +194,10 @@ export const CustomersPage: React.FC = () => {
     if (cust.is_walkin) return;
     try {
       await contactService.toggleCustomerStatus(cust.id);
+      showSuccess(`Customer ${cust.name} status updated.`, 'Customer Status');
       fetchCustomers();
     } catch (err: any) {
-      alert(err?.message || 'Failed to update customer status.');
+      showError(err?.message || 'Failed to update customer status.', 'Customer Error');
     }
   };
 

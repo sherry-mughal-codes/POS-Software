@@ -28,6 +28,7 @@ import {
   DaySessionsReport,
 } from '../../types/daySession';
 import { daySessionService } from '../../services/daySessionService';
+import { useToast } from '../../context/ToastContext';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -35,6 +36,7 @@ const formatMoney = (val: number | string | undefined | null): string => {
 };
 
 export const DaySessionsPage: React.FC = () => {
+  const { showError, showSuccess } = useToast();
   const [activeTab, setActiveTab] = useState<'control' | 'history' | 'report'>('control');
 
   // Current session & live X-report state
@@ -157,6 +159,7 @@ export const DaySessionsPage: React.FC = () => {
         opening_notes: openingNotesInput,
       });
       setIsOpenDayModalOpen(false);
+      showSuccess('POS Business Day opened successfully!', 'Day Opened');
       await fetchCurrentSession();
       if (activeTab === 'history') fetchSessionsList();
     } catch (err: any) {
@@ -197,6 +200,7 @@ export const DaySessionsPage: React.FC = () => {
         closing_notes: closingNotesInput,
       });
       setIsCloseDayModalOpen(false);
+      showSuccess('POS Business Day closed and Z-Report generated successfully!', 'Day Closed');
       setViewingZReport(res.z_report);
       await fetchCurrentSession();
       if (activeTab === 'history') fetchSessionsList();
@@ -219,7 +223,7 @@ export const DaySessionsPage: React.FC = () => {
       const zData = await daySessionService.getZReport(session.id);
       setViewingZReport(zData);
     } catch (err: any) {
-      alert(err?.response?.data?.detail || err?.message || 'Failed to load Z-Report.');
+      showError(err?.response?.data?.detail || err?.message || 'Failed to load Z-Report.', 'Z-Report Error');
     } finally {
       setReportLoading(false);
     }

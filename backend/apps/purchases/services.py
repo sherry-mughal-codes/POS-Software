@@ -159,10 +159,10 @@ class PurchaseService:
         created_by=None,
     ) -> Purchase:
         """
-        Updates an existing DRAFT purchase order and optionally submits it.
+        Updates an existing DRAFT or CANCELLED purchase order and optionally submits it.
         """
-        if purchase.status != PurchaseStatus.DRAFT:
-            raise ValidationError("Only DRAFT purchase orders can be edited.")
+        if purchase.status not in [PurchaseStatus.DRAFT, PurchaseStatus.CANCELLED]:
+            raise ValidationError("Only DRAFT or CANCELLED purchase orders can be edited.")
 
         if not items_data:
             raise ValidationError("A purchase order must contain at least one product item.")
@@ -179,13 +179,18 @@ class PurchaseService:
                 raise ValidationError("Product quantity must be greater than zero.")
             if rate < 0:
                 raise ValidationError("Purchase rate cannot be negative.")
-            subtotal += (qty * rate)
+            subtotal += qty * rate
 
-        grand_total = subtotal - Decimal(str(discount_amount)) + Decimal(str(tax_amount))
+        discount_amount = Decimal(str(discount_amount))
+        tax_amount = Decimal(str(tax_amount))
         paid = Decimal(str(paid_amount))
 
-        if paid > grand_total:
-            raise ValidationError("Paid amount cannot exceed grand total.")
+        grand_total = subtotal - discount_amount + tax_amount
+        if grand_total < Decimal("0.00"):
+            grand_total = Decimal("0.00")
+
+        if purchase.status == PurchaseStatus.CANCELLED:
+            purchase.status = PurchaseStatus.DRAFT
 
         purchase.supplier = supplier
         purchase.date = purchase_date
@@ -240,8 +245,6 @@ class PurchaseService:
         """
         if purchase.status == PurchaseStatus.SUBMITTED:
             raise ValidationError("This purchase has already been submitted.")
-        if purchase.status == PurchaseStatus.CANCELLED:
-            raise ValidationError("Cannot submit a cancelled purchase order.")
 
         # 1. Create Stock Movements & Update Latest Product Catalog Purchase Price
         for item in purchase.items.all():

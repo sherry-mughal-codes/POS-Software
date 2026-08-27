@@ -96,17 +96,18 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
       const [invList, catList, custList, sessionRes] = await Promise.all([
         inventoryService.getSummary(),
         productService.getCategories(),
-        contactService.getCustomers(),
+        contactService.getCustomers({ is_active: true }),
         daySessionService.getCurrentSession().catch(() => ({ active: false })),
       ]);
+      const activeCustomers = (custList || []).filter((c) => c.is_active || c.is_walkin);
       setProducts(invList || []);
       setCategories(catList || []);
-      setCustomers(custList || []);
+      setCustomers(activeCustomers);
       setActiveSession((sessionRes as any)?.active ? (sessionRes as any).session : null);
 
       // Default to walk-in customer
-      const walkin = custList?.find((c) => c.is_walkin) || custList?.[0];
-      if (walkin && (selectedCustomerId === 0 || !custList.some((c) => c.id === selectedCustomerId))) {
+      const walkin = activeCustomers.find((c) => c.is_walkin) || activeCustomers[0];
+      if (walkin && (selectedCustomerId === 0 || !activeCustomers.some((c) => c.id === selectedCustomerId))) {
         setSelectedCustomerId(walkin.id);
       }
     } catch {
@@ -315,12 +316,13 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
 
   const handleCustomerCreated = async (newCustomer?: Customer) => {
     try {
-      const custList = await contactService.getCustomers();
-      setCustomers(custList || []);
+      const custList = await contactService.getCustomers({ is_active: true });
+      const activeCustomers = (custList || []).filter((c) => c.is_active || c.is_walkin);
+      setCustomers(activeCustomers);
       if (newCustomer) {
         setSelectedCustomerId(newCustomer.id);
-      } else if (custList && custList.length > 0) {
-        const latest = custList[custList.length - 1];
+      } else if (activeCustomers && activeCustomers.length > 0) {
+        const latest = activeCustomers[activeCustomers.length - 1];
         if (latest) setSelectedCustomerId(latest.id);
       }
     } catch {

@@ -44,9 +44,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const refreshUser = useCallback(async (): Promise<void> => {
+    const savedToken = localStorage.getItem('apexpos_token');
+    if (!savedToken) return;
+    try {
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  }, []);
+
   useEffect(() => {
     initializeAuth();
-  }, [initializeAuth]);
+    const handlePermissionsUpdated = () => {
+      refreshUser();
+    };
+    window.addEventListener('apexpos_permissions_updated', handlePermissionsUpdated);
+    window.addEventListener('focus', handlePermissionsUpdated);
+    return () => {
+      window.removeEventListener('apexpos_permissions_updated', handlePermissionsUpdated);
+      window.removeEventListener('focus', handlePermissionsUpdated);
+    };
+  }, [initializeAuth, refreshUser]);
 
   const login = async (username: string, password: string): Promise<LoginResponse> => {
     const response = await authService.login(username, password);
@@ -70,19 +90,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const refreshUser = async (): Promise<void> => {
-    if (!token) return;
-    try {
-      const userData = await authService.getCurrentUser();
-      setUser(userData);
-    } catch (error) {
-      console.error('Failed to refresh user data:', error);
-    }
-  };
-
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    if (user.is_superuser) return true;
+    if (user.is_superuser && (!user.roles || user.roles.length === 0)) return true;
 
     // Check direct matching or app_label.codename matching
     const perms = user.effective_permissions || [];
@@ -91,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasRole = (role: string): boolean => {
     if (!user) return false;
-    if (user.is_superuser) return true;
+    if (user.is_superuser && (!user.roles || user.roles.length === 0)) return true;
     return (user.roles || []).includes(role);
   };
 

@@ -21,8 +21,10 @@ import { SupplierModal } from './SupplierModal';
 import { SupplierBulkImportModal } from './SupplierBulkImportModal';
 import { Supplier } from '../../types/contact';
 import { contactService } from '../../services/contactService';
+import { useToast } from '../../context/ToastContext';
 
 export const SuppliersPage: React.FC = () => {
+  const { showError, showSuccess } = useToast();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,9 +58,10 @@ export const SuppliersPage: React.FC = () => {
   const handleToggleStatus = async (supp: Supplier) => {
     try {
       await contactService.toggleSupplierStatus(supp.id);
+      showSuccess(`Supplier ${supp.name} status updated.`, 'Supplier Status');
       fetchSuppliers();
     } catch (err: any) {
-      alert(err?.message || 'Failed to update supplier status.');
+      showError(err?.message || 'Failed to update supplier status.', 'Supplier Error');
     }
   };
 

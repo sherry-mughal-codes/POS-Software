@@ -24,10 +24,12 @@ import { userService } from '../../services/userService';
 import { User, Role, CreateUserData, UpdateUserData } from '../../types/auth';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../context/SettingsContext';
+import { useToast } from '../../context/ToastContext';
 import { formatErrorMessage } from '../../utils/formatError';
 
 export const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const { showError, showSuccess, showWarning } = useToast();
   const { companyName } = useSettings();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -170,15 +172,16 @@ export const UsersPage: React.FC = () => {
 
   const handleToggleStatus = async (targetUser: User) => {
     if (targetUser.id === currentUser?.id) {
-      alert('You cannot deactivate your own logged-in account.');
+      showWarning('You cannot deactivate your own logged-in account.', 'Action Restricted');
       return;
     }
 
     try {
       await userService.toggleUserStatus(targetUser.id);
+      showSuccess(`User ${targetUser.username} status updated.`, 'User Status');
       fetchUsersAndRoles();
     } catch (err: any) {
-      alert(err?.message || 'Failed to change user status.');
+      showError(err?.message || 'Failed to change user status.', 'User Update Error');
     }
   };
 

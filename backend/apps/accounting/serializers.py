@@ -49,6 +49,24 @@ class AccountSerializer(serializers.ModelSerializer):
     def get_children_count(self, obj):
         return obj.children.count()
 
+    def validate_name(self, value):
+        name = value.strip()
+        qs = Account.objects.filter(name__iexact=name)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(f"An account with the name '{name}' already exists. Please choose a distinct name.")
+        return name
+
+    def validate_code(self, value):
+        code = value.strip()
+        qs = Account.objects.filter(code__iexact=code)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(f"An account with code '{code}' already exists. Please use a unique account code.")
+        return code
+
 
 class JournalItemSerializer(serializers.ModelSerializer):
     account_code = serializers.CharField(source="account.code", read_only=True)

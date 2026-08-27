@@ -19,6 +19,7 @@ import { Purchase, PurchaseItem } from '../../types/purchase';
 import { purchaseService } from '../../services/purchaseService';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { PurchaseOrderSlipModal } from './PurchaseOrderSlipModal';
+import { useToast } from '../../context/ToastContext';
 
 interface PurchaseListTabProps {
   purchases: Purchase[];
@@ -48,6 +49,7 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
   onOpenReturn,
   onEditDraft,
 }) => {
+  const { showError, showSuccess } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUBMITTED' | 'DRAFT' | 'CANCELLED'>('ALL');
 
@@ -65,9 +67,10 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
   const handleSubmittingDraft = async (p: Purchase) => {
     try {
       await purchaseService.submitDraftPurchase(p.id);
+      showSuccess(`Purchase order ${p.purchase_number} submitted and restocked successfully!`, 'Purchase Submitted');
       onRefresh();
     } catch (err: any) {
-      alert(err?.response?.data?.detail || err?.message || 'Failed to submit purchase order.');
+      showError(err?.response?.data?.detail || err?.message || 'Failed to submit purchase order.', 'Submission Error');
     }
   };
 
@@ -76,11 +79,12 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
     setCancelling(true);
     try {
       await purchaseService.cancelPurchase(cancelTarget.id, cancelReason.trim() || 'Order cancelled by user');
+      showSuccess(`Purchase order ${cancelTarget.purchase_number} cancelled and reversed successfully.`, 'Order Cancelled');
       setCancelTarget(null);
       setCancelReason('');
       onRefresh();
     } catch (err: any) {
-      alert(err?.response?.data?.detail || err?.message || 'Failed to cancel purchase order.');
+      showError(err?.response?.data?.detail || err?.message || 'Failed to cancel purchase order.', 'Cancellation Error');
     } finally {
       setCancelling(false);
     }
@@ -281,6 +285,16 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                               }}
                             />
                           </>
+                        )}
+
+                        {p.status === 'CANCELLED' && onEditDraft && (
+                          <Button
+                            variant="outline"
+                            icon={<Edit2 size={12} />}
+                            style={{ padding: '0.25rem 0.45rem', color: 'var(--warning)', borderColor: 'var(--warning)' }}
+                            title="Edit & Reopen Cancelled Purchase Order"
+                            onClick={() => onEditDraft(p)}
+                          />
                         )}
                       </div>
                     </td>

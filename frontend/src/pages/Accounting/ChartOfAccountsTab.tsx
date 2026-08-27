@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, CheckCircle2, XCircle, Sparkles, Trash2, BookOpen } from 'lucide-react';
+import { Plus, Search, Sparkles, Trash2, BookOpen, Edit2, FolderPlus } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
@@ -7,6 +7,7 @@ import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
 import { Account, AccountType } from '../../types/accounting';
 import { accountingService } from '../../services/accountingService';
+import { useToast } from '../../context/ToastContext';
 
 interface ChartOfAccountsTabProps {
   accounts: Account[];
@@ -20,11 +21,31 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
   onRefresh,
   onSelectAccountForLedger,
 }) => {
+  const { showError, showSuccess, showWarning } = useToast();
   const [selectedType, setSelectedType] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Parent Group Modal State
+  const [isParentGroupModalOpen, setIsParentGroupModalOpen] = useState(false);
+  const [parentGroupCode, setParentGroupCode] = useState('');
+  const [parentGroupName, setParentGroupName] = useState('');
+  const [parentGroupType, setParentGroupType] = useState<AccountType>('EXPENSE');
+  const [parentGroupParent, setParentGroupParent] = useState<string>('');
+  const [parentGroupDesc, setParentGroupDesc] = useState('');
+  const [parentGroupSaving, setParentGroupSaving] = useState(false);
+  const [parentGroupError, setParentGroupError] = useState<string | null>(null);
+
+  // Edit Account Modal State
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [editCode, setEditCode] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editParent, setEditParent] = useState<string>('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Opening Balance Modal State
   const [openingModalAccount, setOpeningModalAccount] = useState<Account | null>(null);
@@ -60,10 +81,56 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
     setIsModalOpen(true);
   };
 
+  const handleOpenParentGroupModal = () => {
+    setParentGroupCode('');
+    setParentGroupName('');
+    setParentGroupType('EXPENSE');
+    setParentGroupParent('');
+    setParentGroupDesc('');
+    setParentGroupError(null);
+    setIsParentGroupModalOpen(true);
+  };
+
+  const handleOpenEditModal = (acc: Account) => {
+    setEditingAccount(acc);
+    setEditCode(acc.code);
+    setEditName(acc.name);
+    setEditDesc(acc.description || '');
+    setEditParent(acc.parent ? acc.parent.toString() : '');
+    setEditError(null);
+  };
+
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCode || !newName) {
-      setFormError('Account code and name are required.');
+    const trimmedCode = newCode.trim();
+    const trimmedName = newName.trim();
+
+    if (!trimmedCode || !trimmedName) {
+      const msg = 'Account code and name are required.';
+      setFormError(msg);
+      showError(msg, 'Validation Error');
+      return;
+    }
+
+    // Name uniqueness validation
+    const duplicateName = accounts.find(
+      (a) => a.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (duplicateName) {
+      const msg = `An account with the name '${trimmedName}' already exists (Code: ${duplicateName.code}). Please choose a distinct name.`;
+      setFormError(msg);
+      showError(msg, 'Duplicate Account Name');
+      return;
+    }
+
+    // Code uniqueness validation
+    const duplicateCode = accounts.find(
+      (a) => a.code.trim().toLowerCase() === trimmedCode.toLowerCase()
+    );
+    if (duplicateCode) {
+      const msg = `An account with code '${trimmedCode}' already exists (${duplicateCode.name}). Please choose a unique account code.`;
+      setFormError(msg);
+      showError(msg, 'Duplicate Account Code');
       return;
     }
 
@@ -71,19 +138,131 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
     setFormError(null);
     try {
       await accountingService.createAccount({
-        code: newCode,
-        name: newName,
+        code: trimmedCode,
+        name: trimmedName,
         account_type: newType,
         parent: newParent ? parseInt(newParent, 10) : null,
-        description: newDesc,
+        description: newDesc.trim(),
         is_active: true,
       });
+      showSuccess(`Account [${trimmedCode}] ${trimmedName} created successfully!`, 'Account Created');
       setIsModalOpen(false);
       onRefresh();
     } catch (err: any) {
-      setFormError(err?.message || 'Failed to create account.');
+      const msg = err?.response?.data?.name?.[0] || err?.response?.data?.code?.[0] || err?.response?.data?.detail || err?.message || 'Failed to create account.';
+      setFormError(msg);
+      showError(msg, 'Creation Error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCreateParentGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedCode = parentGroupCode.trim();
+    const trimmedName = parentGroupName.trim();
+
+    if (!trimmedCode || !trimmedName) {
+      const msg = 'Parent group code and name are required.';
+      setParentGroupError(msg);
+      showError(msg, 'Validation Error');
+      return;
+    }
+
+    const duplicateName = accounts.find(
+      (a) => a.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (duplicateName) {
+      const msg = `An account group with the name '${trimmedName}' already exists. Please choose a distinct name.`;
+      setParentGroupError(msg);
+      showError(msg, 'Duplicate Group Name');
+      return;
+    }
+
+    const duplicateCode = accounts.find(
+      (a) => a.code.trim().toLowerCase() === trimmedCode.toLowerCase()
+    );
+    if (duplicateCode) {
+      const msg = `An account with code '${trimmedCode}' already exists. Please choose a unique code.`;
+      setParentGroupError(msg);
+      showError(msg, 'Duplicate Code');
+      return;
+    }
+
+    setParentGroupSaving(true);
+    setParentGroupError(null);
+    try {
+      await accountingService.createAccount({
+        code: trimmedCode,
+        name: trimmedName,
+        account_type: parentGroupType,
+        parent: parentGroupParent ? parseInt(parentGroupParent, 10) : null,
+        description: parentGroupDesc.trim(),
+        is_active: true,
+      });
+      showSuccess(`Parent group [${trimmedCode}] ${trimmedName} created successfully!`, 'Group Created');
+      setIsParentGroupModalOpen(false);
+      onRefresh();
+    } catch (err: any) {
+      const msg = err?.response?.data?.name?.[0] || err?.response?.data?.code?.[0] || err?.response?.data?.detail || err?.message || 'Failed to create parent group.';
+      setParentGroupError(msg);
+      showError(msg, 'Group Creation Error');
+    } finally {
+      setParentGroupSaving(false);
+    }
+  };
+
+  const handleUpdateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAccount) return;
+    const trimmedCode = editCode.trim();
+    const trimmedName = editName.trim();
+
+    if (!trimmedCode || !trimmedName) {
+      const msg = 'Account code and name are required.';
+      setEditError(msg);
+      showError(msg, 'Validation Error');
+      return;
+    }
+
+    const duplicateName = accounts.find(
+      (a) => a.id !== editingAccount.id && a.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (duplicateName) {
+      const msg = `Another account with the name '${trimmedName}' already exists (Code: ${duplicateName.code}). Please choose a distinct name.`;
+      setEditError(msg);
+      showError(msg, 'Duplicate Account Name');
+      return;
+    }
+
+    const duplicateCode = accounts.find(
+      (a) => a.id !== editingAccount.id && a.code.trim().toLowerCase() === trimmedCode.toLowerCase()
+    );
+    if (duplicateCode) {
+      const msg = `Another account with code '${trimmedCode}' already exists (${duplicateCode.name}). Please choose a unique code.`;
+      setEditError(msg);
+      showError(msg, 'Duplicate Code');
+      return;
+    }
+
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      await accountingService.updateAccount(editingAccount.id, {
+        code: trimmedCode,
+        name: trimmedName,
+        description: editDesc.trim(),
+        parent: editParent ? parseInt(editParent, 10) : null,
+      });
+      showSuccess(`Account [${trimmedCode}] ${trimmedName} updated successfully!`, 'Account Updated');
+      setEditingAccount(null);
+      onRefresh();
+    } catch (err: any) {
+      const msg = err?.response?.data?.name?.[0] || err?.response?.data?.code?.[0] || err?.response?.data?.detail || err?.message || 'Failed to update account.';
+      setEditError(msg);
+      showError(msg, 'Update Error');
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -126,7 +305,7 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
 
   const handleDeleteAccount = async (acc: Account) => {
     if (acc.is_system) {
-      alert(`System account [${acc.code}] ${acc.name} cannot be deleted.`);
+      showWarning(`System account [${acc.code}] ${acc.name} cannot be deleted.`, 'System Account');
       return;
     }
     const confirmed = window.confirm(`Are you sure you want to delete account [${acc.code}] ${acc.name}? This action cannot be undone.`);
@@ -135,9 +314,10 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
     try {
       setDeletingId(acc.id);
       await accountingService.deleteAccount(acc.id);
+      showSuccess(`Account [${acc.code}] ${acc.name} deleted successfully.`, 'Account Deleted');
       onRefresh();
     } catch (err: any) {
-      alert(err?.response?.data?.detail || err?.message || 'Failed to delete account. Note: Accounts with existing journal entries cannot be deleted.');
+      showError(err?.response?.data?.detail || err?.message || 'Failed to delete account. Accounts with existing journal entries cannot be deleted.', 'Delete Error');
     } finally {
       setDeletingId(null);
     }
@@ -263,6 +443,15 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
           </div>
 
           <Button
+            variant="outline"
+            icon={<FolderPlus size={14} />}
+            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem', borderColor: '#c084fc', color: '#c084fc' }}
+            onClick={handleOpenParentGroupModal}
+          >
+            Add Parent Group
+          </Button>
+
+          <Button
             variant="primary"
             icon={<Plus size={14} />}
             style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
@@ -284,7 +473,6 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                 <th style={{ padding: '0.75rem 1rem', width: '130px' }}>Type</th>
                 <th style={{ padding: '0.75rem 1rem', width: '110px' }}>Nature</th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'right', width: '160px' }}>Authoritative Balance</th>
-                <th style={{ padding: '0.75rem 1rem', textAlign: 'center', width: '90px' }}>Status</th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'right', width: '220px' }}>Actions</th>
               </tr>
             </thead>
@@ -350,23 +538,19 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                       </span>
                     </td>
 
-                    {/* Status */}
-                    <td style={{ padding: '1rem', textAlign: 'center' }}>
-                      {acc.is_active ? (
-                        <CheckCircle2 size={16} style={{ color: 'var(--success)', margin: '0 auto' }} />
-                      ) : (
-                        <XCircle size={16} style={{ color: 'var(--danger)', margin: '0 auto' }} />
-                      )}
-                    </td>
-
                     {/* Actions */}
                     <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        {isHeader ? (
-                          <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontStyle: 'italic' }}>
-                            Organization Header
-                          </span>
-                        ) : (
+                        {/* Edit Button in front of every account */}
+                        <Button
+                          variant="outline"
+                          icon={<Edit2 size={13} />}
+                          style={{ padding: '0.25rem 0.45rem', borderColor: 'var(--primary-400)', color: 'var(--primary-400)' }}
+                          onClick={() => handleOpenEditModal(acc)}
+                          title="Edit Account Code & Name"
+                        />
+
+                        {isHeader ? null : (
                           <>
                             {acc.code !== '3010' && (
                               <Button
@@ -441,9 +625,6 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                       Rs. {netOperatingProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </td>
-                  <td style={{ padding: '1rem', textAlign: 'center' }}>
-                    <CheckCircle2 size={16} style={{ color: 'var(--success)', margin: '0 auto' }} />
-                  </td>
                   <td style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-subtle)', fontSize: '0.75rem' }}>
                     [Dynamic]
                   </td>
@@ -459,7 +640,7 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                   <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '1rem', color: selectedType === 'EQUITY' ? '#a5b4fc' : 'var(--primary-400)' }}>
                     Rs. {(selectedType === 'EQUITY' ? realTimeTotalEquity : filteredAccounts.filter((a) => !a.is_header).reduce((sum, a) => sum + a.current_balance, 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td colSpan={2} />
+                  <td />
                 </tr>
               </tfoot>
             )}
@@ -567,6 +748,190 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
             </Button>
             <Button type="submit" variant="primary" loading={saving}>
               Create Account
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Add Parent Group Modal */}
+      <Modal
+        isOpen={isParentGroupModalOpen}
+        onClose={() => setIsParentGroupModalOpen(false)}
+        title="Create New Parent Account Group"
+      >
+        {parentGroupError && (
+          <div style={{
+            padding: '0.75rem 1rem',
+            borderRadius: '0.5rem',
+            backgroundColor: 'var(--danger-bg)',
+            border: '1px solid var(--danger-border)',
+            color: 'var(--danger)',
+            fontSize: '0.8125rem',
+            marginBottom: '1rem',
+          }}>
+            {parentGroupError}
+          </div>
+        )}
+
+        <form onSubmit={handleCreateParentGroup} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+            <Input
+              label="Group Code *"
+              placeholder="e.g. 1050"
+              value={parentGroupCode}
+              onChange={(e) => setParentGroupCode(e.target.value)}
+              required
+            />
+            <Input
+              label="Group Name *"
+              placeholder="e.g. Fixed Assets & Equipment"
+              value={parentGroupName}
+              onChange={(e) => setParentGroupName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+              <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)' }}>Account Type *</label>
+              <select
+                value={parentGroupType}
+                onChange={(e) => setParentGroupType(e.target.value as AccountType)}
+                style={{
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.5rem',
+                  padding: '0.625rem',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                }}
+              >
+                <option value="ASSET">Asset (1000s)</option>
+                <option value="LIABILITY">Liability (2000s)</option>
+                <option value="EQUITY">Equity (3000s)</option>
+                <option value="INCOME">Revenue / Income (4000s)</option>
+                <option value="EXPENSE">Expense (5000s)</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+              <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)' }}>Parent (Optional)</label>
+              <select
+                value={parentGroupParent}
+                onChange={(e) => setParentGroupParent(e.target.value)}
+                style={{
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.5rem',
+                  padding: '0.625rem',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                }}
+              >
+                <option value="">None (Top-Level Group)</option>
+                {accounts
+                  .filter((a) => a.account_type === parentGroupType && a.is_header)
+                  .map((a) => (
+                    <option key={a.id} value={a.id}>
+                      [{a.code}] {a.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          <Input
+            label="Group Description / Scope"
+            placeholder="e.g. Grouping for all physical assets and store machinery"
+            value={parentGroupDesc}
+            onChange={(e) => setParentGroupDesc(e.target.value)}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+            <Button type="button" variant="outline" onClick={() => setIsParentGroupModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" loading={parentGroupSaving}>
+              Create Parent Group
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Account Modal */}
+      <Modal
+        isOpen={!!editingAccount}
+        onClose={() => !editSaving && setEditingAccount(null)}
+        title={`Edit Account: [${editingAccount?.code}] ${editingAccount?.name}`}
+      >
+        {editError && (
+          <div style={{
+            padding: '0.75rem 1rem',
+            borderRadius: '0.5rem',
+            backgroundColor: 'var(--danger-bg)',
+            border: '1px solid var(--danger-border)',
+            color: 'var(--danger)',
+            fontSize: '0.8125rem',
+            marginBottom: '1rem',
+          }}>
+            {editError}
+          </div>
+        )}
+
+        <form onSubmit={handleUpdateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+            <Input
+              label="Account Code *"
+              value={editCode}
+              onChange={(e) => setEditCode(e.target.value)}
+              required
+            />
+            <Input
+              label="Account Name *"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+            <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)' }}>Parent Header Account</label>
+            <select
+              value={editParent}
+              onChange={(e) => setEditParent(e.target.value)}
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.5rem',
+                padding: '0.625rem',
+                color: 'var(--text-main)',
+                outline: 'none',
+              }}
+            >
+              <option value="">None (Top-Level)</option>
+              {accounts
+                .filter((a) => a.account_type === editingAccount?.account_type && a.id !== editingAccount?.id)
+                .map((a) => (
+                  <option key={a.id} value={a.id}>
+                    [{a.code}] {a.name} {a.is_header ? '— (Parent Group)' : ''}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <Input
+            label="Description / Purpose"
+            placeholder="Operational purpose for this ledger account..."
+            value={editDesc}
+            onChange={(e) => setEditDesc(e.target.value)}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+            <Button type="button" variant="outline" onClick={() => setEditingAccount(null)} disabled={editSaving}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" loading={editSaving}>
+              Save Changes
             </Button>
           </div>
         </form>

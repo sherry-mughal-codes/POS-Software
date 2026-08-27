@@ -60,6 +60,7 @@ export const POSCart: React.FC<POSCartProps> = ({
   onOpenDay,
 }) => {
   const [showDiscountInput, setShowDiscountInput] = useState(false);
+  const [activeDiscountProductId, setActiveDiscountProductId] = useState<number | null>(null);
 
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId) || customers[0];
 
@@ -129,11 +130,13 @@ export const POSCart: React.FC<POSCartProps> = ({
               outline: 'none',
             }}
           >
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} {c.is_walkin ? '(Walk-in)' : `(${c.customer_id})`}
-              </option>
-            ))}
+            {customers
+              .filter((c) => c.is_active || c.is_walkin)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} {c.is_walkin ? '(Walk-in)' : `(${c.customer_id})`}
+                </option>
+              ))}
           </select>
           {onOpenNewCustomerModal && (
             <button
@@ -232,29 +235,22 @@ export const POSCart: React.FC<POSCartProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        const d = prompt(`Enter line discount for ${item.name} (% or Rs.):\nExamples: 5% or 50`, item.discount.toString());
-                        if (d !== null) {
-                          const trimmed = d.trim();
-                          if (trimmed.endsWith('%')) {
-                            const pct = parseFloat(trimmed.slice(0, -1)) || 0;
-                            const calcDisc = Math.round(((item.quantity * item.unit_price) * (pct / 100)) * 100) / 100;
-                            onUpdateLineDiscount(item.product_id, calcDisc);
-                          } else {
-                            onUpdateLineDiscount(item.product_id, parseFloat(trimmed) || 0);
-                          }
-                        }
+                        setActiveDiscountProductId(
+                          activeDiscountProductId === item.product_id ? null : item.product_id
+                        );
                       }}
                       style={{
-                        background: 'none',
+                        background: activeDiscountProductId === item.product_id ? 'var(--primary-500)' : 'none',
                         border: '1px solid var(--border-subtle)',
                         borderRadius: '0.2rem',
-                        color: item.discount > 0 ? 'var(--warning)' : 'var(--text-muted)',
+                        color: activeDiscountProductId === item.product_id ? '#fff' : item.discount > 0 ? 'var(--warning)' : 'var(--text-muted)',
                         padding: '0.05rem 0.25rem',
                         fontSize: '0.6rem',
                         cursor: 'pointer',
                       }}
+                      title="Set line item discount"
                     >
-                      Disc
+                      {item.discount > 0 ? `-Rs.${formatMoney(item.discount)}` : 'Disc'}
                     </button>
 
                     <button
@@ -277,7 +273,99 @@ export const POSCart: React.FC<POSCartProps> = ({
                   </div>
                 </div>
 
-                {/* Bottom Row: Stepper & Unit Price & Subtotal */}
+                {/* Inline Line Discount Row (when toggled) */}
+                {activeDiscountProductId === item.product_id && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      borderRadius: '0.25rem',
+                      padding: '0.2rem 0.4rem',
+                      fontSize: '0.6875rem',
+                    }}
+                  >
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>Discount:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      placeholder="Amount"
+                      value={item.discount || ''}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        onUpdateLineDiscount(item.product_id, val);
+                      }}
+                      style={{
+                        width: '4rem',
+                        padding: '0.1rem 0.25rem',
+                        backgroundColor: 'var(--bg-input)',
+                        border: '1px solid var(--border-medium)',
+                        borderRadius: '0.2rem',
+                        color: 'var(--text-main)',
+                        fontSize: '0.6875rem',
+                        fontFamily: 'var(--font-mono)',
+                        textAlign: 'right',
+                        outline: 'none',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const pct5 = Math.round((item.quantity * item.unit_price * 0.05) * 100) / 100;
+                        onUpdateLineDiscount(item.product_id, pct5);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '0.2rem',
+                        color: 'var(--primary-400)',
+                        fontSize: '0.6rem',
+                        padding: '0.05rem 0.2rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      5%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const pct10 = Math.round((item.quantity * item.unit_price * 0.10) * 100) / 100;
+                        onUpdateLineDiscount(item.product_id, pct10);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '0.2rem',
+                        color: 'var(--primary-400)',
+                        fontSize: '0.6rem',
+                        padding: '0.05rem 0.2rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      10%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onUpdateLineDiscount(item.product_id, 0)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--danger)',
+                        fontSize: '0.6rem',
+                        cursor: 'pointer',
+                        padding: '0.05rem 0.2rem',
+                      }}
+                      title="Clear discount"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+
+                {/* Bottom Row: Stepper & Inline Unit Price & Subtotal */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.35rem' }}>
                   {/* Quantity Stepper */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.15rem', backgroundColor: 'var(--bg-input)', padding: '0.05rem', borderRadius: '0.2rem', border: '1px solid var(--border-medium)' }}>
@@ -335,47 +423,38 @@ export const POSCart: React.FC<POSCartProps> = ({
                     </button>
                   </div>
 
-                  {/* Unit Price (Directly editable for service items or click to edit) */}
-                  {item.is_service || item.maintain_stock === false ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                      <span style={{ fontSize: '0.625rem', color: 'var(--primary-300)', fontWeight: 700 }}>Fee: Rs.</span>
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        value={item.unit_price}
-                        onChange={(e) => onUpdateUnitPrice(item.product_id, parseFloat(e.target.value) || 0)}
-                        style={{
-                          width: '4.2rem',
-                          padding: '0.1rem 0.25rem',
-                          backgroundColor: 'var(--bg-input)',
-                          border: '1px solid var(--primary-400)',
-                          borderRadius: '0.25rem',
-                          color: 'var(--text-main)',
-                          fontSize: '0.71875rem',
-                          fontWeight: 800,
-                          fontFamily: 'var(--font-mono)',
-                          textAlign: 'right',
-                          outline: 'none',
-                        }}
-                        title="Directly edit service charge fee"
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => {
-                        const p = prompt(`Enter custom price for ${item.name} (Rs.):`, item.unit_price.toString());
-                        if (p !== null) {
-                          onUpdateUnitPrice(item.product_id, parseFloat(p) || 0);
-                        }
+                  {/* Inline Direct Editable Unit Price */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
+                    <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', fontWeight: 600 }}>Rs.</span>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={item.unit_price}
+                      onChange={(e) => onUpdateUnitPrice(item.product_id, parseFloat(e.target.value) || 0)}
+                      style={{
+                        width: '4.2rem',
+                        padding: '0.1rem 0.25rem',
+                        backgroundColor: 'var(--bg-input)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '0.25rem',
+                        color: 'var(--text-main)',
+                        fontSize: '0.71875rem',
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-mono)',
+                        textAlign: 'right',
+                        outline: 'none',
                       }}
-                      style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', cursor: 'pointer' }}
-                      title="Click to edit unit price"
-                    >
-                      Rs. {formatMoney(item.unit_price)}
-                      {item.discount > 0 && <span style={{ color: 'var(--warning)', marginLeft: '0.2rem' }}>(-Rs. {formatMoney(item.discount)})</span>}
-                    </div>
-                  )}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = 'var(--primary-400)';
+                        e.target.select();
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'var(--border-subtle)';
+                      }}
+                      title="Edit item price directly"
+                    />
+                  </div>
 
                   {/* Subtotal */}
                   <div

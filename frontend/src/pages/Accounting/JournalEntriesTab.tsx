@@ -55,6 +55,7 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
   const [entryDate, setEntryDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [referenceId, setReferenceId] = useState('');
   const [narration, setNarration] = useState('');
+  const [isCustomNarration, setIsCustomNarration] = useState(false);
   const [lines, setLines] = useState<JournalLineFormItem[]>([
     { accountId: 0, debit: '', credit: '', description: '' },
     { accountId: 0, debit: '', credit: '', description: '' },
@@ -63,41 +64,73 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
   const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
   const activeAccounts = accounts.filter((a) => a.is_active && isLeaf(a));
 
+  const computeDynamicNarration = (
+    purposeType: JournalPurposeType,
+    formLines: JournalLineFormItem[],
+    accs: Account[]
+  ): string => {
+    const getAccLabel = (id: number): string => {
+      const a = accs.find((acc) => acc.id === id);
+      return a ? `[${a.code}] ${a.name}` : '';
+    };
+
+    const drLine = formLines.find((l) => parseFloat(l.debit) > 0) || formLines[0];
+    const crLine = formLines.find((l) => parseFloat(l.credit) > 0) || formLines[1] || formLines[0];
+
+    const drName = drLine?.accountId ? getAccLabel(drLine.accountId) : '';
+    const crName = crLine?.accountId ? getAccLabel(crLine.accountId) : '';
+
+    if (purposeType === 'TRANSFER') {
+      if (crName && drName) return `Fund Transfer from ${crName} to ${drName}`;
+      if (drName) return `Fund Transfer to ${drName}`;
+      return 'Account fund transfer between cash and bank';
+    }
+    if (purposeType === 'EXPENSE') {
+      if (drName && crName) return `Expense for ${drName} paid via ${crName}`;
+      if (drName) return `Expense recording for ${drName}`;
+      return 'Operational expense payment & accrual';
+    }
+    if (purposeType === 'OPENING_BALANCE') {
+      if (drName && crName) return `Initial Opening Balance: ${drName} / ${crName}`;
+      if (drName) return `Initial Opening Balance setup for ${drName}`;
+      return 'Initial account opening balance setup';
+    }
+    if (purposeType === 'STOCK_ADJUSTMENT') {
+      if (drName && crName) return `Stock audit adjustment: ${drName} vs ${crName}`;
+      return 'Inventory valuation physical audit adjustment';
+    }
+    if (purposeType === 'REVERSAL') {
+      if (drName && crName) return `Correction counter-entry: ${drName} / ${crName}`;
+      return 'Correction & rectification counter-entry';
+    }
+    if (drName && crName) return `Journal voucher: ${drName} / ${crName}`;
+    if (drName) return `Journal voucher for ${drName}`;
+    return 'General manual journal voucher entry';
+  };
+
   const handleOpenCreateModal = () => {
     setPurpose('OPENING_BALANCE');
     setEntryDate(new Date().toISOString().split('T')[0]);
     setReferenceId('');
-    setNarration('Initial account opening balance setup');
+    setIsCustomNarration(false);
     setCreateError(null);
 
     const cashOrBank = activeAccounts.find((a) => a.code === '1011' || a.code === '1021' || a.parent_code === '1010' || a.parent_code === '1020') || activeAccounts[0];
     const equityAcc = activeAccounts.find((a) => a.code === '3010' || a.account_type === 'EQUITY') || activeAccounts[1] || activeAccounts[0];
 
-    setLines([
-      { accountId: cashOrBank ? cashOrBank.id : 0, debit: '', credit: '', description: 'Opening balance' },
-      { accountId: equityAcc ? equityAcc.id : 0, debit: '', credit: '', description: 'Balancing equity/capital' },
-    ]);
+    const initialLines: JournalLineFormItem[] = [
+      { accountId: cashOrBank ? cashOrBank.id : 0, debit: '', credit: '', description: '' },
+      { accountId: equityAcc ? equityAcc.id : 0, debit: '', credit: '', description: '' },
+    ];
+    setLines(initialLines);
+    setNarration(computeDynamicNarration('OPENING_BALANCE', initialLines, activeAccounts));
     setIsCreateModalOpen(true);
   };
 
   const handlePurposeChange = (newPurpose: JournalPurposeType) => {
     setPurpose(newPurpose);
-    if (newPurpose === 'OPENING_BALANCE') {
-      if (!narration || narration.startsWith('Manual')) {
-        setNarration('Initial account opening balance setup');
-      }
-    } else if (newPurpose === 'TRANSFER') {
-      setNarration('Account fund transfer between cash and bank');
-    } else if (newPurpose === 'EXPENSE') {
-      setNarration('Operational expense accrual / adjustment');
-    } else if (newPurpose === 'STOCK_ADJUSTMENT') {
-      setNarration('Inventory valuation physical audit adjustment');
-    } else if (newPurpose === 'REVERSAL') {
-      setNarration('Correction & rectification counter-entry');
-    } else {
-      if (!narration || narration.includes('opening balance')) {
-        setNarration('General manual journal voucher entry');
-      }
+    if (!isCustomNarration) {
+      setNarration(computeDynamicNarration(newPurpose, lines, activeAccounts));
     }
   };
 
@@ -107,7 +140,11 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
 
   const handleRemoveLine = (index: number) => {
     if (lines.length <= 2) return;
-    setLines(lines.filter((_, i) => i !== index));
+    const nextLines = lines.filter((_, i) => i !== index);
+    setLines(nextLines);
+    if (!isCustomNarration) {
+      setNarration(computeDynamicNarration(purpose, nextLines, activeAccounts));
+    }
   };
 
   const handleLineChange = (index: number, field: keyof JournalLineFormItem, value: any) => {
@@ -122,6 +159,11 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
     }
 
     setLines(newLines);
+
+    // Auto-update narration when accounts change if user hasn't overridden
+    if (field === 'accountId' && !isCustomNarration) {
+      setNarration(computeDynamicNarration(purpose, newLines, activeAccounts));
+    }
   };
 
   const totalDebit = lines.reduce((sum, l) => sum + (parseFloat(l.debit) || 0), 0);
@@ -603,14 +645,41 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
 
           {/* Description / Narration */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
-              Narration / Description *
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                Narration / Entry Memo *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomNarration(false);
+                  setNarration(computeDynamicNarration(purpose, lines, activeAccounts));
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary-400)',
+                  fontSize: '0.6875rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}
+                title="Reset to intelligent auto-generated narration"
+              >
+                <Sparkles size={11} />
+                Auto-Generate from Accounts
+              </button>
+            </div>
             <input
               type="text"
-              placeholder="e.g. Setting up initial cash drawer & bank opening balances"
+              placeholder="e.g. Fund Transfer from Cash to Bank..."
               value={narration}
-              onChange={(e) => setNarration(e.target.value)}
+              onChange={(e) => {
+                setNarration(e.target.value);
+                setIsCustomNarration(true);
+              }}
               required
               style={{
                 padding: '0.45rem 0.6rem',
@@ -680,10 +749,9 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78125rem', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
-                    <th style={{ padding: '0.45rem 0.6rem', width: '38%' }}>Account</th>
-                    <th style={{ padding: '0.45rem 0.6rem', width: '20%', textAlign: 'right' }}>Debit (Rs.)</th>
-                    <th style={{ padding: '0.45rem 0.6rem', width: '20%', textAlign: 'right' }}>Credit (Rs.)</th>
-                    <th style={{ padding: '0.45rem 0.6rem', width: '18%' }}>Line Memo</th>
+                    <th style={{ padding: '0.45rem 0.6rem', width: '48%' }}>Account</th>
+                    <th style={{ padding: '0.45rem 0.6rem', width: '24%', textAlign: 'right' }}>Debit (Rs.)</th>
+                    <th style={{ padding: '0.45rem 0.6rem', width: '24%', textAlign: 'right' }}>Credit (Rs.)</th>
                     <th style={{ padding: '0.45rem 0.4rem', width: '4%', textAlign: 'center' }}></th>
                   </tr>
                 </thead>
@@ -765,26 +833,6 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
                         />
                       </td>
 
-                      {/* Description */}
-                      <td style={{ padding: '0.35rem 0.5rem' }}>
-                        <input
-                          type="text"
-                          placeholder="Memo (opt.)"
-                          value={line.description}
-                          onChange={(e) => handleLineChange(idx, 'description', e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '0.3rem 0.45rem',
-                            backgroundColor: 'var(--bg-input)',
-                            border: '1px solid var(--border-medium)',
-                            borderRadius: '0.25rem',
-                            color: 'var(--text-muted)',
-                            fontSize: '0.71875rem',
-                            outline: 'none',
-                          }}
-                        />
-                      </td>
-
                       {/* Remove Button */}
                       <td style={{ padding: '0.35rem 0.4rem', textAlign: 'center' }}>
                         <button
@@ -798,11 +846,7 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
                             cursor: lines.length <= 2 ? 'not-allowed' : 'pointer',
                             padding: '0.2rem',
                             borderRadius: '0.2rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            opacity: lines.length <= 2 ? 0.3 : 1,
                           }}
-                          title={lines.length <= 2 ? 'Minimum 2 rows required' : 'Remove line'}
                         >
                           <Trash2 size={13} />
                         </button>
@@ -823,11 +867,11 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
                     <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--warning)' }}>
                       Rs. {totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td colSpan={2} style={{ padding: '0.45rem 0.6rem', textAlign: 'right' }}>
+                    <td style={{ padding: '0.45rem 0.6rem', textAlign: 'right' }}>
                       {isBalanced ? (
                         <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--success)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                           <CheckCircle2 size={12} />
-                          Balanced (0.00)
+                          Balanced
                         </span>
                       ) : (
                         <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--danger)' }}>

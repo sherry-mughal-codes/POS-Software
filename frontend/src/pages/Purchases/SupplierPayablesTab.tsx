@@ -34,6 +34,7 @@ import { contactService } from '../../services/contactService';
 import { accountingService } from '../../services/accountingService';
 import { purchaseService } from '../../services/purchaseService';
 import { SupplierStatementSlipModal } from './SupplierStatementSlipModal';
+import { useToast } from '../../context/ToastContext';
 
 interface SupplierPayablesTabProps {
   onRefreshAll?: () => void;
@@ -47,6 +48,7 @@ const formatMoney = (val: number | string | undefined | null): string => {
 type ViewMode = 'accounts' | 'vouchers' | 'reports';
 
 export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefreshAll }) => {
+  const { showError, showSuccess } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>('accounts');
   const [loading, setLoading] = useState(true);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -314,11 +316,12 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   const handleSubmitDraftPayment = async (payment: SupplierPayment) => {
     try {
       await purchaseService.submitSupplierPayment(payment.id);
+      showSuccess(`Payment voucher ${payment.payment_number} submitted successfully!`, 'Voucher Submitted');
       fetchVouchers();
       fetchPayablesData();
       if (onRefreshAll) onRefreshAll();
     } catch (err: any) {
-      alert(err?.message || 'Failed to submit payment voucher.');
+      showError(err?.message || 'Failed to submit payment voucher.', 'Payment Error');
     }
   };
 

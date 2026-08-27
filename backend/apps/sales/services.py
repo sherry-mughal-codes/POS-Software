@@ -846,7 +846,12 @@ class DaySessionService:
         bank_expenses = Decimal("0.00")
 
         for exp in expense_qs:
-            is_cash = exp.payment_account and (exp.payment_account.code.startswith("101") or exp.payment_account.code == "1010")
+            is_cash = exp.payment_account and (
+                (exp.payment_account.code.startswith("101") or (exp.payment_account.parent and exp.payment_account.parent.code == "1010"))
+                and not exp.payment_account.code.startswith("102")
+                and "jazz" not in exp.payment_account.name.lower()
+                and "easy" not in exp.payment_account.name.lower()
+            )
             if is_cash:
                 cash_expenses += exp.amount
             else:

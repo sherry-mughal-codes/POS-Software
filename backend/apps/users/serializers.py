@@ -81,17 +81,37 @@ class UserSerializer(serializers.ModelSerializer):
         return list(obj.groups.values_list("id", flat=True))
 
     def get_effective_permissions(self, obj):
-        if obj.is_superuser:
-            perms = set(Permission.objects.values_list("codename", flat=True))
-            for ct_app, codename in Permission.objects.values_list("content_type__app_label", "codename"):
-                perms.add(f"{ct_app}.{codename}")
+        try:
+            if obj.groups.exists() or obj.user_permissions.exists():
+                group_perm_ids = obj.groups.values_list("permissions__id", flat=True)
+                user_perm_ids = obj.user_permissions.values_list("id", flat=True)
+                all_ids = set(group_perm_ids).union(set(user_perm_ids))
+                all_ids.discard(None)
+
+                assigned_perms = Permission.objects.filter(id__in=all_ids).select_related("content_type")
+
+                perms = set()
+                for p in assigned_perms:
+                    perms.add(p.codename)
+                    if p.content_type:
+                        perms.add(f"{p.content_type.app_label}.{p.codename}")
+                return list(perms)
+
+            if obj.is_superuser:
+                perms = set(Permission.objects.values_list("codename", flat=True))
+                for ct_app, codename in Permission.objects.values_list("content_type__app_label", "codename"):
+                    perms.add(codename)
+                    perms.add(f"{ct_app}.{codename}")
+                return list(perms)
+
+            return []
+        except Exception:
+            perms = set()
+            for p in obj.get_all_permissions():
+                perms.add(p)
+                if "." in p:
+                    perms.add(p.split(".", 1)[1])
             return list(perms)
-        perms = set()
-        for p in obj.get_all_permissions():
-            perms.add(p)
-            if "." in p:
-                perms.add(p.split(".", 1)[1])
-        return list(perms)
 
 
 import re

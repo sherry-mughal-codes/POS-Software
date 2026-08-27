@@ -58,9 +58,19 @@ class AccountViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         if instance.is_system:
-            raise serializers.ValidationError({"detail": "System accounts cannot be deleted."})
-        if instance.journal_items.exists():
-            raise serializers.ValidationError({"detail": "Cannot delete account with existing journal transactions. Deactivate it instead."})
+            raise serializers.ValidationError({"detail": f"System account [{instance.code}] {instance.name} cannot be deleted."})
+        
+        from apps.expenses.models import Expense
+        Expense.objects.filter(payment_account=instance).update(payment_account=None)
+        Expense.objects.filter(expense_account=instance).delete()
+
+        entry_ids = list(instance.journal_items.values_list("journal_entry_id", flat=True))
+        instance.journal_items.all().delete()
+        if entry_ids:
+            for entry in JournalEntry.objects.filter(id__in=entry_ids):
+                if not entry.items.exists():
+                    entry.delete()
+
         instance.delete()
 
     @action(detail=True, methods=["get"])

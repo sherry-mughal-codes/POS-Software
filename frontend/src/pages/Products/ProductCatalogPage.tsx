@@ -27,6 +27,7 @@ import { getProductImageUrl } from '../../utils/imageUrl';
 import { Product, Category, Unit } from '../../types/product';
 import { productService } from '../../services/productService';
 import { useSettings } from '../../context/SettingsContext';
+import { useToast } from '../../context/ToastContext';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -39,6 +40,7 @@ const formatPercent = (val: number | string | undefined | null): string => {
 };
 
 export const ProductCatalogPage: React.FC = () => {
+  const { showError, showSuccess } = useToast();
   const { currencySymbol } = useSettings();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -86,9 +88,10 @@ export const ProductCatalogPage: React.FC = () => {
   const handleToggleStatus = async (product: Product) => {
     try {
       await productService.toggleProductStatus(product.id);
+      showSuccess(`Product ${product.name} status updated.`, 'Product Status');
       fetchCatalogData();
     } catch (err: any) {
-      alert(err?.message || 'Failed to update product status.');
+      showError(err?.message || 'Failed to update product status.', 'Product Error');
     }
   };
 

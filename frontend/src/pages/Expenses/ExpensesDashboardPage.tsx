@@ -24,6 +24,7 @@ import { Expense, ComprehensiveExpenseReport } from '../../types/expense';
 import { Account } from '../../types/accounting';
 import { expenseService } from '../../services/expenseService';
 import { accountingService } from '../../services/accountingService';
+import { useToast } from '../../context/ToastContext';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -31,6 +32,7 @@ const formatMoney = (val: number | string | undefined | null): string => {
 };
 
 export const ExpensesDashboardPage: React.FC = () => {
+  const { showError, showSuccess } = useToast();
   const [activeTab, setActiveTab] = useState<'expenses' | 'reports'>('expenses');
 
   // Accounts master data
@@ -200,9 +202,10 @@ export const ExpensesDashboardPage: React.FC = () => {
   const handleSubmitDraftExpense = async (id: number) => {
     try {
       await expenseService.submitExpense(id);
+      showSuccess('Expense submitted and accounting journal posted successfully!', 'Expense Submitted');
       fetchExpenses();
     } catch (err: any) {
-      alert(err?.response?.data?.detail || err?.message || 'Failed to submit expense.');
+      showError(err?.response?.data?.detail || err?.message || 'Failed to submit expense.', 'Expense Error');
     }
   };
 
