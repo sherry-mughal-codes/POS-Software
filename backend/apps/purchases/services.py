@@ -715,31 +715,52 @@ class PurchaseService:
         period_voucher_payments = Decimal("0.00")
 
         for p in p_qs:
-            credit_amount = p.grand_total - p.initial_paid_amount
             period_purchases += p.grand_total
-            period_upfront_paid += p.initial_paid_amount
-            if credit_amount > Decimal("0.00"):
+            events.append({
+                "date": p.date,
+                "created_at": p.created_at,
+                "reference": p.purchase_number,
+                "transaction_type": "PURCHASE",
+                "description": f"Purchase Invoice ({p.items.count()} items - Total: Rs. {p.grand_total:,.2f})",
+                "debit": 0.0,
+                "credit": float(p.grand_total),
+            })
+
+            if p.initial_paid_amount > Decimal("0.00"):
+                period_upfront_paid += p.initial_paid_amount
+                method_name = p.payment_method.name if p.payment_method else "Cash/Bank"
                 events.append({
                     "date": p.date,
                     "created_at": p.created_at,
                     "reference": p.purchase_number,
-                    "transaction_type": "PURCHASE",
-                    "description": f"Purchase Invoice ({p.items.count()} items)",
-                    "debit": 0.0,
-                    "credit": float(credit_amount),
+                    "transaction_type": "PAYMENT",
+                    "description": f"Immediate Payment at Purchase ({method_name})",
+                    "debit": float(p.initial_paid_amount),
+                    "credit": 0.0,
                 })
 
         for r in r_qs:
             period_returns += r.total_amount
-            events.append({
-                "date": r.date,
-                "created_at": r.created_at,
-                "reference": r.return_number,
-                "transaction_type": "PURCHASE_RETURN",
-                "description": f"Purchase Return ({r.notes or 'Vendor Debit Note'})",
-                "debit": float(r.total_amount),
-                "credit": 0.0,
-            })
+            if r.refund_method == RefundMethod.PAYABLE_DEDUCTION:
+                events.append({
+                    "date": r.date,
+                    "created_at": r.created_at,
+                    "reference": r.return_number,
+                    "transaction_type": "PURCHASE_RETURN",
+                    "description": f"Purchase Return (Deducted from Payable - {r.items.count()} items)",
+                    "debit": float(r.total_amount),
+                    "credit": 0.0,
+                })
+            else:
+                events.append({
+                    "date": r.date,
+                    "created_at": r.created_at,
+                    "reference": r.return_number,
+                    "transaction_type": "PURCHASE_RETURN",
+                    "description": f"Purchase Return ({r.get_refund_method_display()} Refund - Rs. {r.total_amount:,.2f})",
+                    "debit": 0.0,
+                    "credit": 0.0,
+                })
 
         for pay in pay_qs:
             period_voucher_payments += pay.amount

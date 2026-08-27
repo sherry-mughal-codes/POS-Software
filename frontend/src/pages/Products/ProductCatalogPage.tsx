@@ -52,11 +52,6 @@ export const ProductCatalogPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [viewMode, setViewMode] = useState<'GRID' | 'TABLE'>('GRID');
 
-  // Barcode Scanner input
-  const [barcodeInput, setBarcodeInput] = useState('');
-  const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
-  const [scanError, setScanError] = useState<string | null>(null);
-
   // Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -86,21 +81,6 @@ export const ProductCatalogPage: React.FC = () => {
   useEffect(() => {
     fetchCatalogData();
   }, [fetchCatalogData]);
-
-  // Barcode Instant Lookup
-  const handleBarcodeLookup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!barcodeInput.trim()) return;
-
-    setScanError(null);
-    setScannedProduct(null);
-    try {
-      const found = await productService.lookupBarcode(barcodeInput.trim());
-      setScannedProduct(found);
-    } catch (err: any) {
-      setScanError(`No product found for barcode '${barcodeInput}'.`);
-    }
-  };
 
   // Toggle active status
   const handleToggleStatus = async (product: Product) => {

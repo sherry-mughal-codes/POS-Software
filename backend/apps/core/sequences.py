@@ -222,7 +222,7 @@ class DocumentSequenceService:
             if max_existing >= start_num:
                 next_seq = max_existing + 1
             else:
-                next_seq = start_num + 1
+                next_seq = start_num
         else:
             if max_existing >= 1:
                 next_seq = max_existing + 1
@@ -245,7 +245,7 @@ class DocumentSequenceService:
             if max_existing >= start_num:
                 next_seq = max_existing + 1
             else:
-                next_seq = start_num + 1
+                next_seq = start_num
         else:
             if max_existing >= 1:
                 next_seq = max_existing + 1
@@ -254,7 +254,7 @@ class DocumentSequenceService:
 
         effective_padding = max(padding, len(str(next_seq)))
         next_preview = f"{prefix}{next_seq:0{effective_padding}d}"
-        current_display = str(max_existing) if max_existing > 0 else (str(start_num) if start_num > 1 else "0")
+        current_display = str(max_existing) if max_existing > 0 else "0"
 
         return {
             "key": doc_type,

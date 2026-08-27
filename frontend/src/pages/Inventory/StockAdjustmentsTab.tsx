@@ -7,6 +7,9 @@ import {
   AlertCircle,
   Eye,
   Send,
+  Search,
+  Package,
+  X,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
@@ -52,6 +55,8 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
   const [selectedProductId, setSelectedProductId] = useState<string>(
     targetProductForAdjustment ? targetProductForAdjustment.product_id.toString() : ''
   );
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const [inputMode, setInputMode] = useState<'diff' | 'actual'>('diff');
   const [diffQuantity, setDiffQuantity] = useState<number>(1);
   const [actualStockCount, setActualStockCount] = useState<number>(
@@ -72,6 +77,17 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
 
   const selectedProduct = inventoryItems.find((p) => p.product_id.toString() === selectedProductId);
 
+  const filteredProducts = inventoryItems.filter((p) => {
+    if (!productSearchQuery.trim()) return true;
+    const query = productSearchQuery.toLowerCase();
+    return (
+      p.product_name.toLowerCase().includes(query) ||
+      p.sku.toLowerCase().includes(query) ||
+      (p.barcode && p.barcode.toLowerCase().includes(query)) ||
+      (p.category_name && p.category_name.toLowerCase().includes(query))
+    );
+  });
+
   // Calculated values
   const currentStock = selectedProduct ? selectedProduct.current_stock : 0;
   const calculatedDiff = inputMode === 'diff'
@@ -83,12 +99,16 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
       setSelectedProductId(inventoryItems[0].product_id.toString());
       setActualStockCount(inventoryItems[0].current_stock);
     }
+    setProductSearchQuery('');
+    setIsProductDropdownOpen(false);
     setErrorMsg(null);
     setIsCreateModalOpen(true);
   };
 
   const handleCloseCreateModal = () => {
     setIsCreateModalOpen(false);
+    setProductSearchQuery('');
+    setIsProductDropdownOpen(false);
     onCloseTargetProduct();
   };
 
@@ -429,35 +449,174 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
               </div>
             </div>
 
-            {/* Product Selector */}
-            <div>
+            {/* Product Selector with Live Search */}
+            <div style={{ position: 'relative' }}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Select Product *
+                Select Product (Search by Name, SKU, Barcode, or Category) *
               </label>
-              <select
-                value={selectedProductId}
-                onChange={(e) => {
-                  setSelectedProductId(e.target.value);
-                  const prod = inventoryItems.find((p) => p.product_id.toString() === e.target.value);
-                  if (prod) setActualStockCount(prod.current_stock);
-                }}
-                style={{
-                  width: '100%',
-                  backgroundColor: 'var(--bg-input)',
+
+              {/* Search Bar Input */}
+              <div style={{ position: 'relative' }}>
+                <Search size={14} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
+                <input
+                  type="text"
+                  placeholder="Type to search product by name, SKU, or category..."
+                  value={productSearchQuery}
+                  onChange={(e) => {
+                    setProductSearchQuery(e.target.value);
+                    setIsProductDropdownOpen(true);
+                  }}
+                  onFocus={() => setIsProductDropdownOpen(true)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.375rem',
+                    padding: '0.45rem 2rem 0.45rem 2rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                  }}
+                />
+                {productSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProductSearchQuery('');
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: '0.5rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      padding: '2px',
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Selected Product Pill/Card */}
+              {selectedProduct ? (
+                <div style={{
+                  marginTop: '0.35rem',
+                  padding: '0.45rem 0.65rem',
+                  backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                  border: '1px solid rgba(99, 102, 241, 0.25)',
+                  borderRadius: '0.375rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Package size={15} style={{ color: 'var(--primary-400)', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        {selectedProduct.product_name}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                        SKU: <code style={{ color: 'var(--primary-400)' }}>{selectedProduct.sku}</code>
+                        {selectedProduct.category_name && ` | ${selectedProduct.category_name}`}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{
+                      fontSize: '0.71875rem',
+                      fontWeight: 700,
+                      padding: '0.15rem 0.45rem',
+                      borderRadius: '0.25rem',
+                      backgroundColor: selectedProduct.current_stock > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: selectedProduct.current_stock > 0 ? 'var(--success)' : 'var(--danger)',
+                    }}>
+                      Stock: {selectedProduct.current_stock} {selectedProduct.unit_abbr}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.71875rem', color: 'var(--warning)', marginTop: '0.25rem' }}>
+                  Please search and select a product.
+                </div>
+              )}
+
+              {/* Dropdown Results List */}
+              {isProductDropdownOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 50,
+                  backgroundColor: 'var(--bg-card)',
                   border: '1px solid var(--border-medium)',
                   borderRadius: '0.375rem',
-                  padding: '0.35rem 0.6rem',
-                  color: 'var(--text-main)',
-                  outline: 'none',
-                  fontSize: '0.78125rem',
-                }}
-              >
-                {inventoryItems.map((p) => (
-                  <option key={p.product_id} value={p.product_id.toString()}>
-                    {p.product_name} ({p.sku}) — Current Stock: {p.current_stock} {p.unit_abbr}
-                  </option>
-                ))}
-              </select>
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                  maxHeight: '180px',
+                  overflowY: 'auto',
+                  marginTop: '2px',
+                }}>
+                  {filteredProducts.length === 0 ? (
+                    <div style={{ padding: '0.625rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      No matching products found.
+                    </div>
+                  ) : (
+                    filteredProducts.map((p) => {
+                      const isSelected = p.product_id.toString() === selectedProductId;
+                      return (
+                        <div
+                          key={p.product_id}
+                          onClick={() => {
+                            setSelectedProductId(p.product_id.toString());
+                            setActualStockCount(p.current_stock);
+                            setIsProductDropdownOpen(false);
+                            setProductSearchQuery('');
+                          }}
+                          style={{
+                            padding: '0.45rem 0.65rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                            backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                            borderBottom: '1px solid var(--border-subtle)',
+                            transition: 'background 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: '0.78125rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                              {p.product_name}
+                            </div>
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
+                              SKU: {p.sku} {p.category_name ? `• ${p.category_name}` : ''}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{
+                              fontSize: '0.71875rem',
+                              fontFamily: 'var(--font-mono)',
+                              fontWeight: 700,
+                              color: p.current_stock > 0 ? 'var(--text-main)' : 'var(--danger)',
+                            }}>
+                              {p.current_stock} {p.unit_abbr}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Live Stock Comparison Card */}

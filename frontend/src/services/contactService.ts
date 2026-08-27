@@ -80,7 +80,13 @@ export const contactService = {
     return response.data;
   },
 
-  async createCustomerPayment(payload: CustomerPaymentPayload): Promise<CustomerPayment> {
+  async createCustomerPayment(payload: FormData | CustomerPaymentPayload): Promise<CustomerPayment> {
+    if (payload instanceof FormData) {
+      const response = await apiClient.post<CustomerPayment>('/payments/', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    }
     const response = await apiClient.post<CustomerPayment>('/payments/', payload);
     return response.data;
   },

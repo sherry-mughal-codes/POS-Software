@@ -120,6 +120,7 @@ class CustomerPaymentSerializer(serializers.ModelSerializer):
             "payment_account_name",
             "payment_account_code",
             "reference",
+            "screenshot",
             "notes",
             "status",
             "status_display",

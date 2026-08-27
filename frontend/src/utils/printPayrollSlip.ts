@@ -237,7 +237,7 @@ export const printPayrollSlip = (
               <tr>
                 <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${p.payment_number}</td>
                 <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${p.date}</td>
-                <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${p.payment_method_display || p.payment_method}</td>
+                <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${(p as any).payment_method_display || p.payment_method}</td>
                 <td style="padding: 6px 8px; border: 1px solid #e2e8f0;">${p.payment_account_name || 'N/A'}</td>
                 <td style="padding: 6px 8px; border: 1px solid #e2e8f0; text-align: right; font-weight: 700; color: #16a34a;">Rs. ${formatMoney(p.amount)}</td>
               </tr>

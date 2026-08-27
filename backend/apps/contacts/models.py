@@ -163,6 +163,12 @@ class CustomerPayment(models.Model):
         null=True,
         help_text="Cheque # / Online Deposit Slip / POS Transaction ID",
     )
+    screenshot = models.ImageField(
+        upload_to="customer_payments/",
+        null=True,
+        blank=True,
+        help_text="Payment proof / deposit slip screenshot",
+    )
     notes = models.TextField(blank=True, null=True)
     status = models.CharField(
         max_length=20,

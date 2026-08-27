@@ -20,6 +20,9 @@ import {
   Printer,
   TrendingDown,
   FileSpreadsheet,
+  Upload,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -28,6 +31,8 @@ import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { CustomerModal } from './CustomerModal';
 import { CustomerBulkImportModal } from './CustomerBulkImportModal';
+import { CustomerStatementSlipModal } from './CustomerStatementSlipModal';
+import { getProductImageUrl } from '../../utils/imageUrl';
 import {
   Customer,
   CustomerPayment,
@@ -84,6 +89,8 @@ export const CustomersPage: React.FC = () => {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentScreenshotFile, setPaymentScreenshotFile] = useState<File | null>(null);
+  const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState<string | null>(null);
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
@@ -93,12 +100,35 @@ export const CustomersPage: React.FC = () => {
   const [statementLoading, setStatementLoading] = useState(false);
   const [statementStartDate, setStatementStartDate] = useState('');
   const [statementEndDate, setStatementEndDate] = useState('');
+  const [isStatementSlipModalOpen, setIsStatementSlipModalOpen] = useState(false);
 
   // Cancel Payment Modal
   const [cancelPaymentTarget, setCancelPaymentTarget] = useState<CustomerPayment | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  // Filter accounts based on Cash vs Card/Bank
+  const getFilteredPaymentAccounts = (method: PaymentMethodKind) => {
+    if (method === 'CASH') {
+      return paymentAccounts.filter(
+        (a) =>
+          (a.code.startsWith('101') || a.parent_code === '1010' || (a.name.toLowerCase().includes('cash') && !a.code.startsWith('102'))) &&
+          !a.name.toLowerCase().includes('jazz') &&
+          !a.name.toLowerCase().includes('easy') &&
+          !a.code.startsWith('102')
+      );
+    }
+    return paymentAccounts.filter(
+      (a) =>
+        a.code.startsWith('102') ||
+        a.parent_code === '1020' ||
+        a.name.toLowerCase().includes('bank') ||
+        a.name.toLowerCase().includes('card') ||
+        a.name.toLowerCase().includes('jazz') ||
+        a.name.toLowerCase().includes('easy')
+    );
+  };
 
   // Fetch Payment Accounts
   useEffect(() => {
@@ -184,12 +214,31 @@ export const CustomersPage: React.FC = () => {
     setSelectedCustomerForPayment(target || null);
     setPaymentAmount(target && target.outstanding_balance ? target.outstanding_balance.toString() : '');
     setPaymentMethod('CASH');
-    setPaymentAccountId(paymentAccounts[0]?.id || 0);
+    const cashAccs = getFilteredPaymentAccounts('CASH');
+    setPaymentAccountId(cashAccs[0]?.id || paymentAccounts[0]?.id || 0);
     setPaymentDate(new Date().toISOString().split('T')[0]);
     setPaymentReference('');
     setPaymentNotes('');
+    setPaymentScreenshotFile(null);
+    setPaymentScreenshotPreview(null);
     setPaymentError(null);
     setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentMethodChange = (newMethod: PaymentMethodKind) => {
+    setPaymentMethod(newMethod);
+    const validAccs = getFilteredPaymentAccounts(newMethod);
+    if (validAccs.length > 0 && !validAccs.some((a) => a.id === paymentAccountId)) {
+      setPaymentAccountId(validAccs[0].id);
+    }
+  };
+
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPaymentScreenshotFile(file);
+      setPaymentScreenshotPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSavePayment = async (e: React.FormEvent) => {
@@ -216,16 +265,30 @@ export const CustomersPage: React.FC = () => {
     }
 
     try {
-      await contactService.createCustomerPayment({
-        customer: selectedCustomerForPayment.id,
-        amount: amt,
-        payment_method: paymentMethod,
-        payment_account: paymentAccountId || undefined,
-        date: paymentDate,
-        reference: paymentReference,
-        notes: paymentNotes,
-        submit_now: true,
-      });
+      if (paymentScreenshotFile) {
+        const formData = new FormData();
+        formData.append('customer', selectedCustomerForPayment.id.toString());
+        formData.append('amount', amt.toString());
+        formData.append('payment_method', paymentMethod);
+        if (paymentAccountId) formData.append('payment_account', paymentAccountId.toString());
+        if (paymentDate) formData.append('date', paymentDate);
+        if (paymentReference) formData.append('reference', paymentReference);
+        if (paymentNotes) formData.append('notes', paymentNotes);
+        formData.append('screenshot', paymentScreenshotFile);
+        formData.append('submit_now', 'true');
+        await contactService.createCustomerPayment(formData);
+      } else {
+        await contactService.createCustomerPayment({
+          customer: selectedCustomerForPayment.id,
+          amount: amt,
+          payment_method: paymentMethod,
+          payment_account: paymentAccountId || undefined,
+          date: paymentDate,
+          reference: paymentReference,
+          notes: paymentNotes,
+          submit_now: true,
+        });
+      }
       setIsPaymentModalOpen(false);
       fetchCustomers();
       if (activeTab === 'payments') fetchPayments();
@@ -863,6 +926,7 @@ export const CustomersPage: React.FC = () => {
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Method / Account</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Amount Paid (Rs.)</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Reference</th>
+                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Proof / Slip</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Status</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Created By</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Actions</th>
@@ -871,7 +935,7 @@ export const CustomersPage: React.FC = () => {
                   <tbody>
                     {payments.length === 0 ? (
                       <tr>
-                        <td colSpan={9} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <td colSpan={10} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                           No customer payment vouchers recorded yet. Click "Record Payment" to create one.
                         </td>
                       </tr>
@@ -914,6 +978,32 @@ export const CustomersPage: React.FC = () => {
 
                           <td style={{ padding: '0.625rem 0.75rem', color: 'var(--text-muted)' }}>
                             {pay.reference || '-'}
+                          </td>
+
+                          <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
+                            {pay.screenshot ? (
+                              <a
+                                href={getProductImageUrl(pay.screenshot)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.25rem',
+                                  padding: '0.2rem 0.5rem',
+                                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                                  color: 'var(--primary-400)',
+                                  borderRadius: '0.25rem',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 600,
+                                  textDecoration: 'none',
+                                }}
+                              >
+                                <ImageIcon size={13} /> View Slip
+                              </a>
+                            ) : (
+                              <span style={{ color: 'var(--text-subtle)', fontSize: '0.75rem' }}>-</span>
+                            )}
                           </td>
 
                           <td style={{ padding: '0.625rem 0.75rem' }}>
@@ -1209,7 +1299,7 @@ export const CustomersPage: React.FC = () => {
               </label>
               <select
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethodKind)}
+                onChange={(e) => handlePaymentMethodChange(e.target.value as PaymentMethodKind)}
                 required
                 style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
               >
@@ -1221,7 +1311,7 @@ export const CustomersPage: React.FC = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Deposit Into (Account) *
+                {paymentMethod === 'CASH' ? 'Cash Account (101x) *' : 'Bank Account (102x) *'}
               </label>
               <select
                 value={paymentAccountId}
@@ -1229,7 +1319,7 @@ export const CustomersPage: React.FC = () => {
                 required
                 style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
               >
-                {paymentAccounts.map((a) => (
+                {getFilteredPaymentAccounts(paymentMethod).map((a) => (
                   <option key={a.id} value={a.id}>
                     [{a.code}] {a.name}
                   </option>
@@ -1249,6 +1339,73 @@ export const CustomersPage: React.FC = () => {
               onChange={(e) => setPaymentReference(e.target.value)}
               style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
             />
+          </div>
+
+          {/* Screenshot / Payment Proof Upload */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              Payment Screenshot / Deposit Slip Proof (Optional)
+            </label>
+            {paymentScreenshotPreview ? (
+              <div style={{ position: 'relative', display: 'inline-block', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', overflow: 'hidden' }}>
+                <img
+                  src={paymentScreenshotPreview}
+                  alt="Proof preview"
+                  style={{ width: '120px', height: '120px', objectFit: 'cover', display: 'block' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentScreenshotFile(null);
+                    setPaymentScreenshotPreview(null);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '4px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '22px',
+                    height: '22px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{
+                  border: '1px dashed var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  padding: '0.875rem',
+                  textAlign: 'center',
+                  backgroundColor: 'var(--bg-input)',
+                  cursor: 'pointer',
+                }}
+                onClick={() => document.getElementById('customer-payment-screenshot-input')?.click()}
+              >
+                <input
+                  id="customer-payment-screenshot-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleScreenshotChange}
+                  style={{ display: 'none' }}
+                />
+                <Upload size={20} style={{ color: 'var(--primary-400)', margin: '0 auto 0.25rem auto' }} />
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                  Upload Screenshot / Slip
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                  Click to browse from computer / gallery (PNG, JPG, WebP)
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -1431,8 +1588,8 @@ export const CustomersPage: React.FC = () => {
             ) : null}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
-              <Button variant="outline" onClick={() => window.print()} icon={<Printer size={14} />}>
-                Print Statement
+              <Button variant="outline" onClick={() => setIsStatementSlipModalOpen(true)} icon={<Printer size={14} />}>
+                Print Statement Slip (80mm/58mm)
               </Button>
               <Button variant="primary" onClick={() => setStatementCustomer(null)}>
                 Close
@@ -1441,6 +1598,16 @@ export const CustomersPage: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      {/* CUSTOMER STATEMENT THERMAL SLIP PRINT MODAL */}
+      <CustomerStatementSlipModal
+        isOpen={isStatementSlipModalOpen}
+        onClose={() => setIsStatementSlipModalOpen(false)}
+        customer={statementCustomer}
+        statement={statementData}
+        startDate={statementStartDate}
+        endDate={statementEndDate}
+      />
 
       {/* CANCEL PAYMENT MODAL */}
       {cancelPaymentTarget && (

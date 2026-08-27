@@ -43,10 +43,22 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
   }, []);
 
   const cashAccounts = accounts.filter(
-    (a) => a.account_type === 'ASSET' && (a.code.startsWith('101') || a.parent_code === '1010')
+    (a) =>
+      a.account_type === 'ASSET' &&
+      (a.code.startsWith('101') || a.parent_code === '1010' || (a.name.toLowerCase().includes('cash') && !a.code.startsWith('102'))) &&
+      !a.name.toLowerCase().includes('jazz') &&
+      !a.name.toLowerCase().includes('easy') &&
+      !a.code.startsWith('102')
   );
   const bankAccounts = accounts.filter(
-    (a) => a.account_type === 'ASSET' && (a.code.startsWith('102') || a.parent_code === '1020')
+    (a) =>
+      a.account_type === 'ASSET' &&
+      (a.code.startsWith('102') ||
+        a.parent_code === '1020' ||
+        a.name.toLowerCase().includes('bank') ||
+        a.name.toLowerCase().includes('card') ||
+        a.name.toLowerCase().includes('jazz') ||
+        a.name.toLowerCase().includes('easy'))
   );
   const liquidAccounts = [...cashAccounts, ...bankAccounts];
 
@@ -200,7 +212,7 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
                         </div>
                       ) : r.refund_method === 'CHEQUE' ? (
                         <div>
-                          <Badge variant="purple">Cheque Refund</Badge>
+                          <Badge variant="phase">Cheque Refund</Badge>
                           {r.payment_account_name && (
                             <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', marginTop: '0.125rem' }}>
                               {r.payment_account_name}
@@ -357,7 +369,7 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
                     required
                   >
                     <option value="">-- Select Receiving Account --</option>
-                    {liquidAccounts.map((acc) => (
+                    {(refundMethod === 'CASH' ? cashAccounts : bankAccounts).map((acc) => (
                       <option key={acc.id} value={acc.id}>
                         [{acc.code}] {acc.name}
                       </option>

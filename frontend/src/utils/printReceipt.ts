@@ -57,26 +57,54 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
             margin: 0;
             padding: 0;
           }
-          body {
-            width: ${paperWidth};
-            max-width: ${paperWidth};
-            min-width: ${paperWidth};
-            margin: 0 auto;
-            padding: 2mm 3mm 8mm 3mm;
+          html, body {
+            width: ${paperWidth} !important;
+            max-width: ${paperWidth} !important;
+            min-width: ${paperWidth} !important;
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+            margin: 0 auto !important;
+            padding: 2mm 2.5mm 10mm 2.5mm !important;
             font-family: 'Courier New', Courier, monospace, system-ui;
-            font-size: ${paperWidth === '58mm' ? '10.5px' : '12px'};
+            font-size: ${paperWidth === '58mm' ? '9.5px' : '11px'};
             line-height: 1.35;
             color: #000000;
             background: #ffffff;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
+          .pos-thermal-receipt,
+          #customer-statement-thermal-slip,
+          #supplier-statement-thermal-slip,
+          #po-thermal-slip,
+          #pos-receipt-print-area {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 100% !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
           table {
-            width: 100%;
+            width: 100% !important;
+            max-width: 100% !important;
             border-collapse: collapse;
+            table-layout: fixed;
+            word-wrap: break-word;
           }
           th, td {
             color: #000000;
+            overflow-wrap: break-word;
+            word-break: break-word;
+          }
+          tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           img {
             max-width: 100%;

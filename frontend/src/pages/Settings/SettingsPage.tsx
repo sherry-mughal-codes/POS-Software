@@ -19,7 +19,6 @@ import {
   HardDrive,
   RotateCcw,
   Clock,
-  ShieldCheck,
   AlertTriangle,
   FileCode,
   Search,
@@ -1449,7 +1448,7 @@ export const SettingsPage: React.FC = () => {
                     {/* 1. IMPORT / RESTORE BUTTON */}
                     <Button
                       type="button"
-                      variant="warning"
+                      variant="outline"
                       icon={<Upload size={15} />}
                       onClick={() => handleOpenRestoreModal()}
                       style={{
@@ -1568,7 +1567,7 @@ export const SettingsPage: React.FC = () => {
                                 ) : b.backup_type === 'IMPORT_RESTORE' ? (
                                   <Badge variant="warning">Imported</Badge>
                                 ) : (
-                                  <Badge variant="secondary">Manual</Badge>
+                                  <Badge variant="phase">Manual</Badge>
                                 )}
                               </td>
                               <td style={{ padding: '0.5rem 0.75rem' }}>
@@ -1672,7 +1671,7 @@ export const SettingsPage: React.FC = () => {
           if (!restoringBackup) setRestoreModalOpen(false);
         }}
         title="Restore / Import Database from .SQL Backup"
-        size="md"
+        maxWidth="620px"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Warning Banner */}
@@ -1782,7 +1781,7 @@ export const SettingsPage: React.FC = () => {
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         title="Confirm Backup Deletion"
-        size="sm"
+        maxWidth="460px"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>

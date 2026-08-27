@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Trash2, Save, Send, AlertCircle, Upload, FileText, X, Search, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Save, Send, Upload, FileText, X, Search, ChevronDown } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Supplier } from '../../types/contact';
@@ -10,6 +10,7 @@ import { contactService } from '../../services/contactService';
 import { productService } from '../../services/productService';
 import { accountingService } from '../../services/accountingService';
 import { purchaseService } from '../../services/purchaseService';
+import { useToast } from '../../context/ToastContext';
 
 interface LineItemRow {
   productId: number;
@@ -37,6 +38,7 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
   editingPurchase,
   onCancelEdit,
 }) => {
+  const { showError, showSuccess } = useToast();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -61,13 +63,15 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
   const [lineItems, setLineItems] = useState<LineItemRow[]>([]);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [paidAmount, setPaidAmount] = useState<number>(0);
+  const [isPaidAmountAuto, setIsPaidAmountAuto] = useState<boolean>(
+    !editingPurchase || Number(editingPurchase.paid_amount) === Number(editingPurchase.grand_total)
+  );
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>('');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -121,7 +125,7 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
         }
       }
     }).catch((err) => {
-      setError(err?.message || 'Failed to load suppliers and products.');
+      showError(err?.message || 'Failed to load suppliers and products.', 'Loading Error');
     });
   }, [editingPurchase]);
 
@@ -267,14 +271,24 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
   };
 
   const handleAddProduct = () => {
-    if (!selectedProductToAdd && filteredProducts.length > 0) {
+    if (!selectedProductToAdd && !productSearchText.trim()) {
+      showError('Please search and click a product from the list to add it.', 'No Product Selected');
+      setIsProductDropdownOpen(true);
+      return;
+    }
+    if (selectedProductToAdd) {
+      const prod = products.find((p) => p.id.toString() === selectedProductToAdd);
+      if (prod) {
+        addProductDirectly(prod);
+        return;
+      }
+    }
+    if (filteredProducts.length === 1 && productSearchText.trim()) {
       addProductDirectly(filteredProducts[0]);
       return;
     }
-    const prod = products.find((p) => p.id.toString() === selectedProductToAdd);
-    if (prod) {
-      addProductDirectly(prod);
-    }
+    // If not uniquely matched, open dropdown so user can click
+    setIsProductDropdownOpen(true);
   };
 
   const handleRemoveLine = (idx: number) => {
@@ -292,26 +306,34 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
   const grandTotal = Math.max(0, subtotal - discountAmount);
   const remainingPayable = Math.max(0, grandTotal - paidAmount);
 
+  // Real-time automatic synchronization of paidAmount with grandTotal
+  useEffect(() => {
+    if (isPaidAmountAuto && !editingPurchase) {
+      setPaidAmount(grandTotal);
+    }
+  }, [grandTotal, isPaidAmountAuto, editingPurchase]);
+
   const handlePayInFull = () => {
     setPaidAmount(grandTotal);
+    setIsPaidAmountAuto(true);
   };
 
   const handleFullCredit = () => {
     setPaidAmount(0);
+    setIsPaidAmountAuto(false);
   };
 
   const handleSubmit = async (submitImmediately: boolean) => {
     if (!selectedSupplierId) {
-      setError('Please select a supplier.');
+      showError('Please select a supplier before submitting the purchase order.', 'Supplier Required');
       return;
     }
     if (lineItems.length === 0) {
-      setError('Please add at least one product line item.');
+      showError('Please add at least one product line item to the order.', 'No Items Added');
       return;
     }
 
     setSubmitting(true);
-    setError(null);
 
     const payload = {
       supplier: parseInt(selectedSupplierId),
@@ -336,12 +358,20 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
     try {
       if (editingPurchase) {
         await purchaseService.updatePurchase(editingPurchase.id, payload);
+        showSuccess(`Draft purchase order ${editingPurchase.purchase_number} updated successfully!`, 'Purchase Updated');
       } else {
         await purchaseService.createPurchase(payload);
+        showSuccess(
+          submitImmediately
+            ? 'Purchase order submitted and inventory restocked successfully!'
+            : 'Draft purchase order saved successfully!',
+          'Purchase Order Created'
+        );
       }
       onSuccess();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || 'Failed to process purchase.');
+      const msg = err?.response?.data?.detail || err?.message || 'Failed to process purchase.';
+      showError(msg, 'Purchase Error');
     } finally {
       setSubmitting(false);
     }
@@ -374,23 +404,6 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
               Cancel Edit
             </Button>
           )}
-        </div>
-      )}
-
-      {error && (
-        <div style={{
-          padding: '0.75rem 1rem',
-          backgroundColor: 'var(--danger-bg)',
-          border: '1px solid var(--danger-border)',
-          borderRadius: '0.5rem',
-          color: 'var(--danger)',
-          fontSize: '0.8125rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-        }}>
-          <AlertCircle size={16} />
-          <span>{error}</span>
         </div>
       )}
 
@@ -970,7 +983,11 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
                   max={grandTotal}
                   step="0.01"
                   value={paidAmount}
-                  onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setPaidAmount(val);
+                    setIsPaidAmountAuto(false);
+                  }}
                   style={{
                     width: '100%',
                     backgroundColor: 'var(--bg-input)',

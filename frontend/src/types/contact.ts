@@ -67,6 +67,7 @@ export interface CustomerPayment {
   payment_account_name: string;
   payment_account_code: string;
   reference?: string | null;
+  screenshot?: string | null;
   notes?: string | null;
   status: PaymentStatusKind;
   status_display: string;
@@ -92,6 +93,7 @@ export interface CustomerPaymentPayload {
   payment_method: PaymentMethodKind;
   payment_account?: number;
   reference?: string;
+  screenshot?: File | string | null;
   notes?: string;
   submit_now?: boolean;
 }
@@ -123,6 +125,7 @@ export interface CustomerStatement {
     end_date?: string | null;
   };
   summary: {
+    opening_balance?: number;
     total_debit: number;
     total_sales?: number;
     total_payments?: number;

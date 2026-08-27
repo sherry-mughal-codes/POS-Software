@@ -33,6 +33,7 @@ import {
 import { contactService } from '../../services/contactService';
 import { accountingService } from '../../services/accountingService';
 import { purchaseService } from '../../services/purchaseService';
+import { SupplierStatementSlipModal } from './SupplierStatementSlipModal';
 
 interface SupplierPayablesTabProps {
   onRefreshAll?: () => void;
@@ -85,6 +86,7 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   const [statementStartDate, setStatementStartDate] = useState('');
   const [statementEndDate, setStatementEndDate] = useState('');
   const [selectedSupplierForStatement, setSelectedSupplierForStatement] = useState<Supplier | null>(null);
+  const [isStatementSlipModalOpen, setIsStatementSlipModalOpen] = useState(false);
 
   // Cancel Payment Modal
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -92,6 +94,28 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   const [cancelReason, setCancelReason] = useState('');
   const [cancellingLoading, setCancellingLoading] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  // Filter accounts based on Cash vs Card/Bank
+  const getFilteredPaymentAccounts = (method: SupplierPaymentMethodType) => {
+    if (method === 'CASH') {
+      return paymentAccounts.filter(
+        (a) =>
+          (a.code.startsWith('101') || a.parent_code === '1010' || (a.name.toLowerCase().includes('cash') && !a.code.startsWith('102'))) &&
+          !a.name.toLowerCase().includes('jazz') &&
+          !a.name.toLowerCase().includes('easy') &&
+          !a.code.startsWith('102')
+      );
+    }
+    return paymentAccounts.filter(
+      (a) =>
+        a.code.startsWith('102') ||
+        a.parent_code === '1020' ||
+        a.name.toLowerCase().includes('bank') ||
+        a.name.toLowerCase().includes('card') ||
+        a.name.toLowerCase().includes('jazz') ||
+        a.name.toLowerCase().includes('easy')
+    );
+  };
 
   // Fetch initial directory data
   const fetchPayablesData = useCallback(async () => {
@@ -191,10 +215,9 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
     setSubmitNow(true);
     setPaymentError(null);
 
-    // Auto-select cash account 1010
-    const cashAcc = paymentAccounts.find((a) => a.code === '1010') || paymentAccounts[0];
-    if (cashAcc) {
-      setSelectedAccountId(cashAcc.id.toString());
+    const cashAccs = getFilteredPaymentAccounts('CASH');
+    if (cashAccs.length > 0) {
+      setSelectedAccountId(cashAccs[0].id.toString());
     }
 
     setIsPaymentModalOpen(true);
@@ -203,12 +226,9 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   // Change payment method handler
   const handleMethodChange = (method: SupplierPaymentMethodType) => {
     setPayMethod(method);
-    if (method === 'CASH') {
-      const cashAcc = paymentAccounts.find((a) => a.code === '1010');
-      if (cashAcc) setSelectedAccountId(cashAcc.id.toString());
-    } else if (method === 'BANK' || method === 'CHEQUE') {
-      const bankAcc = paymentAccounts.find((a) => a.code === '1020');
-      if (bankAcc) setSelectedAccountId(bankAcc.id.toString());
+    const validAccs = getFilteredPaymentAccounts(method);
+    if (validAccs.length > 0) {
+      setSelectedAccountId(validAccs[0].id.toString());
     }
   };
 
@@ -1030,7 +1050,7 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                   fontSize: '0.875rem',
                 }}
               >
-                {paymentAccounts.map((a) => (
+                {getFilteredPaymentAccounts(payMethod).map((a) => (
                   <option key={a.id} value={a.id}>
                     [{a.code}] {a.name} (Balance: Rs. {formatMoney(a.current_balance)})
                   </option>
@@ -1171,8 +1191,8 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                 Filter
               </Button>
 
-              <Button variant="outline" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', marginLeft: 'auto' }} icon={<Printer size={13} />} onClick={() => window.print()}>
-                Print Statement
+              <Button variant="outline" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', marginLeft: 'auto' }} icon={<Printer size={13} />} onClick={() => setIsStatementSlipModalOpen(true)}>
+                Print Statement Slip (80mm/58mm)
               </Button>
             </div>
 
@@ -1300,6 +1320,16 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
           </div>
         )}
       </Modal>
+
+      {/* SUPPLIER STATEMENT THERMAL SLIP PRINT MODAL */}
+      <SupplierStatementSlipModal
+        isOpen={isStatementSlipModalOpen}
+        onClose={() => setIsStatementSlipModalOpen(false)}
+        supplier={selectedSupplierForStatement}
+        statement={activeStatement}
+        startDate={statementStartDate}
+        endDate={statementEndDate}
+      />
 
       {/* CANCEL PAYMENT MODAL */}
       <Modal

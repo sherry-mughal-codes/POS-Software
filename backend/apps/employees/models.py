@@ -399,9 +399,9 @@ class SalaryPayment(models.Model):
 
     @classmethod
     def generate_payment_number(cls, target_date=None):
-        """Generates sequential voucher: SPAY-YYYY-XXXXX"""
+        """Generates sequential voucher: SALPAY-YYYY-XXXXX"""
         year = target_date.year if target_date else timezone.now().year
-        prefix = f"SPAY-{year}-"
+        prefix = f"SALPAY-{year}-"
         last = cls.objects.filter(payment_number__startswith=prefix).order_by("-payment_number").first()
         if last:
             try:

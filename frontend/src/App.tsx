@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { ToastProvider } from './context/ToastContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
@@ -350,7 +351,9 @@ export const App: React.FC = () => {
   return (
     <AuthProvider>
       <SettingsProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </SettingsProvider>
     </AuthProvider>
   );
