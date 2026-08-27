@@ -336,6 +336,17 @@ class SalesService:
             "description": f"Sales Revenue for {sale.invoice_number}",
         })
 
+        # Sales Tax Liability Credit = Output Tax collected from customer
+        if sale.tax_amount > Decimal("0.00"):
+            tax_payable_acc = Account.objects.filter(code="2020").first() or Account.objects.filter(parent__code="2000", name__icontains="tax").first()
+            if tax_payable_acc:
+                revenue_lines.append({
+                    "account": tax_payable_acc,
+                    "debit": Decimal("0.00"),
+                    "credit": sale.tax_amount,
+                    "description": f"Sales Tax collected on {sale.invoice_number}",
+                })
+
         AccountingService.create_journal_entry(
             entry_date=sale.date,
             reference_type=ReferenceType.SALE if hasattr(ReferenceType, "SALE") else ReferenceType.JOURNAL,

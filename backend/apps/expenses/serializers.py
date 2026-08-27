@@ -110,6 +110,11 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Selected account '{value.name}' is not an Expense account.")
         
         name_lower = value.name.lower()
+        if value.code in ["5000", "5100"] or (value.parent is None and not value.code.startswith("50")):
+            raise serializers.ValidationError(
+                f"Account [{value.code}] {value.name} is a parent header group. Direct or indirect expenses cannot be recorded to a parent group. Please select a specific expense sub-account."
+            )
+
         if (
             value.code in ["5000", "5010", "5080"]
             or "cogs" in name_lower
