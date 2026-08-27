@@ -44,16 +44,20 @@ class Command(BaseCommand):
             {"code": "4030", "name": "Discount Received (Supplier)", "type": AccountType.INCOME, "parent": "4000", "is_system": False},
             {"code": "4040", "name": "Other Operating Income", "type": AccountType.INCOME, "parent": "4000", "is_system": False},
 
-            # 5000 - EXPENSES
-            {"code": "5000", "name": "Expenses", "type": AccountType.EXPENSE, "parent": None, "is_system": True},
+            # 5000 - DIRECT EXPENSES (COGS)
+            {"code": "5000", "name": "Direct Expenses (COGS)", "type": AccountType.EXPENSE, "parent": None, "is_system": True},
             {"code": "5010", "name": "Cost of Goods Sold (COGS)", "type": AccountType.EXPENSE, "parent": "5000", "is_system": True},
-            {"code": "5020", "name": "Salaries & Wages Expense", "type": AccountType.EXPENSE, "parent": "5000", "is_system": False},
-            {"code": "5030", "name": "Store Rent Expense", "type": AccountType.EXPENSE, "parent": "5000", "is_system": False},
-            {"code": "5040", "name": "Utilities (Electricity, Water)", "type": AccountType.EXPENSE, "parent": "5000", "is_system": False},
-            {"code": "5050", "name": "Store Maintenance & Supplies", "type": AccountType.EXPENSE, "parent": "5000", "is_system": False},
-            {"code": "5060", "name": "Marketing & Advertising", "type": AccountType.EXPENSE, "parent": "5000", "is_system": False},
-            {"code": "5070", "name": "Bank & Card Gateway Fees", "type": AccountType.EXPENSE, "parent": "5000", "is_system": False},
             {"code": "5080", "name": "Inventory Shrinkage & Write-offs", "type": AccountType.EXPENSE, "parent": "5000", "is_system": False},
+
+            # 5100 - INDIRECT EXPENSES (OPERATING & ADMIN)
+            {"code": "5100", "name": "Indirect Expenses", "type": AccountType.EXPENSE, "parent": None, "is_system": True},
+            {"code": "5020", "name": "Salaries & Wages Expense", "type": AccountType.EXPENSE, "parent": "5100", "is_system": False},
+            {"code": "5030", "name": "Store Rent Expense", "type": AccountType.EXPENSE, "parent": "5100", "is_system": False},
+            {"code": "5040", "name": "Utilities (Electricity, Water)", "type": AccountType.EXPENSE, "parent": "5100", "is_system": False},
+            {"code": "5050", "name": "Store Maintenance & Supplies", "type": AccountType.EXPENSE, "parent": "5100", "is_system": False},
+            {"code": "5060", "name": "Marketing & Advertising", "type": AccountType.EXPENSE, "parent": "5100", "is_system": False},
+            {"code": "5070", "name": "Bank & Card Gateway Fees", "type": AccountType.EXPENSE, "parent": "5100", "is_system": False},
+            {"code": "5082", "name": "Entertainment & Refreshment", "type": AccountType.EXPENSE, "parent": "5100", "is_system": False},
         ]
 
         created_count = 0

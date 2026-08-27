@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus, Search, Sparkles, Trash2, BookOpen, Edit2, FolderPlus } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -335,13 +335,56 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
     return level;
   };
 
-  const filteredAccounts = accounts.filter((acc) => {
-    const matchesType = selectedType === 'ALL' || acc.account_type === selectedType;
-    const matchesSearch =
-      acc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      acc.code.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesSearch;
-  });
+  const buildHierarchicalAccounts = (accList: Account[]): Account[] => {
+    const childrenMap = new Map<number, Account[]>();
+    const roots: Account[] = [];
+
+    accList.forEach((acc: Account) => {
+      if (!acc.parent) {
+        roots.push(acc);
+      } else {
+        const existing = childrenMap.get(acc.parent) || [];
+        existing.push(acc);
+        childrenMap.set(acc.parent, existing);
+      }
+    });
+
+    const allIds = new Set(accList.map((a: Account) => a.id));
+    accList.forEach((acc: Account) => {
+      if (acc.parent && !allIds.has(acc.parent) && !roots.some((r: Account) => r.id === acc.id)) {
+        roots.push(acc);
+      }
+    });
+
+    roots.sort((a: Account, b: Account) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+
+    const result: Account[] = [];
+    const traverse = (node: Account) => {
+      result.push(node);
+      const children = childrenMap.get(node.id) || [];
+      children.sort((a: Account, b: Account) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+      children.forEach(traverse);
+    };
+
+    roots.forEach(traverse);
+    return result;
+  };
+
+  const filteredAccounts: Account[] = useMemo(() => {
+    const matching = accounts.filter((acc: Account) => {
+      const matchesType = selectedType === 'ALL' || acc.account_type === selectedType;
+      const matchesSearch =
+        acc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        acc.code.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesType && matchesSearch;
+    });
+
+    if (searchQuery.trim()) {
+      return matching.sort((a: Account, b: Account) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+    }
+
+    return buildHierarchicalAccounts(matching);
+  }, [accounts, selectedType, searchQuery]);
 
   const getTypeBadgeVariant = (type: AccountType) => {
     switch (type) {
@@ -638,7 +681,7 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                     {selectedType === 'EQUITY' ? "Total Real-Time Owner's Equity (Capital + Net Profit):" : `Net ${accountTypes.find((t) => t.key === selectedType)?.label} Total:`}
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '1rem', color: selectedType === 'EQUITY' ? '#a5b4fc' : 'var(--primary-400)' }}>
-                    Rs. {(selectedType === 'EQUITY' ? realTimeTotalEquity : filteredAccounts.filter((a) => !a.is_header).reduce((sum, a) => sum + a.current_balance, 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    Rs. {(selectedType === 'EQUITY' ? realTimeTotalEquity : filteredAccounts.filter((a: Account) => !a.is_header).reduce((sum: number, a: Account) => sum + a.current_balance, 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td />
                 </tr>

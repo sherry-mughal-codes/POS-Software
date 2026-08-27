@@ -108,6 +108,17 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
     def validate_expense_account(self, value):
         if value.account_type != AccountType.EXPENSE:
             raise serializers.ValidationError(f"Selected account '{value.name}' is not an Expense account.")
+        
+        name_lower = value.name.lower()
+        if (
+            value.code in ["5000", "5010", "5080"]
+            or "cogs" in name_lower
+            or "cost of goods" in name_lower
+            or (value.parent and value.parent.code == "5000")
+        ):
+            raise serializers.ValidationError(
+                f"Account [{value.code}] {value.name} is a Direct Expense (COGS / Inventory adjustments) and cannot be recorded manually. Please select an Indirect Expense account."
+            )
         return value
 
     def validate_payment_account(self, value):

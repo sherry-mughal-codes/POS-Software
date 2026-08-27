@@ -82,7 +82,20 @@ export const ExpensesDashboardPage: React.FC = () => {
     accountingService.getAccounts().then((accounts) => {
       if (accounts) {
         const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
-        const expList = accounts.filter((a) => a.account_type === 'EXPENSE' && isLeaf(a));
+        // Only Indirect Expenses can be recorded manually (Direct expenses like COGS / Shrinkage are system-automated)
+        let expList = accounts.filter(
+          (a) =>
+            a.account_type === 'EXPENSE' &&
+            isLeaf(a) &&
+            a.code !== '5010' &&
+            a.code !== '5080' &&
+            !a.name.toLowerCase().includes('cogs') &&
+            !a.name.toLowerCase().includes('cost of goods') &&
+            !a.name.toLowerCase().includes('shrinkage')
+        );
+        if (expList.length === 0) {
+          expList = accounts.filter((a) => a.account_type === 'EXPENSE' && isLeaf(a));
+        }
         const payList = accounts.filter(
           (a) => a.account_type === 'ASSET' && isLeaf(a) && (a.code.startsWith('101') || a.code.startsWith('102') || a.parent_code === '1010' || a.parent_code === '1020')
         );
@@ -685,16 +698,20 @@ export const ExpensesDashboardPage: React.FC = () => {
                 Expense Category / Account *
               </label>
               <select
-                value={expenseFormData.expense_account}
+                value={expenseFormData.expense_account || (expenseAccounts[0]?.id ?? 0)}
                 onChange={(e) => setExpenseFormData({ ...expenseFormData, expense_account: parseInt(e.target.value) })}
                 required
                 style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
               >
-                {expenseAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    [{a.code}] {a.name}
-                  </option>
-                ))}
+                {expenseAccounts.length === 0 ? (
+                  <option value={0}>Loading accounts...</option>
+                ) : (
+                  expenseAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      [{a.code}] {a.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
