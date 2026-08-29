@@ -5,8 +5,6 @@ import {
   PieChart,
   Filter,
   Search,
-  Printer,
-  Download,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -202,72 +200,6 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
     });
   }, [balanceSheet, hideZeroBalances, searchTerm]);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleExportCSV = () => {
-    let headers: string[] = [];
-    let rows: (string | number)[][] = [];
-    let filename = '';
-
-    if (activeReport === 'TRIAL_BALANCE' && trialBalance) {
-      filename = `Trial_Balance_${asOfDate || 'All_Time'}`;
-      headers = ['Account Code', 'Account Name', 'Category', 'Debit (DR)', 'Credit (CR)'];
-      rows = filteredTrialBalanceRows.map((r) => [
-        r.account_code,
-        r.account_name,
-        r.account_type || '',
-        r.debit,
-        r.credit,
-      ]);
-      rows.push(['TOTAL', '', '', trialBalance.total_debit, trialBalance.total_credit]);
-    } else if (activeReport === 'INCOME_STATEMENT' && incomeStatement) {
-      filename = `Profit_and_Loss_${startDate || 'Start'}_to_${endDate || 'End'}`;
-      headers = ['Category', 'Account Code', 'Account Name', 'Amount (PKR)'];
-      filteredRevenueRows.forEach((r) => {
-        rows.push(['Revenue', r.code, r.name, r.amount]);
-      });
-      rows.push(['Total Revenue', '', '', incomeStatement.revenue.total]);
-      filteredExpenseRows.forEach((r) => {
-        rows.push(['Expense', r.code, r.name, r.amount]);
-      });
-      rows.push(['Total Expenses', '', '', incomeStatement.expenses.total]);
-      rows.push(['Net Profit', '', '', incomeStatement.net_profit]);
-    } else if (activeReport === 'BALANCE_SHEET' && balanceSheet) {
-      filename = `Balance_Sheet_${asOfDate || 'All_Time'}`;
-      headers = ['Category', 'Account Code', 'Account Name', 'Amount (PKR)'];
-      filteredAssetRows.forEach((r) => rows.push(['Asset', r.code, r.name, r.amount]));
-      rows.push(['Total Assets', '', '', balanceSheet.assets.total]);
-      filteredLiabilityRows.forEach((r) => rows.push(['Liability', r.code, r.name, r.amount]));
-      rows.push(['Total Liabilities', '', '', balanceSheet.liabilities.total]);
-      filteredEquityRows.forEach((r) => rows.push(['Equity', r.code, r.name, r.amount]));
-      rows.push(['Total Equity', '', '', balanceSheet.equity.total]);
-    }
-
-    if (rows.length === 0) return;
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) =>
-        row
-          .map((item) => {
-            const str = String(item ?? '');
-            return str.includes(',') ? `"${str.replace(/"/g, '""')}"` : str;
-          })
-          .join(',')
-      ),
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', `${filename}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Report Switcher */}
@@ -338,26 +270,6 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
             <PieChart size={16} />
             <span>Balance Sheet</span>
           </button>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button
-            variant="outline"
-            icon={<Printer size={14} />}
-            onClick={handlePrint}
-            style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-          >
-            Print Report
-          </Button>
-
-          <Button
-            variant="outline"
-            icon={<Download size={14} />}
-            onClick={handleExportCSV}
-            style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-          >
-            Export CSV
-          </Button>
         </div>
       </div>
 

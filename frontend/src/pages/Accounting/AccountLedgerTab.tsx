@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Book, RefreshCw } from 'lucide-react';
+import { Book } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
-import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Account, AccountLedgerResponse } from '../../types/accounting';
 import { accountingService } from '../../services/accountingService';
@@ -77,18 +76,6 @@ export const AccountLedgerTab: React.FC<AccountLedgerTabProps> = ({
               </option>
             ))}
           </select>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.4rem' }}>
-          <Button
-            variant="secondary"
-            icon={<RefreshCw size={13} />}
-            loading={loading}
-            style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-            onClick={() => selectedAccountId && fetchLedger(selectedAccountId)}
-          >
-            Refresh Ledger
-          </Button>
         </div>
       </div>
 

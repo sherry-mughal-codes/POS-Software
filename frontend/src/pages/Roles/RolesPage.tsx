@@ -212,6 +212,8 @@ export const RolesPage: React.FC = () => {
 
   // Standard business module ordering
   const MODULE_ORDER = [
+    'Dashboard & Analytics',
+    'Reports & Data Analytics',
     'Point of Sale (POS) & Sales',
     'Purchases & Payables',
     'Customers & Receivables',
@@ -229,7 +231,17 @@ export const RolesPage: React.FC = () => {
     const app = perm.app_label?.toLowerCase() || '';
     const code = perm.codename.toLowerCase();
 
-    if (
+    if (code.includes('dashboard') || (code.includes('analytics') && !code.includes('report'))) {
+      category = 'Dashboard & Analytics';
+    } else if (
+      code === 'view_reports' ||
+      code === 'view_sales_reports' ||
+      code === 'view_inventory_reports' ||
+      code === 'export_reports' ||
+      (code.includes('report') && !code.includes('financial') && !code.includes('register') && !code.includes('sale'))
+    ) {
+      category = 'Reports & Data Analytics';
+    } else if (
       app === 'sales' ||
       code.includes('pos') ||
       code.includes('discount') ||

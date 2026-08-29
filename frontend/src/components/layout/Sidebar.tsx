@@ -143,12 +143,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Dashboard & Reports',
       icon: <LayoutDashboard size={18} />,
       items: [
-        { id: 'dashboard', name: 'Business Dashboard', icon: <LayoutDashboard size={16} /> },
+        {
+          id: 'dashboard',
+          name: 'Business Dashboard',
+          icon: <LayoutDashboard size={16} />,
+          requiredPermissions: ['view_dashboard', 'view_dashboard_analytics'],
+        },
         {
           id: 'reports',
           name: 'Reports Center',
           icon: <BarChart3 size={16} />,
-          requiredPermissions: ['view_financial_reports', 'view_sale', 'view_purchase', 'view_expense'],
+          requiredPermissions: ['view_reports', 'view_sales_reports', 'view_inventory_reports', 'export_reports'],
         },
       ],
     },

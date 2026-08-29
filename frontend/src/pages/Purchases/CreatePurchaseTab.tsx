@@ -1056,21 +1056,23 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
               borderBottom: '1px solid var(--border-subtle)',
               padding: '0.5rem 0',
               margin: '0.2rem 0',
+              flexWrap: 'wrap',
+              gap: '0.25rem',
             }}>
               <strong style={{ fontSize: '0.875rem', color: 'var(--text-main)' }}>Grand Total:</strong>
-              <strong style={{ fontSize: '1.25rem', color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+              <strong style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'var(--primary-400)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all', overflowWrap: 'anywhere', textAlign: 'right' }}>
                 Rs. {formatMoney(grandTotal)}
               </strong>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--success)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--success)', flexWrap: 'wrap', gap: '0.25rem' }}>
               <span>Paid at Purchase:</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>Rs. {formatMoney(paidAmount)}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, wordBreak: 'break-all', overflowWrap: 'anywhere' }}>Rs. {formatMoney(paidAmount)}</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: remainingPayable > 0 ? 'var(--warning)' : 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: remainingPayable > 0 ? 'var(--warning)' : 'var(--text-muted)', flexWrap: 'wrap', gap: '0.25rem' }}>
               <span>Supplier Accounts Payable:</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>Rs. {formatMoney(remainingPayable)}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, wordBreak: 'break-all', overflowWrap: 'anywhere' }}>Rs. {formatMoney(remainingPayable)}</span>
             </div>
 
             {/* Action Buttons */}

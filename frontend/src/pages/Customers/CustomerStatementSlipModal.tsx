@@ -39,7 +39,7 @@ export const CustomerStatementSlipModal: React.FC<CustomerStatementSlipModalProp
     currencySymbol,
   } = useSettings();
 
-  const [paperWidth, setPaperWidth] = useState<'80mm' | '58mm'>('80mm');
+  const [paperWidth, setPaperWidth] = useState<'80mm' | '58mm' | 'A4'>('80mm');
 
   if (!customer || !statement) return null;
 
@@ -51,6 +51,7 @@ export const CustomerStatementSlipModal: React.FC<CustomerStatementSlipModalProp
   };
 
   const is58 = paperWidth === '58mm';
+  const isA4 = paperWidth === 'A4';
   const closingBal = statement.summary.closing_balance;
 
   return (
@@ -58,7 +59,7 @@ export const CustomerStatementSlipModal: React.FC<CustomerStatementSlipModalProp
       isOpen={isOpen}
       onClose={onClose}
       title={`Print Customer Statement — ${customer.name}`}
-      maxWidth="560px"
+      maxWidth={isA4 ? '780px' : '560px'}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {/* Controls Bar */}
@@ -89,7 +90,7 @@ export const CustomerStatementSlipModal: React.FC<CustomerStatementSlipModalProp
                 cursor: 'pointer',
               }}
             >
-              80mm (Standard POS)
+              80mm (Thermal POS)
             </button>
             <button
               onClick={() => setPaperWidth('58mm')}
@@ -105,7 +106,23 @@ export const CustomerStatementSlipModal: React.FC<CustomerStatementSlipModalProp
                 cursor: 'pointer',
               }}
             >
-              58mm (Compact Mini)
+              58mm (Mini)
+            </button>
+            <button
+              onClick={() => setPaperWidth('A4')}
+              style={{
+                padding: '0.25rem 0.625rem',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                borderRadius: '0.375rem',
+                border: '1px solid',
+                borderColor: paperWidth === 'A4' ? 'var(--primary-400)' : 'var(--border-subtle)',
+                backgroundColor: paperWidth === 'A4' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                color: paperWidth === 'A4' ? 'var(--primary-400)' : 'var(--text-muted)',
+                cursor: 'pointer',
+              }}
+            >
+              A4 (Full Page)
             </button>
           </div>
         </div>
@@ -124,13 +141,13 @@ export const CustomerStatementSlipModal: React.FC<CustomerStatementSlipModalProp
           <div
             id="customer-statement-thermal-slip"
             style={{
-              width: paperWidth === '58mm' ? '220px' : '300px',
+              width: paperWidth === '58mm' ? '220px' : paperWidth === 'A4' ? '680px' : '320px',
               backgroundColor: '#ffffff',
               color: '#000000',
-              padding: is58 ? '8px 6px' : '14px 10px',
+              padding: is58 ? '8px 6px' : isA4 ? '24px 20px' : '14px 10px',
               fontFamily: "'Courier New', Courier, monospace, system-ui",
-              fontSize: is58 ? '10px' : '11.5px',
-              lineHeight: 1.3,
+              fontSize: is58 ? '10px' : isA4 ? '13px' : '11.5px',
+              lineHeight: 1.35,
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
               borderRadius: '2px',
             }}

@@ -318,9 +318,13 @@ export const EmployeesDashboardPage: React.FC = () => {
 
   // Attendance Form Handlers
   const handleOpenMarkAttendance = () => {
+    const targetDate = attendanceDate || new Date().toISOString().split('T')[0];
+    const availableEmployees = employees.filter(
+      (e) => e.is_active && !attendanceRecords.some((rec) => rec.employee === e.id && rec.date === targetDate)
+    );
     setAttendanceFormData({
-      employee: employees[0]?.id || 0,
-      date: attendanceDate || new Date().toISOString().split('T')[0],
+      employee: availableEmployees[0]?.id || 0,
+      date: targetDate,
       check_in: '09:00',
       check_out: '18:00',
       status: 'PRESENT',
@@ -1416,12 +1420,26 @@ export const EmployeesDashboardPage: React.FC = () => {
               <option value={0} disabled>Select an employee...</option>
               {employees
                 .filter((e) => e.is_active)
+                .filter((e) => {
+                  const alreadyMarked = attendanceRecords.some(
+                    (rec) => rec.employee === e.id && rec.date === attendanceFormData.date
+                  );
+                  return !alreadyMarked;
+                })
                 .map((e) => (
                   <option key={e.id} value={e.id}>
                     [{e.employee_id}] {e.full_name} ({e.job_title})
                   </option>
                 ))}
             </select>
+            {employees
+              .filter((e) => e.is_active)
+              .filter((e) => !attendanceRecords.some((rec) => rec.employee === e.id && rec.date === attendanceFormData.date))
+              .length === 0 && (
+              <div style={{ fontSize: '0.6875rem', color: 'var(--success)', marginTop: '0.25rem', fontWeight: 600 }}>
+                ✓ All active employees have already had attendance recorded for {attendanceFormData.date}.
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>

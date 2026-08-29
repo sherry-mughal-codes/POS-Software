@@ -15,6 +15,8 @@ import { Product } from '../../types/product';
 import { inventoryService } from '../../services/inventoryService';
 import { productService } from '../../services/productService';
 
+import { SearchableProductSelect } from '../../components/common/SearchableProductSelect';
+
 interface ProductStockCardTabProps {
   initialProductId?: number | null;
   refreshTrigger?: number;
@@ -34,11 +36,8 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
   useEffect(() => {
     productService.getProducts().then((pList) => {
       setProducts(pList || []);
-      if (!selectedProductId && pList && pList.length > 0) {
-        setSelectedProductId(pList[0].id);
-      }
     });
-  }, [selectedProductId, refreshTrigger]);
+  }, [refreshTrigger]);
 
   useEffect(() => {
     if (initialProductId) {
@@ -47,7 +46,10 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
   }, [initialProductId]);
 
   useEffect(() => {
-    if (!selectedProductId) return;
+    if (!selectedProductId) {
+      setStockCard(null);
+      return;
+    }
     setLoading(true);
     inventoryService.getStockCard(selectedProductId)
       .then((data) => setStockCard(data))
@@ -79,36 +81,37 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Product Selector Bar */}
-      <Card title="Product Stock Card" icon={<History size={16} />}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+      <Card title="Product Stock Card" icon={<History size={16} />} style={{ overflow: 'visible', position: 'relative', zIndex: 30 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', overflow: 'visible' }}>
           <div style={{ flex: 1, minWidth: '260px' }}>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              Select Product to Inspect Lifecycle
+              Search & Select Product to Inspect Lifecycle
             </label>
-            <select
+            <SearchableProductSelect
+              products={products}
               value={selectedProductId || ''}
-              onChange={(e) => setSelectedProductId(parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                backgroundColor: 'var(--bg-input)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: '0.375rem',
-                padding: '0.35rem 0.6rem',
-                color: 'var(--text-main)',
-                outline: 'none',
-                fontSize: '0.78125rem',
-                fontWeight: 600,
-              }}
-            >
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.sku})
-                </option>
-              ))}
-            </select>
+              onChange={(id) => setSelectedProductId(id ? parseInt(id, 10) : null)}
+              placeholder="Select or search product by name, SKU, or barcode..."
+              allowClear
+            />
           </div>
         </div>
       </Card>
+
+      {/* Empty State Prompt */}
+      {!selectedProductId && !loading && (
+        <Card>
+          <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
+            <Package size={42} style={{ margin: '0 auto 0.75rem', color: 'var(--text-muted)', opacity: 0.6 }} />
+            <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
+              No Product Selected
+            </h4>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto' }}>
+              Please use the search box above to select a product and view its complete stock card audit history.
+            </p>
+          </div>
+        </Card>
+      )}
 
       {/* Stock Card Content */}
       {loading ? (

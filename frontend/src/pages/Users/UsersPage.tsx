@@ -352,8 +352,8 @@ export const UsersPage: React.FC = () => {
                         />
 
                         <Button
-                          variant={u.is_active ? 'outline' : 'primary'}
-                          icon={<Power size={13} />}
+                          variant="outline"
+                          icon={u.is_active ? <Power size={13} /> : <UserCheck size={13} />}
                           onClick={() => handleToggleStatus(u)}
                           disabled={u.id === currentUser?.id}
                           style={{
@@ -361,8 +361,9 @@ export const UsersPage: React.FC = () => {
                             fontSize: '0.75rem',
                             color: u.is_active ? 'var(--warning)' : 'var(--success)',
                             borderColor: u.is_active ? 'var(--warning-border)' : 'var(--success-border)',
+                            backgroundColor: u.is_active ? 'transparent' : 'rgba(34, 197, 94, 0.1)',
                           }}
-                          title={u.is_active ? 'Deactivate User' : 'Activate User'}
+                          title={u.is_active ? 'Deactivate User' : 'Reactivate User (Enable Access)'}
                         />
                       </div>
                     </td>

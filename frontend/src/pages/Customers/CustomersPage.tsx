@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Users,
   Plus,
@@ -85,6 +85,9 @@ export const CustomersPage: React.FC = () => {
   // Record Payment Modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState<Customer | null>(null);
+  const [paymentCustomerSearch, setPaymentCustomerSearch] = useState('');
+  const [isPaymentCustomerDropdownOpen, setIsPaymentCustomerDropdownOpen] = useState(false);
+  const paymentCustomerRef = useRef<HTMLDivElement>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodKind>('CASH');
   const [paymentAccountId, setPaymentAccountId] = useState<number>(0);
@@ -201,6 +204,17 @@ export const CustomersPage: React.FC = () => {
     }
   };
 
+  // Click outside listener for payment customer search dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (paymentCustomerRef.current && !paymentCustomerRef.current.contains(e.target as Node)) {
+        setIsPaymentCustomerDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleOpenAddCustomer = () => {
     setEditingCustomer(null);
     setIsCustomerModalOpen(true);
@@ -213,9 +227,16 @@ export const CustomersPage: React.FC = () => {
 
   // Payment Modal Handlers
   const handleOpenPaymentModal = (cust?: Customer) => {
-    const target = cust || customers.find((c) => !c.is_walkin && (c.outstanding_balance || 0) > 0) || customers.find((c) => !c.is_walkin);
-    setSelectedCustomerForPayment(target || null);
-    setPaymentAmount(target && target.outstanding_balance ? target.outstanding_balance.toString() : '');
+    if (cust) {
+      setSelectedCustomerForPayment(cust);
+      setPaymentCustomerSearch(`[${cust.customer_id}] ${cust.name}`);
+      setPaymentAmount(cust.outstanding_balance ? cust.outstanding_balance.toString() : '');
+    } else {
+      setSelectedCustomerForPayment(null);
+      setPaymentCustomerSearch('');
+      setPaymentAmount('');
+    }
+    setIsPaymentCustomerDropdownOpen(false);
     setPaymentMethod('CASH');
     const cashAccs = getFilteredPaymentAccounts('CASH');
     setPaymentAccountId(cashAccs[0]?.id || paymentAccounts[0]?.id || 0);
@@ -1205,32 +1226,168 @@ export const CustomersPage: React.FC = () => {
             </div>
           )}
 
-          <div>
+          {/* Searchable Customer Combobox */}
+          <div ref={paymentCustomerRef} style={{ position: 'relative', zIndex: 50 }}>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Select Customer *
             </label>
-            <select
-              value={selectedCustomerForPayment?.id || 0}
-              onChange={(e) => {
-                const target = customers.find((c) => c.id === parseInt(e.target.value));
-                setSelectedCustomerForPayment(target || null);
-                if (target && target.outstanding_balance) {
-                  setPaymentAmount(target.outstanding_balance.toString());
-                }
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'var(--bg-input)',
+                border: isPaymentCustomerDropdownOpen ? '1px solid var(--primary-500)' : '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.2rem 0.5rem',
+                position: 'relative',
               }}
-              required
-              style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
             >
-              <option value={0} disabled>Select a customer...</option>
-              {customers
-                .filter((c) => !c.is_walkin)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    [{c.customer_id}] {c.name} — Outstanding: Rs. {formatMoney(c.outstanding_balance || 0)}
-                  </option>
-                ))}
-            </select>
+              <Search size={14} style={{ color: 'var(--text-muted)', marginRight: '0.4rem', flexShrink: 0 }} />
+              <input
+                type="text"
+                placeholder="-- Search customer by name, ID, or phone --"
+                value={selectedCustomerForPayment ? `[${selectedCustomerForPayment.customer_id}] ${selectedCustomerForPayment.name}` : paymentCustomerSearch}
+                onChange={(e) => {
+                  setSelectedCustomerForPayment(null);
+                  setPaymentCustomerSearch(e.target.value);
+                  setIsPaymentCustomerDropdownOpen(true);
+                }}
+                onFocus={() => setIsPaymentCustomerDropdownOpen(true)}
+                style={{
+                  width: '100%',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  padding: '0.3rem 0',
+                }}
+              />
+              {selectedCustomerForPayment || paymentCustomerSearch ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCustomerForPayment(null);
+                    setPaymentCustomerSearch('');
+                    setPaymentAmount('');
+                    setIsPaymentCustomerDropdownOpen(false);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: '0.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  title="Clear customer"
+                >
+                  <X size={13} />
+                </button>
+              ) : null}
+            </div>
+
+            {/* Dropdown Popover */}
+            {isPaymentCustomerDropdownOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  marginTop: '0.25rem',
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+                  zIndex: 99999,
+                }}
+              >
+                {customers
+                  .filter((c) => !c.is_walkin)
+                  .filter((c) => {
+                    if (!paymentCustomerSearch.trim()) return true;
+                    const q = paymentCustomerSearch.toLowerCase();
+                    return (
+                      c.name.toLowerCase().includes(q) ||
+                      (c.customer_id && c.customer_id.toLowerCase().includes(q)) ||
+                      (c.phone && c.phone.includes(q))
+                    );
+                  })
+                  .map((cust) => {
+                    const bal = cust.outstanding_balance || 0;
+                    return (
+                      <div
+                        key={cust.id}
+                        onClick={() => {
+                          setSelectedCustomerForPayment(cust);
+                          setPaymentCustomerSearch(`[${cust.customer_id}] ${cust.name}`);
+                          if (cust.outstanding_balance) {
+                            setPaymentAmount(cust.outstanding_balance.toString());
+                          }
+                          setIsPaymentCustomerDropdownOpen(false);
+                        }}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          borderBottom: '1px solid var(--border-subtle)',
+                          backgroundColor: selectedCustomerForPayment?.id === cust.id ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                          transition: 'background-color 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = selectedCustomerForPayment?.id === cust.id ? 'rgba(56, 189, 248, 0.15)' : 'transparent')}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--text-main)' }}>
+                            {cust.name} <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>({cust.customer_id})</span>
+                          </div>
+                          {cust.phone && (
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
+                              📞 {cust.phone}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: bal > 0 ? 'var(--danger)' : 'var(--success)' }}>
+                            Rs. {formatMoney(bal)}
+                          </span>
+                          <div style={{ fontSize: '0.625rem', color: bal > 0 ? 'var(--danger)' : 'var(--success)' }}>
+                            {bal > 0 ? 'Due' : 'Cleared'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                {customers
+                  .filter((c) => !c.is_walkin)
+                  .filter((c) => {
+                    if (!paymentCustomerSearch.trim()) return true;
+                    const q = paymentCustomerSearch.toLowerCase();
+                    return (
+                      c.name.toLowerCase().includes(q) ||
+                      (c.customer_id && c.customer_id.toLowerCase().includes(q)) ||
+                      (c.phone && c.phone.includes(q))
+                    );
+                  }).length === 0 && (
+                  <div style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    No matching customers found.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          {!selectedCustomerForPayment && (
+            <div style={{ padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px dashed var(--border-medium)', borderRadius: '0.375rem', fontSize: '0.75rem', color: 'var(--text-subtle)', textAlign: 'center' }}>
+              Please search and select a customer above to view outstanding balance and record payment.
+            </div>
+          )}
 
           {selectedCustomerForPayment && (
             <div
@@ -1636,16 +1793,63 @@ export const CustomersPage: React.FC = () => {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Reason for Cancellation *
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                Select Common Reason or Enter Custom *
               </label>
+              
+              <select
+                value={[
+                  'Cheque / Bank Transfer Bounced or Declined',
+                  'Entered Under Incorrect Customer Account',
+                  'Duplicate Payment Voucher Entered',
+                  'Incorrect Amount or Payment Mode Selected',
+                  'Customer Disputed / Requested Cancellation',
+                ].includes(cancelReason) ? cancelReason : (cancelReason ? 'OTHER' : '')}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'OTHER') {
+                    setCancelReason('');
+                  } else {
+                    setCancelReason(val);
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  outline: 'none',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                <option value="">-- Choose a standard reason --</option>
+                <option value="Cheque / Bank Transfer Bounced or Declined">1. Cheque / Bank Transfer Bounced or Declined</option>
+                <option value="Entered Under Incorrect Customer Account">2. Entered Under Incorrect Customer Account</option>
+                <option value="Duplicate Payment Voucher Entered">3. Duplicate Payment Voucher Entered</option>
+                <option value="Incorrect Amount or Payment Mode Selected">4. Incorrect Amount or Payment Mode Selected</option>
+                <option value="Customer Disputed / Requested Cancellation">5. Customer Disputed / Requested Cancellation</option>
+                <option value="OTHER">✍️ Custom Reason (Type below)</option>
+              </select>
+
               <input
                 type="text"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="e.g. Cheque bounced, entered incorrect customer..."
+                placeholder="Type or customize reason for cancellation..."
                 required
-                style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.375rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  outline: 'none',
+                }}
               />
             </div>
 

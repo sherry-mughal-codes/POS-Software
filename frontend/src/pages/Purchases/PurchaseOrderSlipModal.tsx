@@ -281,15 +281,31 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
               <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.grand_total)}</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
-              <span>Paid Amount:</span>
-              <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.paid_amount)}</span>
-            </div>
+            {isDraft ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem', color: '#4b5563' }}>
+                  <span>Paid Amount:</span>
+                  <span style={{ fontFamily: 'monospace' }}>{currencySymbol} 0.00 <span style={{ fontSize: '0.65rem', color: '#b45309', fontWeight: 600 }}>(Draft - Unpaid)</span></span>
+                </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: purchase.payable_amount > 0 ? '#b45309' : '#15803d' }}>
-              <span>Balance Payable:</span>
-              <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.payable_amount)}</span>
-            </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#b45309' }}>
+                  <span>Estimated Payable:</span>
+                  <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.grand_total)}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+                  <span>Paid Amount:</span>
+                  <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.paid_amount)}</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: purchase.payable_amount > 0 ? '#b45309' : '#15803d' }}>
+                  <span>Balance Payable:</span>
+                  <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.payable_amount)}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Notes */}

@@ -5,7 +5,7 @@
  */
 
 export interface ThermalPrintOptions {
-  paperWidth?: '80mm' | '58mm';
+  paperWidth?: '80mm' | '58mm' | 'A4';
   title?: string;
 }
 
@@ -17,20 +17,25 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
     return;
   }
 
-  // Create isolated hidden iframe
-  let iframe = document.getElementById('pos-thermal-print-iframe') as HTMLIFrameElement;
-  if (!iframe) {
-    iframe = document.createElement('iframe');
-    iframe.id = 'pos-thermal-print-iframe';
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    iframe.style.visibility = 'hidden';
-    document.body.appendChild(iframe);
+  // Remove existing iframe if present to prevent cached/stale DOM
+  const existingIframe = document.getElementById('pos-thermal-print-iframe');
+  if (existingIframe) {
+    existingIframe.remove();
   }
+
+  // Create isolated headless printable iframe
+  const iframe = document.createElement('iframe');
+  iframe.id = 'pos-thermal-print-iframe';
+  iframe.style.position = 'fixed';
+  iframe.style.top = '0';
+  iframe.style.left = '0';
+  iframe.style.width = '100%';
+  iframe.style.height = '100%';
+  iframe.style.border = '0';
+  iframe.style.opacity = '0';
+  iframe.style.pointerEvents = 'none';
+  iframe.style.zIndex = '-99999';
+  document.body.appendChild(iframe);
 
   const doc = iframe.contentWindow?.document;
   if (!doc) {
@@ -38,7 +43,7 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
     return;
   }
 
-  const htmlContent = element.innerHTML;
+  const htmlContent = element.outerHTML;
 
   doc.open();
   doc.write(`
@@ -49,8 +54,8 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
         <title>${title}</title>
         <style>
           @page {
-            size: ${paperWidth} auto;
-            margin: 0mm !important;
+            size: ${paperWidth === 'A4' ? 'A4 portrait' : paperWidth === '58mm' ? '58mm auto' : '80mm auto'};
+            margin: 0 !important;
           }
           * {
             box-sizing: border-box;
@@ -58,17 +63,16 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
             padding: 0;
           }
           html, body {
-            width: ${paperWidth} !important;
-            max-width: ${paperWidth} !important;
-            min-width: ${paperWidth} !important;
+            width: 100% !important;
+            max-width: ${paperWidth === 'A4' ? '210mm' : paperWidth === '58mm' ? '58mm' : '80mm'} !important;
             height: auto !important;
-            min-height: auto !important;
+            min-height: 0 !important;
             max-height: none !important;
             overflow: visible !important;
             margin: 0 auto !important;
-            padding: 2mm 2.5mm 10mm 2.5mm !important;
+            padding: 3mm 2mm !important;
             font-family: 'Courier New', Courier, monospace, system-ui;
-            font-size: ${paperWidth === '58mm' ? '9.5px' : '11px'};
+            font-size: ${paperWidth === '58mm' ? '9px' : paperWidth === 'A4' ? '12px' : '10.5px'};
             line-height: 1.35;
             color: #000000;
             background: #ffffff;
@@ -88,7 +92,9 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
             margin: 0 !important;
             border-radius: 0 !important;
             height: auto !important;
+            max-height: none !important;
             overflow: visible !important;
+            page-break-after: auto !important;
           }
           table {
             width: 100% !important;
@@ -96,6 +102,7 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
             border-collapse: collapse;
             table-layout: fixed;
             word-wrap: break-word;
+            page-break-inside: auto !important;
           }
           th, td {
             color: #000000;

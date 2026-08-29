@@ -26,6 +26,10 @@ export const UnitManagerModal: React.FC<UnitManagerModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [deletingUnit, setDeletingUnit] = useState<Unit | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const handleCreateUnit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !shortCode) {
@@ -46,20 +50,25 @@ export const UnitManagerModal: React.FC<UnitManagerModalProps> = ({
       setAllowDecimal(false);
       onRefresh();
     } catch (err: any) {
-      setError(err?.message || 'Failed to create unit.');
+      setError(err?.response?.data?.detail || err?.data?.detail || err?.message || 'Failed to create unit.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteUnit = async (unit: Unit) => {
-    if (!window.confirm(`Are you sure you want to delete unit '${unit.name}'?`)) return;
-    setError(null);
+  const handleConfirmDeleteUnit = async () => {
+    if (!deletingUnit) return;
+    setDeleteError(null);
+    setDeleteSubmitting(true);
     try {
-      await productService.deleteUnit(unit.id);
+      await productService.deleteUnit(deletingUnit.id);
+      setDeletingUnit(null);
       onRefresh();
     } catch (err: any) {
-      setError(err?.message || `Cannot delete unit '${unit.name}'. It may be assigned to products.`);
+      const msg = err?.response?.data?.detail || err?.data?.detail || err?.detail || err?.message || `Cannot delete unit '${deletingUnit.name}'. It may be assigned to active products.`;
+      setDeleteError(msg);
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -169,7 +178,10 @@ export const UnitManagerModal: React.FC<UnitManagerModalProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Badge variant="phase">{u.product_count} items</Badge>
                   <button
-                    onClick={() => handleDeleteUnit(u)}
+                    onClick={() => {
+                      setError(null);
+                      setDeletingUnit(u);
+                    }}
                     title="Delete unit"
                     style={{
                       backgroundColor: 'transparent',
@@ -188,6 +200,63 @@ export const UnitManagerModal: React.FC<UnitManagerModalProps> = ({
             ))}
           </div>
         </div>
+
+        {/* Standard Delete Confirmation Modal */}
+        {deletingUnit && (
+          <Modal
+            isOpen={!!deletingUnit}
+            onClose={() => {
+              setDeletingUnit(null);
+              setDeleteError(null);
+            }}
+            title="Confirm Unit Deletion"
+            maxWidth="440px"
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {deleteError && (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  backgroundColor: 'var(--danger-bg)',
+                  border: '1px solid var(--danger-border)',
+                  borderRadius: '0.5rem',
+                  color: 'var(--danger)',
+                  fontSize: '0.8125rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  lineHeight: 1.4,
+                }}>
+                  <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                  <span>{deleteError}</span>
+                </div>
+              )}
+
+              <div style={{ fontSize: '0.875rem', color: 'var(--text-main)', lineHeight: 1.45 }}>
+                Are you sure you want to delete unit <strong>{deletingUnit.name} ({deletingUnit.short_code})</strong>?
+                {deletingUnit.product_count > 0 && !deleteError && (
+                  <div style={{ marginTop: '0.5rem', color: 'var(--danger)', fontSize: '0.8125rem', fontWeight: 600 }}>
+                    ⚠️ This unit of measure is currently assigned to {deletingUnit.product_count} product(s).
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <Button variant="outline" onClick={() => { setDeletingUnit(null); setDeleteError(null); }} disabled={deleteSubmitting}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  loading={deleteSubmitting}
+                  icon={<Trash2 size={14} />}
+                  style={{ backgroundColor: 'var(--danger)', borderColor: 'var(--danger)' }}
+                  onClick={handleConfirmDeleteUnit}
+                >
+                  Delete Unit
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
       </div>
     </Modal>
   );

@@ -4,6 +4,8 @@ API views for double-entry accounts, journal ledger, financial reports, and tran
 
 from decimal import Decimal
 from datetime import datetime
+from django.db import models
+from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -56,22 +58,49 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         return qs
 
-    def perform_destroy(self, instance):
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
         if instance.is_system:
-            raise serializers.ValidationError({"detail": f"System account [{instance.code}] {instance.name} cannot be deleted."})
-        
+            return Response(
+                {"detail": f"Cannot delete account [{instance.code}] {instance.name} because it is a core system default account required for automated accounting operations."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if instance.children.exists():
+            return Response(
+                {"detail": f"Cannot delete parent group [{instance.code}] {instance.name} because it contains {instance.children.count()} child sub-account(s). Please delete or reassign its sub-accounts first."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        journal_items_count = instance.journal_items.count()
+        if journal_items_count > 0:
+            return Response(
+                {"detail": f"Cannot delete account [{instance.code}] {instance.name} because it contains {journal_items_count} recorded transaction entry(ies) in the General Ledger. To preserve financial audit integrity, accounts with transaction history cannot be deleted."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         from apps.expenses.models import Expense
-        Expense.objects.filter(payment_account=instance).update(payment_account=None)
-        Expense.objects.filter(expense_account=instance).delete()
+        from apps.accounting.models import PaymentMethod
+        if PaymentMethod.objects.filter(linked_account=instance).exists():
+            return Response(
+                {"detail": f"Cannot delete account [{instance.code}] {instance.name} because it is currently configured as the linked account for a Payment Method."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        entry_ids = list(instance.journal_items.values_list("journal_entry_id", flat=True))
-        instance.journal_items.all().delete()
-        if entry_ids:
-            for entry in JournalEntry.objects.filter(id__in=entry_ids):
-                if not entry.items.exists():
-                    entry.delete()
+        if Expense.objects.filter(models.Q(payment_account=instance) | models.Q(expense_account=instance)).exists():
+            return Response(
+                {"detail": f"Cannot delete account [{instance.code}] {instance.name} because it is referenced by existing expense vouchers."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        instance.delete()
+        try:
+            self.perform_destroy(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response(
+                {"detail": f"Cannot delete account [{instance.code}] {instance.name}: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     @action(detail=True, methods=["get"])
     def ledger(self, request, pk=None):

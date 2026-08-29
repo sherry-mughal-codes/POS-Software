@@ -27,15 +27,44 @@ import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { Can } from './components/auth/Can';
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, hasPermission } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [isPOSSidebarOpen, setIsPOSSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (isAuthenticated) {
-      setCurrentTab('dashboard');
+      if (hasPermission('view_dashboard') || hasPermission('view_dashboard_analytics')) {
+        setCurrentTab('dashboard');
+      } else if (hasPermission('access_pos_register')) {
+        setCurrentTab('register');
+      } else if (hasPermission('view_product') || hasPermission('manage_products')) {
+        setCurrentTab('products');
+      } else if (hasPermission('view_sale')) {
+        setCurrentTab('sales');
+      } else if (hasPermission('view_customer')) {
+        setCurrentTab('customers');
+      } else if (hasPermission('view_purchase')) {
+        setCurrentTab('purchases');
+      } else if (hasPermission('view_stockmovement')) {
+        setCurrentTab('inventory');
+      } else if (hasPermission('view_expense')) {
+        setCurrentTab('expenses');
+      } else if (hasPermission('view_account')) {
+        setCurrentTab('accounting');
+      } else if (hasPermission('view_employee')) {
+        setCurrentTab('employees');
+      } else if (
+        hasPermission('view_reports') ||
+        hasPermission('view_sales_reports') ||
+        hasPermission('view_inventory_reports') ||
+        hasPermission('export_reports')
+      ) {
+        setCurrentTab('reports');
+      } else {
+        setCurrentTab('register');
+      }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, hasPermission]);
 
   useEffect(() => {
     if (currentTab === 'register') {
@@ -62,12 +91,24 @@ const AppContent: React.FC = () => {
       isPOSSidebarOpen={isPOSSidebarOpen}
     >
       {currentTab === 'dashboard' && (
-        <DashboardPage onNavigate={setCurrentTab} />
+        <Can
+          anyOfPermissions={['view_dashboard', 'view_dashboard_analytics']}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to access the Business Dashboard.
+              </p>
+            </div>
+          }
+        >
+          <DashboardPage onNavigate={setCurrentTab} />
+        </Can>
       )}
 
       {currentTab === 'reports' && (
         <Can
-          anyOfPermissions={['view_financial_reports', 'view_sale', 'view_purchase', 'view_expense']}
+          anyOfPermissions={['view_reports', 'view_sales_reports', 'view_inventory_reports', 'export_reports']}
           fallback={
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
               <h3>Access Denied (403 Forbidden)</h3>

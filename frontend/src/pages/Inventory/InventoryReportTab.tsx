@@ -16,6 +16,7 @@ import { ComprehensiveInventoryReport, StockStatus } from '../../types/inventory
 import { Category, Product } from '../../types/product';
 import { inventoryService } from '../../services/inventoryService';
 import { productService } from '../../services/productService';
+import { SearchableProductSelect } from '../../components/common/SearchableProductSelect';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -84,8 +85,8 @@ export const InventoryReportTab: React.FC<InventoryReportTabProps> = ({ refreshT
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Filter Card */}
-      <Card title="Inventory Report Filters" icon={<Filter size={16} />}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem', alignItems: 'flex-end' }}>
+      <Card title="Inventory Report Filters" icon={<Filter size={16} />} style={{ overflow: 'visible', position: 'relative', zIndex: 30 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.625rem', alignItems: 'flex-end', overflow: 'visible' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               Date From
@@ -155,27 +156,16 @@ export const InventoryReportTab: React.FC<InventoryReportTabProps> = ({ refreshT
 
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              Product
+              Product Filter
             </label>
-            <select
+            <SearchableProductSelect
+              products={products}
               value={selectedProductId}
-              onChange={(e) => setSelectedProductId(e.target.value)}
-              style={{
-                width: '100%',
-                backgroundColor: 'var(--bg-input)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: '0.375rem',
-                padding: '0.35rem 0.6rem',
-                color: 'var(--text-main)',
-                outline: 'none',
-                fontSize: '0.78125rem',
-              }}
-            >
-              <option value="">All Products</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id.toString()}>{p.name}</option>
-              ))}
-            </select>
+              onChange={(id) => setSelectedProductId(id)}
+              allOptionLabel="All Products"
+              allowClear
+              placeholder="Search product..."
+            />
           </div>
 
           <div>

@@ -301,25 +301,31 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
     }
   };
 
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingTargetAccount, setDeletingTargetAccount] = useState<Account | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
-  const handleDeleteAccount = async (acc: Account) => {
+  const handleDeleteAccount = (acc: Account) => {
     if (acc.is_system) {
-      showWarning(`System account [${acc.code}] ${acc.name} cannot be deleted.`, 'System Account');
+      showWarning(`System account [${acc.code}] ${acc.name} is protected and cannot be deleted.`, 'System Account Protected');
       return;
     }
-    const confirmed = window.confirm(`Are you sure you want to delete account [${acc.code}] ${acc.name}? This action cannot be undone.`);
-    if (!confirmed) return;
+    setDeletingTargetAccount(acc);
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    if (!deletingTargetAccount) return;
 
     try {
-      setDeletingId(acc.id);
-      await accountingService.deleteAccount(acc.id);
-      showSuccess(`Account [${acc.code}] ${acc.name} deleted successfully.`, 'Account Deleted');
+      setDeleteSubmitting(true);
+      await accountingService.deleteAccount(deletingTargetAccount.id);
+      showSuccess(`Account [${deletingTargetAccount.code}] ${deletingTargetAccount.name} deleted successfully.`, 'Account Deleted');
+      setDeletingTargetAccount(null);
       onRefresh();
     } catch (err: any) {
-      showError(err?.response?.data?.detail || err?.message || 'Failed to delete account. Accounts with existing journal entries cannot be deleted.', 'Delete Error');
+      const msg = err?.response?.data?.detail || err?.message || 'Failed to delete account.';
+      showError(msg, 'Cannot Delete Account');
     } finally {
-      setDeletingId(null);
+      setDeleteSubmitting(false);
     }
   };
 
@@ -618,7 +624,7 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
                                 title="Delete Account"
                                 style={{ padding: '0.25rem 0.45rem', borderColor: 'rgba(239, 68, 68, 0.35)', color: 'var(--danger)' }}
                                 onClick={() => handleDeleteAccount(acc)}
-                                disabled={deletingId === acc.id}
+                                disabled={deleteSubmitting && deletingTargetAccount?.id === acc.id}
                               />
                             )}
                           </>
@@ -1072,6 +1078,40 @@ export const ChartOfAccountsTab: React.FC<ChartOfAccountsTabProps> = ({
           </div>
         </form>
       </Modal>
+
+      {/* Standard Delete Account Confirmation Modal */}
+      {deletingTargetAccount && (
+        <Modal
+          isOpen={!!deletingTargetAccount}
+          onClose={() => setDeletingTargetAccount(null)}
+          title="Confirm Account Deletion"
+          maxWidth="440px"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-main)', lineHeight: 1.45 }}>
+              Are you sure you want to delete account <strong>[{deletingTargetAccount.code}] {deletingTargetAccount.name}</strong>?
+              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)', fontSize: '0.78125rem' }}>
+                Account Type: <strong style={{ color: 'var(--primary-400)' }}>{deletingTargetAccount.account_type}</strong>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <Button variant="outline" onClick={() => setDeletingTargetAccount(null)} disabled={deleteSubmitting}>
+                Keep Account
+              </Button>
+              <Button
+                variant="primary"
+                loading={deleteSubmitting}
+                icon={<Trash2 size={14} />}
+                style={{ backgroundColor: 'var(--danger)', borderColor: 'var(--danger)' }}
+                onClick={handleConfirmDeleteAccount}
+              >
+                Delete Account
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

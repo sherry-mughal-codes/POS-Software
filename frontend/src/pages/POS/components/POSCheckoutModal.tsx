@@ -318,19 +318,21 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
           }}
         >
-          <div>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
               Amount Payable
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: 'var(--primary-400)' }}>
+            <div style={{ fontSize: 'clamp(1.15rem, 4vw, 1.75rem)', fontWeight: 900, fontFamily: 'var(--font-mono)', color: 'var(--primary-400)', wordBreak: 'break-all', overflowWrap: 'anywhere' }}>
               Rs. {formatMoney(grandTotal)}
             </div>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-main)' }}>
+          <div style={{ textAlign: 'right', minWidth: 0, flexShrink: 0 }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
               {customer.name}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -550,10 +552,13 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
               </div>
               <span
                 style={{
-                  fontSize: '1.25rem',
+                  fontSize: 'clamp(0.95rem, 3.5vw, 1.25rem)',
                   fontWeight: 900,
                   fontFamily: 'var(--font-mono)',
                   color: tenderedNumber >= grandTotal ? 'var(--success)' : 'var(--danger)',
+                  wordBreak: 'break-all',
+                  overflowWrap: 'anywhere',
+                  textAlign: 'right',
                 }}
               >
                 Rs. {formatMoney(tenderedNumber >= grandTotal ? changeDue : remainingDue)}

@@ -7,9 +7,7 @@ import {
   AlertCircle,
   Eye,
   Send,
-  Search,
   Package,
-  X,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
@@ -22,7 +20,9 @@ import {
   AdjustmentType,
   AdjustmentReason,
 } from '../../types/inventory';
+import { Product } from '../../types/product';
 import { inventoryService } from '../../services/inventoryService';
+import { SearchableProductSelect } from '../../components/common/SearchableProductSelect';
 
 interface StockAdjustmentsTabProps {
   adjustments: StockAdjustment[];
@@ -52,11 +52,10 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
   // Form State
   const [adjustmentType, setAdjustmentType] = useState<AdjustmentType>('OUT');
   const [reason, setReason] = useState<AdjustmentReason>('DAMAGED');
+  const [customReason, setCustomReason] = useState<string>('');
   const [selectedProductId, setSelectedProductId] = useState<string>(
     targetProductForAdjustment ? targetProductForAdjustment.product_id.toString() : ''
   );
-  const [productSearchQuery, setProductSearchQuery] = useState('');
-  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const [inputMode, setInputMode] = useState<'diff' | 'actual'>('diff');
   const [diffQuantity, setDiffQuantity] = useState<number>(1);
   const [actualStockCount, setActualStockCount] = useState<number>(
@@ -77,16 +76,25 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
 
   const selectedProduct = inventoryItems.find((p) => p.product_id.toString() === selectedProductId);
 
-  const filteredProducts = inventoryItems.filter((p) => {
-    if (!productSearchQuery.trim()) return true;
-    const query = productSearchQuery.toLowerCase();
-    return (
-      p.product_name.toLowerCase().includes(query) ||
-      p.sku.toLowerCase().includes(query) ||
-      (p.barcode && p.barcode.toLowerCase().includes(query)) ||
-      (p.category_name && p.category_name.toLowerCase().includes(query))
-    );
-  });
+  const productOptions: Product[] = inventoryItems.map((item) => ({
+    id: item.product_id,
+    name: item.product_name,
+    sku: item.sku,
+    barcode: item.barcode,
+    category: 0,
+    category_name: item.category_name || '',
+    category_code: '',
+    unit: 0,
+    unit_name: item.unit_abbr || '',
+    unit_code: item.unit_abbr || '',
+    allow_decimal: true,
+    purchase_price: item.weighted_average_cost || 0,
+    selling_price: item.selling_price || 0,
+    current_stock: item.current_stock || 0,
+    is_active: true,
+    created_at: '',
+    updated_at: '',
+  }));
 
   // Calculated values
   const currentStock = selectedProduct ? selectedProduct.current_stock : 0;
@@ -95,20 +103,16 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
     : Math.abs(actualStockCount - currentStock);
 
   const handleOpenCreateModal = () => {
-    if (inventoryItems.length > 0 && !selectedProductId) {
-      setSelectedProductId(inventoryItems[0].product_id.toString());
-      setActualStockCount(inventoryItems[0].current_stock);
+    if (!targetProductForAdjustment) {
+      setSelectedProductId('');
+      setActualStockCount(0);
     }
-    setProductSearchQuery('');
-    setIsProductDropdownOpen(false);
     setErrorMsg(null);
     setIsCreateModalOpen(true);
   };
 
   const handleCloseCreateModal = () => {
     setIsCreateModalOpen(false);
-    setProductSearchQuery('');
-    setIsProductDropdownOpen(false);
     onCloseTargetProduct();
   };
 
@@ -129,19 +133,23 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
       return;
     }
 
-    if (reason === 'OTHER' && !notes.trim()) {
-      setErrorMsg("Notes are mandatory when 'Other' reason is selected.");
+    if (reason === 'OTHER' && !customReason.trim() && !notes.trim()) {
+      setErrorMsg("Custom reason description or notes are mandatory when 'Other' reason is selected.");
       return;
     }
 
     setSubmitting(true);
     setErrorMsg(null);
 
+    const finalNotes = reason === 'OTHER'
+      ? (customReason.trim() ? `Reason: ${customReason.trim()}${notes.trim() ? ` | Notes: ${notes.trim()}` : ''}` : notes)
+      : notes;
+
     try {
       await inventoryService.createAdjustment({
         adjustment_type: adjustmentType,
         reason,
-        notes,
+        notes: finalNotes,
         items: [
           {
             product: selectedProduct.product_id,
@@ -152,6 +160,7 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
 
       handleCloseCreateModal();
       setNotes('');
+      setCustomReason('');
       onRefresh();
     } catch (err: any) {
       setErrorMsg(err?.response?.data?.detail || err?.message || 'Failed to post stock adjustment.');
@@ -444,67 +453,49 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                   <option value="FOUND">Found / Discovered Stock</option>
                   <option value="EXPIRED">Expired / Spoiled</option>
                   <option value="OPENING_STOCK">Opening Stock Entry</option>
-                  <option value="OTHER">Other (Notes Required)</option>
+                  <option value="OTHER">Other / Custom Reason</option>
                 </select>
               </div>
             </div>
 
-            {/* Product Selector with Live Search */}
-            <div style={{ position: 'relative' }}>
+            {/* Custom Reason Text Input */}
+            {reason === 'OTHER' && (
+              <div>
+                <Input
+                  label="Enter Custom Adjustment Reason *"
+                  placeholder="e.g. Promotional tasting giveaway, Factory packaging defect, etc."
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {/* Product Selector with Searchable Combobox */}
+            <div style={{ position: 'relative', zIndex: 10 }}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Select Product (Search by Name, SKU, Barcode, or Category) *
+                Select Product to Adjust *
               </label>
 
-              {/* Search Bar Input */}
-              <div style={{ position: 'relative' }}>
-                <Search size={14} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
-                <input
-                  type="text"
-                  placeholder="Type to search product by name, SKU, or category..."
-                  value={productSearchQuery}
-                  onChange={(e) => {
-                    setProductSearchQuery(e.target.value);
-                    setIsProductDropdownOpen(true);
-                  }}
-                  onFocus={() => setIsProductDropdownOpen(true)}
-                  style={{
-                    width: '100%',
-                    backgroundColor: 'var(--bg-input)',
-                    border: '1px solid var(--border-medium)',
-                    borderRadius: '0.375rem',
-                    padding: '0.45rem 2rem 0.45rem 2rem',
-                    color: 'var(--text-main)',
-                    fontSize: '0.8125rem',
-                    outline: 'none',
-                  }}
-                />
-                {productSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProductSearchQuery('');
-                    }}
-                    style={{
-                      position: 'absolute',
-                      right: '0.5rem',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                      padding: '2px',
-                    }}
-                  >
-                    <X size={13} />
-                  </button>
-                )}
-              </div>
+              <SearchableProductSelect
+                products={productOptions}
+                value={selectedProductId}
+                onChange={(id, p) => {
+                  setSelectedProductId(id);
+                  if (p) {
+                    setActualStockCount(p.current_stock ?? 0);
+                  } else {
+                    setActualStockCount(0);
+                  }
+                }}
+                placeholder="Search by product name, SKU, or barcode..."
+                allowClear
+              />
 
               {/* Selected Product Pill/Card */}
               {selectedProduct ? (
                 <div style={{
-                  marginTop: '0.35rem',
+                  marginTop: '0.5rem',
                   padding: '0.45rem 0.65rem',
                   backgroundColor: 'rgba(99, 102, 241, 0.08)',
                   border: '1px solid rgba(99, 102, 241, 0.25)',
@@ -534,87 +525,13 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                       backgroundColor: selectedProduct.current_stock > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                       color: selectedProduct.current_stock > 0 ? 'var(--success)' : 'var(--danger)',
                     }}>
-                      Stock: {selectedProduct.current_stock} {selectedProduct.unit_abbr}
+                      Current Stock: {selectedProduct.current_stock} {selectedProduct.unit_abbr}
                     </span>
                   </div>
                 </div>
               ) : (
-                <div style={{ fontSize: '0.71875rem', color: 'var(--warning)', marginTop: '0.25rem' }}>
-                  Please search and select a product.
-                </div>
-              )}
-
-              {/* Dropdown Results List */}
-              {isProductDropdownOpen && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  zIndex: 50,
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-medium)',
-                  borderRadius: '0.375rem',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-                  maxHeight: '180px',
-                  overflowY: 'auto',
-                  marginTop: '2px',
-                }}>
-                  {filteredProducts.length === 0 ? (
-                    <div style={{ padding: '0.625rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      No matching products found.
-                    </div>
-                  ) : (
-                    filteredProducts.map((p) => {
-                      const isSelected = p.product_id.toString() === selectedProductId;
-                      return (
-                        <div
-                          key={p.product_id}
-                          onClick={() => {
-                            setSelectedProductId(p.product_id.toString());
-                            setActualStockCount(p.current_stock);
-                            setIsProductDropdownOpen(false);
-                            setProductSearchQuery('');
-                          }}
-                          style={{
-                            padding: '0.45rem 0.65rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            cursor: 'pointer',
-                            backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                            borderBottom: '1px solid var(--border-subtle)',
-                            transition: 'background 0.15s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          <div>
-                            <div style={{ fontSize: '0.78125rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                              {p.product_name}
-                            </div>
-                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
-                              SKU: {p.sku} {p.category_name ? `• ${p.category_name}` : ''}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <span style={{
-                              fontSize: '0.71875rem',
-                              fontFamily: 'var(--font-mono)',
-                              fontWeight: 700,
-                              color: p.current_stock > 0 ? 'var(--text-main)' : 'var(--danger)',
-                            }}>
-                              {p.current_stock} {p.unit_abbr}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
+                <div style={{ fontSize: '0.71875rem', color: 'var(--warning)', marginTop: '0.35rem' }}>
+                  Please search and select a product to begin adjustment.
                 </div>
               )}
             </div>

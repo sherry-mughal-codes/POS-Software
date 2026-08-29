@@ -61,9 +61,19 @@ class PosPermissionRegistry(models.Model):
             ("view_cost_prices", "Can view purchase cost prices of inventory"),
             ("create_stock_adjustment", "Can create stock count write-offs or adjustments"),
 
+            # Dashboard & Analytics
+            ("view_dashboard", "Can access the main business overview dashboard"),
+            ("view_dashboard_analytics", "Can view live revenue graphs, sales trends, and KPI summaries"),
+
+            # Reports & Analytics
+            ("view_reports", "Can access the business reports center"),
+            ("view_sales_reports", "Can view sales performance and invoice analytical reports"),
+            ("view_inventory_reports", "Can view stock valuation and inventory movement reports"),
+            ("export_reports", "Can export system data and analytical reports to Excel/PDF"),
+
             # Purchasing & Accounting
             ("approve_purchases", "Can approve supplier purchase orders"),
-            ("view_financial_reports", "Can access executive financial and profit reports"),
+            ("view_financial_reports", "Can access executive financial statements, profit & loss, and balance sheet"),
         ]
 
 

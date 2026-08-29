@@ -301,17 +301,6 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  const handleDownloadBackup = () => {
-    const jsonStr = JSON.stringify(formData, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ApexPOS_System_Config_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'store', label: 'Store Profile & Business Info', icon: <Store size={16} /> },
     { id: 'pos', label: 'POS & Receipt Templates', icon: <Receipt size={16} /> },
@@ -541,7 +530,7 @@ export const SettingsPage: React.FC = () => {
                 <Input
                   value={formData.company_phone || ''}
                   onChange={(e) => handleChange('company_phone', e.target.value)}
-                  placeholder="e.g. +92 42 111 2653"
+                  placeholder="e.g. 0300-1234567 or +92 300 1234567"
                 />
               </div>
 
@@ -1330,6 +1319,26 @@ export const SettingsPage: React.FC = () => {
                   </Button>
                 </div>
 
+                {/* Dropbox Disconnected Notification Banner */}
+                {(!formData.dropbox_access_token || formData.dropbox_backup_enabled !== 'true') && !dropboxTestResult && (
+                  <div style={{
+                    padding: '0.65rem 0.875rem',
+                    borderRadius: '0.375rem',
+                    backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                    border: '1px solid rgba(234, 179, 8, 0.3)',
+                    fontSize: '0.8125rem',
+                    color: 'var(--warning)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}>
+                    <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                    <span>
+                      Dropbox is currently <strong>NOT connected</strong>. Backups are saved locally on the server. Enter your Dropbox Access Token below and click "Test Connection" to enable automatic off-site cloud replication.
+                    </span>
+                  </div>
+                )}
+
                 {/* Live Dropbox Test Feedback */}
                 {dropboxTestResult && (
                   <div style={{
@@ -1473,18 +1482,6 @@ export const SettingsPage: React.FC = () => {
                       style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem', fontWeight: 700 }}
                     >
                       Create Database Backup Now (.SQL)
-                    </Button>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      icon={<Download size={13} />}
-                      onClick={handleDownloadBackup}
-                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                    >
-                      Export System Config JSON
                     </Button>
                   </div>
                 </div>
