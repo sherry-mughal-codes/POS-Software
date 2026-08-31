@@ -61,6 +61,10 @@ export const ExpensesDashboardPage: React.FC = () => {
   const [expenseFormData, setExpenseFormData] = useState({
     expense_account: 0,
     payment_account: 0,
+    payment_method: 'CASH' as 'CASH' | 'BANK' | 'CHEQUE',
+    cheque_number: '',
+    cheque_date: new Date().toISOString().split('T')[0],
+    cheque_bank: '',
     amount: '',
     date: new Date().toISOString().split('T')[0],
     description: '',
@@ -76,6 +80,28 @@ export const ExpensesDashboardPage: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  // Filter accounts based on payment method
+  const getFilteredPaymentAccounts = (pm: 'CASH' | 'BANK' | 'CHEQUE') => {
+    if (pm === 'CASH') {
+      return paymentAccounts.filter(
+        (a) =>
+          (a.code.startsWith('101') || a.parent_code === '1010' || (a.name.toLowerCase().includes('cash') && !a.code.startsWith('102'))) &&
+          !a.name.toLowerCase().includes('jazz') &&
+          !a.name.toLowerCase().includes('easy') &&
+          !a.code.startsWith('102')
+      );
+    }
+    return paymentAccounts.filter(
+      (a) =>
+        a.code.startsWith('102') ||
+        a.parent_code === '1020' ||
+        a.name.toLowerCase().includes('bank') ||
+        a.name.toLowerCase().includes('card') ||
+        a.name.toLowerCase().includes('jazz') ||
+        a.name.toLowerCase().includes('easy')
+    );
+  };
 
   // Fetch Chart of Accounts
   useEffect(() => {
@@ -145,9 +171,14 @@ export const ExpensesDashboardPage: React.FC = () => {
   // Handlers for Expense Form
   const handleOpenCreateExpense = () => {
     setEditingExpense(null);
+    const cashAccs = getFilteredPaymentAccounts('CASH');
     setExpenseFormData({
       expense_account: expenseAccounts[0]?.id || 0,
-      payment_account: paymentAccounts[0]?.id || 0,
+      payment_account: cashAccs[0]?.id || paymentAccounts[0]?.id || 0,
+      payment_method: 'CASH',
+      cheque_number: '',
+      cheque_date: new Date().toISOString().split('T')[0],
+      cheque_bank: '',
       amount: '',
       date: new Date().toISOString().split('T')[0],
       description: '',
@@ -164,6 +195,10 @@ export const ExpensesDashboardPage: React.FC = () => {
     setExpenseFormData({
       expense_account: exp.expense_account,
       payment_account: exp.payment_account,
+      payment_method: (exp.payment_method as any) || 'CASH',
+      cheque_number: exp.cheque_number || '',
+      cheque_date: exp.cheque_date || new Date().toISOString().split('T')[0],
+      cheque_bank: exp.cheque_bank || '',
       amount: exp.amount.toString(),
       date: exp.date,
       description: exp.description,
@@ -175,9 +210,24 @@ export const ExpensesDashboardPage: React.FC = () => {
     setIsExpenseModalOpen(true);
   };
 
+  const handlePaymentMethodChange = (pm: 'CASH' | 'BANK' | 'CHEQUE') => {
+    const validAccs = getFilteredPaymentAccounts(pm);
+    setExpenseFormData({
+      ...expenseFormData,
+      payment_method: pm,
+      payment_account: validAccs[0]?.id || expenseFormData.payment_account,
+    });
+  };
+
   const handleSaveExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     setExpenseError(null);
+
+    if (expenseFormData.payment_method === 'CHEQUE' && !expenseFormData.cheque_number.trim()) {
+      setExpenseError('Cheque Number is required.');
+      return;
+    }
+
     setExpenseSubmitting(true);
 
     try {
@@ -185,6 +235,10 @@ export const ExpensesDashboardPage: React.FC = () => {
         await expenseService.updateExpense(editingExpense.id, {
           expense_account: expenseFormData.expense_account,
           payment_account: expenseFormData.payment_account,
+          payment_method: expenseFormData.payment_method,
+          cheque_number: expenseFormData.payment_method === 'CHEQUE' ? expenseFormData.cheque_number.trim() : undefined,
+          cheque_date: expenseFormData.payment_method === 'CHEQUE' ? expenseFormData.cheque_date : undefined,
+          cheque_bank: expenseFormData.payment_method === 'CHEQUE' ? expenseFormData.cheque_bank.trim() : undefined,
           amount: parseFloat(expenseFormData.amount),
           date: expenseFormData.date,
           description: expenseFormData.description,
@@ -195,6 +249,10 @@ export const ExpensesDashboardPage: React.FC = () => {
         await expenseService.createExpense({
           expense_account: expenseFormData.expense_account,
           payment_account: expenseFormData.payment_account,
+          payment_method: expenseFormData.payment_method,
+          cheque_number: expenseFormData.payment_method === 'CHEQUE' ? expenseFormData.cheque_number.trim() : undefined,
+          cheque_date: expenseFormData.payment_method === 'CHEQUE' ? expenseFormData.cheque_date : undefined,
+          cheque_bank: expenseFormData.payment_method === 'CHEQUE' ? expenseFormData.cheque_bank.trim() : undefined,
           amount: parseFloat(expenseFormData.amount),
           date: expenseFormData.date,
           description: expenseFormData.description,
@@ -692,32 +750,48 @@ export const ExpensesDashboardPage: React.FC = () => {
             </div>
           )}
 
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              Expense Category / Account *
+            </label>
+            <select
+              value={expenseFormData.expense_account || (expenseAccounts[0]?.id ?? 0)}
+              onChange={(e) => setExpenseFormData({ ...expenseFormData, expense_account: parseInt(e.target.value) })}
+              required
+              style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+            >
+              {expenseAccounts.length === 0 ? (
+                <option value={0}>Loading accounts...</option>
+              ) : (
+                expenseAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    [{a.code}] {a.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Expense Category / Account *
+                Payment Method *
               </label>
               <select
-                value={expenseFormData.expense_account || (expenseAccounts[0]?.id ?? 0)}
-                onChange={(e) => setExpenseFormData({ ...expenseFormData, expense_account: parseInt(e.target.value) })}
+                value={expenseFormData.payment_method}
+                onChange={(e) => handlePaymentMethodChange(e.target.value as any)}
                 required
                 style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
               >
-                {expenseAccounts.length === 0 ? (
-                  <option value={0}>Loading accounts...</option>
-                ) : (
-                  expenseAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      [{a.code}] {a.name}
-                    </option>
-                  ))
-                )}
+                <option value="CASH">Cash</option>
+                <option value="BANK">Bank / Card</option>
+                <option value="CHEQUE">Cheque</option>
               </select>
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Payment Account (Paid From) *
+                {expenseFormData.payment_method === 'CASH' ? 'Cash Account (101x) *' : 'Bank Account (102x) *'}
               </label>
               <select
                 value={expenseFormData.payment_account}
@@ -725,7 +799,7 @@ export const ExpensesDashboardPage: React.FC = () => {
                 required
                 style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
               >
-                {paymentAccounts.map((a) => (
+                {getFilteredPaymentAccounts(expenseFormData.payment_method).map((a) => (
                   <option key={a.id} value={a.id}>
                     [{a.code}] {a.name}
                   </option>
@@ -733,6 +807,54 @@ export const ExpensesDashboardPage: React.FC = () => {
               </select>
             </div>
           </div>
+
+          {/* Dynamic Cheque Inputs when Payment Method is Cheque */}
+          {expenseFormData.payment_method === 'CHEQUE' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.06)', border: '1px solid var(--border-subtle)', borderRadius: '0.375rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-400)' }}>
+                Cheque Details
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                    Cheque Number *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. CHQ-55201"
+                    value={expenseFormData.cheque_number}
+                    onChange={(e) => setExpenseFormData({ ...expenseFormData, cheque_number: e.target.value })}
+                    style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                    Cheque Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={expenseFormData.cheque_date}
+                    onChange={(e) => setExpenseFormData({ ...expenseFormData, cheque_date: e.target.value })}
+                    style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                  Payee / Bank Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Meezan Bank, HBL, Allied Bank..."
+                  value={expenseFormData.cheque_bank}
+                  onChange={(e) => setExpenseFormData({ ...expenseFormData, cheque_bank: e.target.value })}
+                  style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                />
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>

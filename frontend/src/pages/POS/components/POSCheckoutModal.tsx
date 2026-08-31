@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Coins,
   Printer,
+  Landmark,
 } from 'lucide-react';
 import { Modal } from '../../../components/common/Modal';
 import { Button } from '../../../components/common/Button';
@@ -25,7 +26,10 @@ interface POSCheckoutModalProps {
     payment_method: PaymentMethodType;
     payment_account?: number;
     paid_amount: number;
-    payments_breakdown?: { payment_method: PaymentMethodType; payment_account?: number; amount: number }[];
+    cheque_number?: string;
+    cheque_date?: string;
+    cheque_bank?: string;
+    payments_breakdown?: { payment_method: PaymentMethodType; payment_account?: number; amount: number; cheque_number?: string; cheque_date?: string; cheque_bank?: string }[];
     notes?: string;
   }, autoPrint?: boolean) => Promise<void>;
   loading: boolean;
@@ -102,6 +106,11 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
+  // Cheque payment fields
+  const [chequeNumber, setChequeNumber] = useState<string>('');
+  const [chequeDate, setChequeDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [chequeBank, setChequeBank] = useState<string>('');
+
   // Accounts state
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedCashAccountId, setSelectedCashAccountId] = useState<number | undefined>();
@@ -110,7 +119,11 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
   // Split payment fields
   const [splitCash, setSplitCash] = useState<string>('');
   const [splitCard, setSplitCard] = useState<string>('');
+  const [splitCheque, setSplitCheque] = useState<string>('');
   const [splitCredit, setSplitCredit] = useState<string>('');
+  const [splitChequeNumber, setSplitChequeNumber] = useState<string>('');
+  const [splitChequeDate, setSplitChequeDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [splitChequeBank, setSplitChequeBank] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
@@ -118,9 +131,16 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
       setCashTendered(grandTotal.toString());
       setNotes('');
       setError(null);
+      setChequeNumber('');
+      setChequeDate(new Date().toISOString().split('T')[0]);
+      setChequeBank('');
       setSplitCash(grandTotal.toString());
       setSplitCard('0');
+      setSplitCheque('0');
       setSplitCredit('0');
+      setSplitChequeNumber('');
+      setSplitChequeDate(new Date().toISOString().split('T')[0]);
+      setSplitChequeBank('');
 
       accountingService.getAccounts({ is_active: true }).then((accs) => {
         setAccounts(accs);
@@ -257,6 +277,20 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
           paid_amount: grandTotal,
           notes,
         }, autoPrint);
+      } else if (paymentMethod === 'CHEQUE') {
+        if (!chequeNumber.trim()) {
+          setError('Please enter the Cheque Number.');
+          return;
+        }
+        await onConfirmCheckout({
+          payment_method: 'CHEQUE',
+          payment_account: selectedBankAccountId,
+          paid_amount: grandTotal,
+          cheque_number: chequeNumber.trim(),
+          cheque_date: chequeDate,
+          cheque_bank: chequeBank.trim(),
+          notes,
+        }, autoPrint);
       } else if (paymentMethod === 'CREDIT') {
         if (!isCreditAllowed) {
           setError('Credit purchases are not enabled for this customer.');
@@ -270,8 +304,9 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
       } else if (paymentMethod === 'SPLIT') {
         const cVal = parseFloat(splitCash) || 0;
         const cardVal = parseFloat(splitCard) || 0;
+        const chqVal = parseFloat(splitCheque) || 0;
         const credVal = parseFloat(splitCredit) || 0;
-        const totalAllocated = cVal + cardVal + credVal;
+        const totalAllocated = cVal + cardVal + chqVal + credVal;
 
         if (Math.abs(totalAllocated - grandTotal) > 0.01) {
           setError(`Split sum (Rs. ${formatMoney(totalAllocated)}) does not match Grand Total (Rs. ${formatMoney(grandTotal)}).`);
@@ -283,14 +318,20 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
           return;
         }
 
-        const breakdown: { payment_method: PaymentMethodType; payment_account?: number; amount: number }[] = [];
+        if (chqVal > 0 && !splitChequeNumber.trim()) {
+          setError('Please enter the Cheque Number for the cheque split allocation.');
+          return;
+        }
+
+        const breakdown: { payment_method: PaymentMethodType; payment_account?: number; amount: number; cheque_number?: string; cheque_date?: string; cheque_bank?: string }[] = [];
         if (cVal > 0) breakdown.push({ payment_method: 'CASH', payment_account: selectedCashAccountId, amount: cVal });
         if (cardVal > 0) breakdown.push({ payment_method: 'CARD', payment_account: selectedBankAccountId, amount: cardVal });
+        if (chqVal > 0) breakdown.push({ payment_method: 'CHEQUE', payment_account: selectedBankAccountId, amount: chqVal, cheque_number: splitChequeNumber.trim(), cheque_date: splitChequeDate, cheque_bank: splitChequeBank.trim() });
         if (credVal > 0) breakdown.push({ payment_method: 'CREDIT', amount: credVal });
 
         await onConfirmCheckout({
           payment_method: 'SPLIT',
-          paid_amount: cVal + cardVal,
+          paid_amount: cVal + cardVal + chqVal,
           payments_breakdown: breakdown,
           notes,
         }, autoPrint);
@@ -305,7 +346,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="POS Sale Payment & Checkout"
-      maxWidth="560px"
+      maxWidth="620px"
     >
       <form onSubmit={(e) => { e.preventDefault(); handlePerformSubmit(true); }} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         {/* Payable Total Header */}
@@ -365,12 +406,12 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
           <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
             Select Payment Method
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
             <button
               type="button"
               onClick={() => setPaymentMethod('CASH')}
               style={{
-                padding: '0.75rem 0.5rem',
+                padding: '0.75rem 0.35rem',
                 borderRadius: '0.5rem',
                 border: paymentMethod === 'CASH' ? '2px solid var(--primary-400)' : '1px solid var(--border-subtle)',
                 backgroundColor: paymentMethod === 'CASH' ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-card)',
@@ -392,7 +433,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
               type="button"
               onClick={() => setPaymentMethod('CARD')}
               style={{
-                padding: '0.75rem 0.5rem',
+                padding: '0.75rem 0.35rem',
                 borderRadius: '0.5rem',
                 border: paymentMethod === 'CARD' ? '2px solid var(--primary-400)' : '1px solid var(--border-subtle)',
                 backgroundColor: paymentMethod === 'CARD' ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-card)',
@@ -407,7 +448,29 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
               }}
             >
               <CreditCard size={20} />
-              <span>Card</span>
+              <span>Bank / Card</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('CHEQUE')}
+              style={{
+                padding: '0.75rem 0.35rem',
+                borderRadius: '0.5rem',
+                border: paymentMethod === 'CHEQUE' ? '2px solid var(--primary-400)' : '1px solid var(--border-subtle)',
+                backgroundColor: paymentMethod === 'CHEQUE' ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-card)',
+                color: paymentMethod === 'CHEQUE' ? 'var(--primary-400)' : 'var(--text-muted)',
+                fontWeight: 700,
+                fontSize: '0.8125rem',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.375rem',
+              }}
+            >
+              <Landmark size={20} />
+              <span>Cheque</span>
             </button>
 
             <button
@@ -416,7 +479,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
               disabled={!isCreditAllowed}
               title={!isCreditAllowed ? 'Customer is not eligible for credit' : 'Charge to Customer Receivable'}
               style={{
-                padding: '0.75rem 0.5rem',
+                padding: '0.75rem 0.35rem',
                 borderRadius: '0.5rem',
                 border: paymentMethod === 'CREDIT' ? '2px solid var(--primary-400)' : '1px solid var(--border-subtle)',
                 backgroundColor: paymentMethod === 'CREDIT' ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-card)',
@@ -439,7 +502,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
               type="button"
               onClick={() => setPaymentMethod('SPLIT')}
               style={{
-                padding: '0.75rem 0.5rem',
+                padding: '0.75rem 0.35rem',
                 borderRadius: '0.5rem',
                 border: paymentMethod === 'SPLIT' ? '2px solid var(--primary-400)' : '1px solid var(--border-subtle)',
                 backgroundColor: paymentMethod === 'SPLIT' ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-card)',
@@ -659,6 +722,134 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
           </div>
         )}
 
+        {/* CHEQUE Payment Body */}
+        {paymentMethod === 'CHEQUE' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            <div
+              style={{
+                padding: '0.875rem 1rem',
+                backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                borderRadius: '0.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Landmark size={20} style={{ color: 'var(--primary-400)' }} />
+                <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  Cheque Receipt Amount:
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 900,
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--primary-400)',
+                }}
+              >
+                Rs. {formatMoney(grandTotal)}
+              </span>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                Depositing Bank / Digital Account *
+              </label>
+              <select
+                value={selectedBankAccountId || ''}
+                onChange={(e) => setSelectedBankAccountId(Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 0.75rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.5rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  outline: 'none',
+                }}
+              >
+                {bankAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    [{acc.code}] {acc.name} (Bal: Rs. {formatMoney(acc.current_balance)})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Cheque Number *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. CHQ-990142"
+                  value={chequeNumber}
+                  onChange={(e) => setChequeNumber(e.target.value)}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Cheque Date *
+                </label>
+                <input
+                  type="date"
+                  value={chequeDate}
+                  onChange={(e) => setChequeDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                Drawer / Issuing Bank Name (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Meezan Bank, HBL, Standard Chartered..."
+                value={chequeBank}
+                onChange={(e) => setChequeBank(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 0.75rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '0.5rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8125rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* CREDIT Notice */}
         {paymentMethod === 'CREDIT' && (
           <div
@@ -686,7 +877,7 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
         {/* SPLIT Payment Body */}
         {paymentMethod === 'SPLIT' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                   Cash (Rs.)
@@ -715,6 +906,19 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Cheque (Rs.)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={splitCheque}
+                  onChange={(e) => setSplitCheque(e.target.value)}
+                  style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                   Credit (Rs.)
                 </label>
                 <input
@@ -728,10 +932,43 @@ export const POSCheckoutModal: React.FC<POSCheckoutModalProps> = ({
               </div>
             </div>
 
-            {parseFloat(splitCard) > 0 && bankAccounts.length > 0 && (
+            {parseFloat(splitCheque) > 0 && (
+              <div style={{ padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.05)', border: '1px solid var(--border-subtle)', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-400)' }}>
+                  Cheque Portion Details
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque # *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. CHQ-9921"
+                      value={splitChequeNumber}
+                      onChange={(e) => setSplitChequeNumber(e.target.value)}
+                      style={{ width: '100%', padding: '0.4rem 0.6rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque Date
+                    </label>
+                    <input
+                      type="date"
+                      value={splitChequeDate}
+                      onChange={(e) => setSplitChequeDate(e.target.value)}
+                      style={{ width: '100%', padding: '0.4rem 0.6rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(parseFloat(splitCard) > 0 || parseFloat(splitCheque) > 0) && bankAccounts.length > 0 && (
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                  Receiving Bank / Digital Account for Card portion *
+                  Receiving Bank / Digital Account for Digital/Cheque portion *
                 </label>
                 <select
                   value={selectedBankAccountId || ''}

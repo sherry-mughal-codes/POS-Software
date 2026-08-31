@@ -147,7 +147,7 @@ class CustomerPayment(models.Model):
     )
     payment_method = models.CharField(
         max_length=20,
-        choices=[("CASH", "Cash"), ("BANK", "Bank Transfer"), ("CARD", "Credit / Debit Card")],
+        choices=[("CASH", "Cash"), ("BANK", "Bank / Card"), ("CARD", "Card"), ("CHEQUE", "Cheque")],
         default="CASH",
         db_index=True,
     )
@@ -157,6 +157,9 @@ class CustomerPayment(models.Model):
         related_name="customer_payments",
         help_text="Debit Asset Account (e.g. Cash in Hand 1010, Bank 1020)",
     )
+    cheque_number = models.CharField(max_length=50, blank=True, null=True, help_text="Cheque number")
+    cheque_date = models.DateField(blank=True, null=True, help_text="Cheque date")
+    cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Customer issuing bank")
     reference = models.CharField(
         max_length=100,
         blank=True,

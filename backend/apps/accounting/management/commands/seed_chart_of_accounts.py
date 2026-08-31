@@ -85,8 +85,9 @@ class Command(BaseCommand):
         # Seed Payment Methods
         payment_methods_data = [
             {"name": "Cash", "code": "CASH", "account_code": "1010"},
-            {"name": "Bank Transfer", "code": "BANK", "account_code": "1020"},
+            {"name": "Bank / Card", "code": "BANK", "account_code": "1020"},
             {"name": "Credit / Debit Card", "code": "CARD", "account_code": "1025"},
+            {"name": "Cheque", "code": "CHEQUE", "account_code": "1020"},
         ]
 
         for pm in payment_methods_data:

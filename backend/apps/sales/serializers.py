@@ -59,7 +59,11 @@ class SalePaymentSerializer(serializers.ModelSerializer):
             "id",
             "payment_method",
             "payment_method_display",
+            "payment_account",
             "amount",
+            "cheque_number",
+            "cheque_date",
+            "cheque_bank",
             "notes",
             "created_at",
         ]
@@ -101,6 +105,11 @@ class SalesReturnSerializer(serializers.ModelSerializer):
             "original_invoice_number",
             "date",
             "refund_amount",
+            "refund_method",
+            "payment_account",
+            "cheque_number",
+            "cheque_date",
+            "cheque_bank",
             "reason",
             "notes",
             "created_by",
@@ -158,6 +167,9 @@ class SaleSerializer(serializers.ModelSerializer):
             "payment_account",
             "payment_account_name",
             "payment_account_code",
+            "cheque_number",
+            "cheque_date",
+            "cheque_bank",
             "payment_status",
             "payment_status_display",
             "subtotal",
@@ -216,6 +228,9 @@ class SalePaymentItemSerializer(serializers.Serializer):
     payment_method = serializers.ChoiceField(choices=PaymentMethodType.choices, required=True)
     payment_account = serializers.IntegerField(required=False, allow_null=True)
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=True)
+    cheque_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+    cheque_date = serializers.DateField(required=False, allow_null=True)
+    cheque_bank = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")
 
 
@@ -224,6 +239,9 @@ class SaleCheckoutSerializer(serializers.Serializer):
     items = SaleCheckoutItemSerializer(many=True, required=True)
     payment_method = serializers.ChoiceField(choices=PaymentMethodType.choices, default=PaymentMethodType.CASH)
     payment_account = serializers.IntegerField(required=False, allow_null=True)
+    cheque_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+    cheque_date = serializers.DateField(required=False, allow_null=True)
+    cheque_bank = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
     discount_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("0.00"))
     tax_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("0.00"))
     paid_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
@@ -241,7 +259,11 @@ class SalesReturnCreateSerializer(serializers.Serializer):
     sale_id = serializers.IntegerField(required=True)
     items = SalesReturnItemInputSerializer(many=True, required=True)
     reason = serializers.CharField(required=True)
+    refund_method = serializers.ChoiceField(choices=PaymentMethodType.choices, required=False, default=PaymentMethodType.CASH)
     payment_account = serializers.IntegerField(required=False, allow_null=True)
+    cheque_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+    cheque_date = serializers.DateField(required=False, allow_null=True)
+    cheque_bank = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")
     date = serializers.DateField(required=False)
 

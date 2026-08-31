@@ -62,6 +62,9 @@ class Purchase(models.Model):
         blank=True,
         related_name="purchase_payments",
     )
+    cheque_number = models.CharField(max_length=50, blank=True, null=True, help_text="Cheque number if paid by cheque")
+    cheque_date = models.DateField(blank=True, null=True, help_text="Cheque issue or clearance date")
+    cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Bank on which cheque is drawn")
     supplier_invoice_number = models.CharField(
         max_length=100,
         blank=True,
@@ -176,6 +179,9 @@ class PurchaseReturn(models.Model):
         related_name="purchase_returns",
         help_text="Receiving Cash/Bank Asset Account if refund taken in cash or bank transfer",
     )
+    cheque_number = models.CharField(max_length=50, blank=True, null=True, help_text="Refund cheque number")
+    cheque_date = models.DateField(blank=True, null=True, help_text="Refund cheque date")
+    cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Refund issuing bank")
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(
         User,
@@ -219,7 +225,7 @@ class SupplierPaymentStatus(models.TextChoices):
 
 class SupplierPaymentMethodType(models.TextChoices):
     CASH = "CASH", "Cash"
-    BANK = "BANK", "Bank Transfer"
+    BANK = "BANK", "Bank / Card"
     CHEQUE = "CHEQUE", "Cheque"
 
 
@@ -252,6 +258,9 @@ class SupplierPayment(models.Model):
         on_delete=models.PROTECT,
         related_name="supplier_payment_accounts",
     )
+    cheque_number = models.CharField(max_length=50, blank=True, null=True, help_text="Cheque number")
+    cheque_date = models.DateField(blank=True, null=True, help_text="Cheque issue / clearance date")
+    cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Drawn on bank name")
     reference = models.CharField(max_length=100, blank=True, null=True, help_text="Cheque # / Online Bank Reference")
     notes = models.TextField(blank=True, null=True)
     status = models.CharField(

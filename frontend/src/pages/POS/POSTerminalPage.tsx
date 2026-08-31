@@ -344,7 +344,10 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
       payment_method: PaymentMethodType;
       payment_account?: number;
       paid_amount: number;
-      payments_breakdown?: { payment_method: PaymentMethodType; payment_account?: number; amount: number }[];
+      cheque_number?: string;
+      cheque_date?: string;
+      cheque_bank?: string;
+      payments_breakdown?: { payment_method: PaymentMethodType; payment_account?: number; amount: number; cheque_number?: string; cheque_date?: string; cheque_bank?: string }[];
       notes?: string;
     },
     autoPrint: boolean = true
@@ -361,6 +364,9 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
         })),
         payment_method: payload.payment_method,
         payment_account: payload.payment_account,
+        cheque_number: payload.cheque_number,
+        cheque_date: payload.cheque_date,
+        cheque_bank: payload.cheque_bank,
         discount_amount: overallDiscountAmount,
         paid_amount: payload.paid_amount,
         payments_breakdown: payload.payments_breakdown,

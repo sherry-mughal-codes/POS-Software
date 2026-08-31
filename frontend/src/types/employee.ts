@@ -91,6 +91,9 @@ export interface SalaryPayment {
   payment_account_name: string;
   payment_account_code: string;
   reference?: string | null;
+  cheque_number?: string | null;
+  cheque_date?: string | null;
+  cheque_bank?: string | null;
   notes?: string | null;
   status: SalaryPaymentStatusKind;
   journal_entry?: number | null;
@@ -111,6 +114,9 @@ export interface SalaryPaymentPayload {
   payment_account?: number;
   date?: string;
   reference?: string;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
   notes?: string;
 }
 

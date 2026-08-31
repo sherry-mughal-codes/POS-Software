@@ -74,6 +74,9 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   const [payAmount, setPayAmount] = useState<number>(0);
   const [payMethod, setPayMethod] = useState<SupplierPaymentMethodType>('CASH');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [chequeNumber, setChequeNumber] = useState<string>('');
+  const [chequeDate, setChequeDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [chequeBank, setChequeBank] = useState<string>('');
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
@@ -97,7 +100,7 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   const [cancellingLoading, setCancellingLoading] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
 
-  // Filter accounts based on Cash vs Card/Bank
+  // Filter accounts based on Cash vs Card/Bank vs Cheque
   const getFilteredPaymentAccounts = (method: SupplierPaymentMethodType) => {
     if (method === 'CASH') {
       return paymentAccounts.filter(
@@ -152,11 +155,11 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       );
       setStatements(stmts);
     } catch {
-      // ignore
+      showError('Failed to load supplier payables accounts.', 'Data Error');
     } finally {
       setLoading(false);
     }
-  }, [selectedAccountId]);
+  }, [showError, selectedAccountId]);
 
   // Fetch vouchers history
   const fetchVouchers = useCallback(async () => {
@@ -169,11 +172,11 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       const data = await purchaseService.getSupplierPayments(params);
       setVouchers(data || []);
     } catch {
-      // ignore
+      showError('Failed to load supplier payment vouchers.', 'Vouchers Error');
     } finally {
       setVouchersLoading(false);
     }
-  }, [voucherFilterStatus]);
+  }, [voucherFilterStatus, showError]);
 
   // Fetch master report
   const fetchReport = useCallback(async () => {
@@ -186,11 +189,11 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       const data = await purchaseService.getSupplierPayablesReport(params);
       setReportData(data);
     } catch {
-      // ignore
+      showError('Failed to generate supplier payables audit report.', 'Report Error');
     } finally {
       setReportLoading(false);
     }
-  }, [reportStartDate, reportEndDate, reportSupplierId]);
+  }, [reportStartDate, reportEndDate, reportSupplierId, showError]);
 
   useEffect(() => {
     fetchPayablesData();
@@ -211,6 +214,9 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
     const maxPayable = stmt?.summary?.closing_payable ?? (supp.outstanding_payable ?? 0);
     setPayAmount(maxPayable);
     setPayMethod('CASH');
+    setChequeNumber('');
+    setChequeDate(new Date().toISOString().split('T')[0]);
+    setChequeBank('');
     setReference('');
     setNotes('');
     setPaymentDate(new Date().toISOString().split('T')[0]);
@@ -250,6 +256,11 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       return;
     }
 
+    if (payMethod === 'CHEQUE' && !chequeNumber.trim()) {
+      setPaymentError('Cheque Number is required.');
+      return;
+    }
+
     setSavingPayment(true);
     setPaymentError(null);
 
@@ -259,6 +270,9 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
         amount: payAmount,
         payment_method: payMethod,
         payment_account: parseInt(selectedAccountId),
+        cheque_number: payMethod === 'CHEQUE' ? chequeNumber.trim() : undefined,
+        cheque_date: payMethod === 'CHEQUE' ? chequeDate : undefined,
+        cheque_bank: payMethod === 'CHEQUE' ? chequeBank.trim() : undefined,
         date: paymentDate,
         reference: reference.trim(),
         notes: notes.trim(),
@@ -1028,7 +1042,7 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                       cursor: 'pointer',
                     }}
                   >
-                    {m === 'CASH' ? 'Cash in Hand' : m === 'BANK' ? 'Bank Transfer' : 'Cheque'}
+                    {m === 'CASH' ? 'Cash' : m === 'BANK' ? 'Bank / Card' : 'Cheque'}
                   </button>
                 ))}
               </div>
@@ -1037,7 +1051,7 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
             {/* Payment Account */}
             <div>
               <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                Disburse From GL Account *
+                {payMethod === 'CASH' ? 'Disburse From Cash Drawer Account *' : 'Disburse From Bank Account *'}
               </label>
               <select
                 required
@@ -1060,6 +1074,58 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                 ))}
               </select>
             </div>
+
+            {/* Dynamic Cheque Inputs when Payment Method is Cheque */}
+            {payMethod === 'CHEQUE' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.06)', border: '1px solid var(--border-subtle)', borderRadius: '0.375rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-400)' }}>
+                  Cheque Details
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque Number *
+                    </label>
+                    <Input
+                      required
+                      value={chequeNumber}
+                      onChange={(e) => setChequeNumber(e.target.value)}
+                      placeholder="e.g. CHQ-9901"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={chequeDate}
+                      onChange={(e) => setChequeDate(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        borderRadius: '0.375rem',
+                        border: '1px solid var(--border-medium)',
+                        backgroundColor: 'var(--bg-input)',
+                        color: 'var(--text-main)',
+                        fontSize: '0.8125rem',
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                    Payee / Supplier Bank (Optional)
+                  </label>
+                  <Input
+                    value={chequeBank}
+                    onChange={(e) => setChequeBank(e.target.value)}
+                    placeholder="e.g. Meezan Bank, HBL, Allied Bank..."
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Date & Reference */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -1086,12 +1152,12 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
-                  Cheque / Reference #
+                  Reference / Slip #
                 </label>
                 <Input
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
-                  placeholder="e.g. CHQ-9901, FT-302"
+                  placeholder="e.g. FT-302, Slip-101"
                 />
               </div>
             </div>

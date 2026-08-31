@@ -226,10 +226,17 @@ export const POSReceiptModal: React.FC<POSReceiptModalProps> = ({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
               <span>
-                Payment ({sale.payment_method === 'CREDIT' ? (sale.due_amount <= 0 ? 'Credit - Settled' : 'Credit') : sale.payment_method_display}):
+                Payment ({sale.payment_method === 'CREDIT' ? (sale.due_amount <= 0 ? 'Credit - Settled' : 'Credit') : sale.payment_method === 'CHEQUE' ? 'Cheque' : sale.payment_method === 'CARD' ? 'Bank / Card' : (sale.payment_method_display || sale.payment_method)}):
               </span>
               <span>{currencySymbol} {formatMoney(sale.paid_amount)}</span>
             </div>
+
+            {sale.cheque_number && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', color: '#4b5563' }}>
+                <span>Cheque #:</span>
+                <span>{sale.cheque_number} {sale.cheque_bank ? `(${sale.cheque_bank})` : ''}</span>
+              </div>
+            )}
 
             {sale.change_amount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

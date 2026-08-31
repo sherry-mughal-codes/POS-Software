@@ -135,6 +135,9 @@ class SalaryPaymentSerializer(serializers.ModelSerializer):
             "payment_account_name",
             "payment_account_code",
             "reference",
+            "cheque_number",
+            "cheque_date",
+            "cheque_bank",
             "notes",
             "status",
             "journal_entry",
@@ -178,6 +181,9 @@ class SalaryPaymentCreateSerializer(serializers.ModelSerializer):
             "payment_method",
             "payment_account",
             "reference",
+            "cheque_number",
+            "cheque_date",
+            "cheque_bank",
             "notes",
         ]
 

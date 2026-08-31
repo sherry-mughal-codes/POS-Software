@@ -35,6 +35,15 @@ class Expense(models.Model):
         related_name="payment_expenses",
         help_text="Credit Asset Account (e.g. Cash in Hand, Bank Account)",
     )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=[("CASH", "Cash"), ("BANK", "Bank / Card"), ("CHEQUE", "Cheque")],
+        default="CASH",
+        db_index=True,
+    )
+    cheque_number = models.CharField(max_length=50, blank=True, null=True, help_text="Cheque number")
+    cheque_date = models.DateField(blank=True, null=True, help_text="Cheque date")
+    cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Bank name")
     reference_no = models.CharField(max_length=100, blank=True, null=True, help_text="Bill/Receipt/Voucher number")
     attachment = models.FileField(upload_to="expenses/attachments/", blank=True, null=True)
     notes = models.TextField(blank=True, null=True)

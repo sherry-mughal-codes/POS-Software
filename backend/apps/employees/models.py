@@ -343,6 +343,25 @@ class SalaryPayment(models.Model):
         null=True,
         help_text="Cheque # / Bank Transfer Ref",
     )
+    cheque_number = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        default="",
+        help_text="Cheque number for bank disbursement",
+    )
+    cheque_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Cheque issuance / value date",
+    )
+    cheque_bank = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        default="",
+        help_text="Issuing / Disbursing bank name",
+    )
     notes = models.TextField(blank=True, null=True)
     status = models.CharField(
         max_length=20,

@@ -63,6 +63,9 @@ class SalesService:
         tax_amount: Decimal = Decimal("0.00"),
         paid_amount: Optional[Decimal] = None,
         payments_breakdown: Optional[List[Dict[str, Any]]] = None,
+        cheque_number: Optional[str] = None,
+        cheque_date: Optional[date] = None,
+        cheque_bank: Optional[str] = None,
         notes: str = "",
         sale_date: Optional[date] = None,
         created_by: Optional[User] = None,
@@ -120,55 +123,62 @@ class SalesService:
                     f"Insufficient stock for '{prod.name}' (SKU: {prod.sku}). Available: {current_stock}, Requested: {qty}"
                 )
 
-            unit_cost = prod.cost_price or Decimal("0.00")
-            line_cogs = qty * unit_cost
-            total_cogs += line_cogs
-
             unit_price = Decimal(str(row.get("unit_price", prod.selling_price)))
-            line_disc = Decimal(str(row.get("discount", 0)))
-
-            line_subtotal = (qty * unit_price) - line_disc
-            if line_subtotal < Decimal("0.00"):
-                line_subtotal = Decimal("0.00")
-
+            discount = Decimal(str(row.get("discount", "0.00")))
+            line_subtotal = (qty * unit_price) - discount
             subtotal += line_subtotal
+
+            # Cost of goods sold snapshot using current Weighted Average Cost
+            unit_cogs = prod.cost_price or Decimal("0.00")
+            line_cogs = qty * unit_cogs
+            total_cogs += line_cogs
 
             validated_items.append({
                 "product": prod,
                 "quantity": qty,
                 "unit_price": unit_price,
-                "unit_cost": unit_cost,
-                "discount": line_disc,
+                "unit_cost": unit_cogs,
+                "discount": discount,
                 "subtotal": line_subtotal,
                 "current_stock": current_stock,
             })
 
-        # 2. Invoice totals & Payment calculations
-        discount_amount = Decimal(str(discount_amount or 0))
-        tax_amount = Decimal(str(tax_amount or 0))
-        grand_total = max(Decimal("0.00"), (subtotal - discount_amount + tax_amount))
+        # 2. Compute Invoice Totals
+        grand_total = subtotal - discount_amount + tax_amount
 
+        # Validate paid vs due amount
         if paid_amount is None:
             if payment_method == PaymentMethodType.CREDIT:
                 paid_amount = Decimal("0.00")
             else:
                 paid_amount = grand_total
-        else:
-            paid_amount = Decimal(str(paid_amount))
 
-        if paid_amount >= grand_total:
+        if paid_amount > grand_total and payment_method != PaymentMethodType.CASH:
+            # Non-cash payments cannot tender excess change
+            paid_amount = grand_total
+
+        change_amount = Decimal("0.00")
+        if paid_amount > grand_total and payment_method == PaymentMethodType.CASH:
             change_amount = paid_amount - grand_total
             due_amount = Decimal("0.00")
         else:
-            change_amount = Decimal("0.00")
-            due_amount = grand_total - paid_amount
+            due_amount = max(Decimal("0.00"), grand_total - paid_amount)
 
-        # 3. Credit rule enforcement
-        if payment_method == PaymentMethodType.CREDIT or due_amount > Decimal("0.00"):
+        # 3. Credit Limit and Walk-in Customer Validation
+        if due_amount > Decimal("0.00"):
             if customer.is_walkin:
-                raise ValidationError("Credit transactions are strictly prohibited for Walk-in Customers.")
-            if not customer.credit_enabled:
-                raise ValidationError(f"Credit facility is not enabled for customer '{customer.name}'.")
+                raise ValidationError(
+                    "Credit / partial payment is not allowed for Walk-in Customer. Please assign a registered customer or tender full payment."
+                )
+
+            current_outstanding = customer.outstanding_balance
+            if customer.credit_limit is not None and customer.credit_limit > Decimal("0.00"):
+                new_total_due = current_outstanding + due_amount
+                if new_total_due > customer.credit_limit:
+                    raise ValidationError(
+                        f"Sale exceeds customer credit limit! Current due: Rs. {current_outstanding}, "
+                        f"New due: Rs. {due_amount}, Limit: Rs. {customer.credit_limit}"
+                    )
 
         invoice_number = cls.generate_invoice_number()
 
@@ -187,6 +197,9 @@ class SalesService:
             due_amount=due_amount,
             payment_method=payment_method,
             payment_account=payment_account,
+            cheque_number=cheque_number,
+            cheque_date=cheque_date,
+            cheque_bank=cheque_bank,
             notes=notes,
             created_by=created_by,
         )
@@ -230,6 +243,9 @@ class SalesService:
                         payment_method=p.get("payment_method", PaymentMethodType.CASH),
                         payment_account=p_acc,
                         amount=p_amt,
+                        cheque_number=p.get("cheque_number", ""),
+                        cheque_date=p.get("cheque_date"),
+                        cheque_bank=p.get("cheque_bank", ""),
                         notes=p.get("notes", ""),
                     )
         else:
@@ -240,6 +256,9 @@ class SalesService:
                     payment_method=payment_method if payment_method != PaymentMethodType.CREDIT else PaymentMethodType.CASH,
                     payment_account=payment_account,
                     amount=effective_paid,
+                    cheque_number=cheque_number,
+                    cheque_date=cheque_date,
+                    cheque_bank=cheque_bank,
                 )
             if due_amount > Decimal("0.00"):
                 SalePayment.objects.create(
@@ -286,30 +305,36 @@ class SalesService:
                 if sp.amount > Decimal("0.00"):
                     if sp.payment_account:
                         acc = sp.payment_account
-                    elif sp.payment_method == PaymentMethodType.CARD:
+                    elif sp.payment_method in [PaymentMethodType.CARD, PaymentMethodType.CHEQUE]:
                         acc = bank_acc
                     else:
                         acc = cash_acc
+                    desc = f"Payment received ({acc.name}) for {sale.invoice_number}"
+                    if sp.payment_method == PaymentMethodType.CHEQUE and sp.cheque_number:
+                        desc += f" [Cheque #{sp.cheque_number}]"
                     revenue_lines.append({
                         "account": acc,
                         "debit": sp.amount,
                         "credit": Decimal("0.00"),
-                        "description": f"Payment received ({acc.name}) for {sale.invoice_number}",
+                        "description": desc,
                     })
         else:
             if sale.payment_account:
                 received_acc = sale.payment_account
-            elif sale.payment_method == PaymentMethodType.CARD:
+            elif sale.payment_method in [PaymentMethodType.CARD, PaymentMethodType.CHEQUE]:
                 received_acc = bank_acc
             else:
                 received_acc = cash_acc
 
             if effective_received > Decimal("0.00"):
+                desc = f"Payment received ({received_acc.name}) for {sale.invoice_number}"
+                if sale.payment_method == PaymentMethodType.CHEQUE and sale.cheque_number:
+                    desc += f" [Cheque #{sale.cheque_number}]"
                 revenue_lines.append({
                     "account": received_acc,
                     "debit": effective_received,
                     "credit": Decimal("0.00"),
-                    "description": f"Payment received ({received_acc.name}) for {sale.invoice_number}",
+                    "description": desc,
                 })
 
         if sale.due_amount > Decimal("0.00"):
@@ -389,9 +414,13 @@ class SalesService:
         sale_id: int,
         items_data: list,
         reason: str,
+        refund_method: str = PaymentMethodType.CASH,
+        payment_account_id=None,
+        cheque_number: Optional[str] = None,
+        cheque_date: Optional[date] = None,
+        cheque_bank: Optional[str] = None,
         notes: str = "",
         return_date=None,
-        payment_account_id=None,
         created_by=None,
     ) -> SalesReturn:
         """
@@ -470,7 +499,11 @@ class SalesService:
             date=return_date,
             refund_amount=total_refund,
             reason=reason,
+            refund_method=refund_method,
             payment_account=payout_acc,
+            cheque_number=cheque_number,
+            cheque_date=cheque_date,
+            cheque_bank=cheque_bank,
             notes=notes,
             created_by=created_by,
         )

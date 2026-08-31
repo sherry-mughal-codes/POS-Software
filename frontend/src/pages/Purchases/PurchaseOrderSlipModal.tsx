@@ -200,6 +200,22 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
                 [ ORDER CANCELLED ]
               </div>
             )}
+            {(purchase.returned_amount ?? 0) > 0 && (
+              <div style={{
+                display: 'inline-block',
+                marginTop: '0.25rem',
+                marginLeft: '0.35rem',
+                padding: '0.1rem 0.5rem',
+                backgroundColor: '#fef3c7',
+                border: '1px solid #f59e0b',
+                color: '#b45309',
+                borderRadius: '0.25rem',
+                fontSize: '0.6875rem',
+                fontWeight: 800,
+              }}>
+                [ RETURNED: {currencySymbol} {formatMoney(purchase.returned_amount)} ]
+              </div>
+            )}
           </div>
 
           {/* Meta details */}
@@ -280,6 +296,13 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
               <span>GRAND TOTAL:</span>
               <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.grand_total)}</span>
             </div>
+
+            {(purchase.returned_amount ?? 0) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#b45309', fontWeight: 700, marginTop: '0.15rem' }}>
+                <span>Returned Merchandise:</span>
+                <span style={{ fontFamily: 'monospace' }}>- {currencySymbol} {formatMoney(purchase.returned_amount)}</span>
+              </div>
+            )}
 
             {isDraft ? (
               <>

@@ -1,5 +1,5 @@
 export type SaleStatus = 'DRAFT' | 'COMPLETED' | 'CANCELLED';
-export type PaymentMethodType = 'CASH' | 'CARD' | 'CREDIT' | 'SPLIT';
+export type PaymentMethodType = 'CASH' | 'CARD' | 'CHEQUE' | 'CREDIT' | 'SPLIT';
 
 export interface CartItem {
   product_id: number;
@@ -41,6 +41,9 @@ export interface SalePayment {
   payment_method_display: string;
   payment_account?: number;
   amount: number;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
   notes?: string;
   created_at: string;
 }
@@ -63,6 +66,11 @@ export interface SalesReturn {
   original_invoice_number: string;
   date: string;
   refund_amount: number;
+  refund_method?: PaymentMethodType;
+  payment_account?: number;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
   reason: string;
   notes?: string;
   created_by?: number;
@@ -87,6 +95,9 @@ export interface Sale {
   payment_account?: number;
   payment_account_name?: string;
   payment_account_code?: string;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
   payment_status?: 'PAID' | 'PARTIAL' | 'UNPAID';
   payment_status_display?: string;
   subtotal: number;
@@ -117,6 +128,9 @@ export interface SaleCheckoutPayload {
   }[];
   payment_method: PaymentMethodType;
   payment_account?: number;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
   discount_amount?: number;
   tax_amount?: number;
   paid_amount?: number;
@@ -124,6 +138,9 @@ export interface SaleCheckoutPayload {
     payment_method: PaymentMethodType;
     payment_account?: number;
     amount: number;
+    cheque_number?: string;
+    cheque_date?: string;
+    cheque_bank?: string;
     notes?: string;
   }[];
   notes?: string;
@@ -137,7 +154,11 @@ export interface SalesReturnPayload {
     quantity: number;
   }[];
   reason: string;
+  refund_method?: PaymentMethodType;
   payment_account?: number;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
   notes?: string;
   date?: string;
 }

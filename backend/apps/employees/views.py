@@ -249,6 +249,8 @@ class SalaryPaymentViewSet(viewsets.ModelViewSet):
             return Response(SalaryPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
         except (DjangoValidationError, DRFValidationError) as e:
             return Response({"detail": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"], url_path="cancel")
     def cancel(self, request, pk=None):
@@ -260,6 +262,8 @@ class SalaryPaymentViewSet(viewsets.ModelViewSet):
             return Response(SalaryPaymentSerializer(cancelled).data, status=status.HTTP_200_OK)
         except (DjangoValidationError, DRFValidationError) as e:
             return Response({"detail": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EmployeeReportView(APIView):

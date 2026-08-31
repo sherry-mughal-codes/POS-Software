@@ -60,6 +60,9 @@ class PurchaseService:
         paid_amount: Decimal = Decimal("0.00"),
         payment_method: Optional[PaymentMethod] = None,
         payment_account: Optional[Account] = None,
+        cheque_number: Optional[str] = None,
+        cheque_date: Optional[date] = None,
+        cheque_bank: Optional[str] = None,
         supplier_invoice_number: Optional[str] = None,
         supplier_invoice_file: Optional[str] = None,
         notes: str = "",
@@ -107,6 +110,9 @@ class PurchaseService:
             paid_amount=paid,
             payment_method=payment_method,
             payment_account=payment_account,
+            cheque_number=cheque_number,
+            cheque_date=cheque_date,
+            cheque_bank=cheque_bank,
             supplier_invoice_number=supplier_invoice_number or "",
             supplier_invoice_file=supplier_invoice_file or "",
             notes=notes,
@@ -344,6 +350,9 @@ class PurchaseService:
         items_to_return: List[Dict[str, Any]],
         refund_method: str = RefundMethod.PAYABLE_DEDUCTION,
         payment_account=None,
+        cheque_number: Optional[str] = None,
+        cheque_date: Optional[date] = None,
+        cheque_bank: Optional[str] = None,
         notes: str = "",
         created_by=None,
     ) -> PurchaseReturn:
@@ -401,6 +410,9 @@ class PurchaseService:
             total_amount=total_return_amount,
             refund_method=refund_method,
             payment_account=receiving_acc if refund_method != RefundMethod.PAYABLE_DEDUCTION else None,
+            cheque_number=cheque_number,
+            cheque_date=cheque_date,
+            cheque_bank=cheque_bank,
             notes=notes,
             created_by=created_by,
         )
@@ -498,6 +510,9 @@ class PurchaseService:
         amount: Decimal,
         payment_method: str,
         payment_account: Account,
+        cheque_number: Optional[str] = None,
+        cheque_date: Optional[date] = None,
+        cheque_bank: Optional[str] = None,
         payment_date: Optional[date] = None,
         reference: str = "",
         notes: str = "",
@@ -529,6 +544,9 @@ class PurchaseService:
             amount=amt,
             payment_method=payment_method,
             payment_account=payment_account,
+            cheque_number=cheque_number,
+            cheque_date=cheque_date,
+            cheque_bank=cheque_bank,
             reference=reference,
             notes=notes,
             status=SupplierPaymentStatus.DRAFT,
@@ -744,6 +762,7 @@ class PurchaseService:
 
         for r in r_qs:
             period_returns += r.total_amount
+            acc_name = f" ({r.payment_account.name})" if r.payment_account else ""
             if r.refund_method == RefundMethod.PAYABLE_DEDUCTION:
                 events.append({
                     "date": r.date,
@@ -753,6 +772,30 @@ class PurchaseService:
                     "description": f"Purchase Return (Deducted from Payable - {r.items.count()} items)",
                     "debit": float(r.total_amount),
                     "credit": 0.0,
+                    "is_direct_refund": False,
+                })
+            elif r.refund_method == RefundMethod.CHEQUE:
+                cheque_info = f" (Cheque #{r.cheque_number} - {r.cheque_bank or 'Bank'})" if r.cheque_number else " (Cheque)"
+                events.append({
+                    "date": r.date,
+                    "created_at": r.created_at,
+                    "reference": r.return_number,
+                    "transaction_type": "PURCHASE_RETURN",
+                    "description": f"Purchase Return - Refund received via Cheque{cheque_info} (Rs. {r.total_amount:,.2f})",
+                    "debit": float(r.total_amount),
+                    "credit": 0.0,
+                    "is_direct_refund": True,
+                })
+            elif r.refund_method == RefundMethod.BANK:
+                events.append({
+                    "date": r.date,
+                    "created_at": r.created_at,
+                    "reference": r.return_number,
+                    "transaction_type": "PURCHASE_RETURN",
+                    "description": f"Purchase Return - Refund received via Bank Transfer{acc_name} (Rs. {r.total_amount:,.2f})",
+                    "debit": float(r.total_amount),
+                    "credit": 0.0,
+                    "is_direct_refund": True,
                 })
             else:
                 events.append({
@@ -760,21 +803,31 @@ class PurchaseService:
                     "created_at": r.created_at,
                     "reference": r.return_number,
                     "transaction_type": "PURCHASE_RETURN",
-                    "description": f"Purchase Return ({r.get_refund_method_display()} Refund - Rs. {r.total_amount:,.2f})",
-                    "debit": 0.0,
+                    "description": f"Purchase Return - Refund received in Cash{acc_name} (Rs. {r.total_amount:,.2f})",
+                    "debit": float(r.total_amount),
                     "credit": 0.0,
+                    "is_direct_refund": True,
                 })
 
         for pay in pay_qs:
             period_voucher_payments += pay.amount
+            acc_name = pay.payment_account.name if pay.payment_account else "Payment Account"
+            if pay.payment_method == "CHEQUE" and pay.cheque_number:
+                method_display = f"Payment Voucher (Cheque #{pay.cheque_number} - {pay.cheque_bank or acc_name})"
+            elif pay.payment_method in ["BANK", "CARD"]:
+                method_display = f"Payment Voucher (Bank - {acc_name})"
+            else:
+                method_display = f"Payment Voucher (Cash - {acc_name})"
+
             events.append({
                 "date": pay.date,
                 "created_at": pay.created_at,
                 "reference": pay.payment_number,
                 "transaction_type": "SUPPLIER_PAYMENT",
-                "description": f"Payment Voucher ({pay.get_payment_method_display()} - {pay.payment_account.name})",
+                "description": pay.notes or method_display,
                 "debit": float(pay.amount),
                 "credit": 0.0,
+                "is_direct_refund": False,
             })
 
         events.sort(key=lambda x: (x["date"], x["created_at"]))
@@ -784,7 +837,11 @@ class PurchaseService:
         for e in events:
             debit_val = Decimal(str(e["debit"]))
             credit_val = Decimal(str(e["credit"]))
-            running_balance += (credit_val - debit_val)
+            if e["transaction_type"] == "PURCHASE_RETURN" and e.get("is_direct_refund"):
+                # Direct cash/bank/cheque refund collected immediately from vendor
+                pass
+            else:
+                running_balance += (credit_val - debit_val)
 
             rows.append({
                 "date": str(e["date"]),

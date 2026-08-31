@@ -13,6 +13,7 @@ from apps.accounting.models import Account, AccountType, JournalEntry, Reference
 from apps.accounting.services import AccountingService
 from .models import (
     Employee,
+    EmployeePaymentMethod,
     Attendance,
     AttendanceStatus,
     SalarySlip,
@@ -447,11 +448,17 @@ class PayrollService:
             },
         ]
 
+        cheque_number = data.get("cheque_number", "").strip()
+        cheque_date = data.get("cheque_date")
+        cheque_bank = data.get("cheque_bank", "").strip()
+
+        cheque_note = f" (Cheque #{cheque_number})" if payment_method == EmployeePaymentMethod.CHEQUE and cheque_number else ""
+
         journal_entry = AccountingService.create_journal_entry(
             entry_date=payment_date,
             reference_type=ReferenceType.SALARY_PAYMENT if hasattr(ReferenceType, "SALARY_PAYMENT") else ReferenceType.JOURNAL,
             reference_id=payment_number,
-            narration=f"Salary Payment [{payment_number}]: {salary_slip.employee.full_name} ({salary_slip.slip_number}) - Rs. {amount:,.2f}",
+            narration=f"Salary Payment [{payment_number}]: {salary_slip.employee.full_name} ({salary_slip.slip_number}){cheque_note} - Rs. {amount:,.2f}",
             lines=entry_lines,
             created_by=user,
             post_immediately=True,
@@ -466,6 +473,9 @@ class PayrollService:
             payment_method=payment_method,
             payment_account=payment_account,
             reference=data.get("reference", "").strip() or None,
+            cheque_number=cheque_number,
+            cheque_date=cheque_date,
+            cheque_bank=cheque_bank,
             notes=data.get("notes", "").strip() or None,
             status=SalaryPaymentStatus.SUBMITTED,
             journal_entry=journal_entry,

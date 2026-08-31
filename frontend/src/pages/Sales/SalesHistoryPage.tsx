@@ -16,7 +16,7 @@ import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { POSReceiptModal } from '../POS/components/POSReceiptModal';
-import { Sale } from '../../types/sales';
+import { Sale, PaymentMethodType } from '../../types/sales';
 import { Account } from '../../types/accounting';
 import { salesService } from '../../services/salesService';
 import { accountingService } from '../../services/accountingService';
@@ -41,11 +41,36 @@ export const SalesHistoryPage: React.FC = () => {
   const [selectedReceiptSale, setSelectedReceiptSale] = useState<Sale | null>(null);
   const [returnTargetSale, setReturnTargetSale] = useState<Sale | null>(null);
   const [returnQuantities, setReturnQuantities] = useState<Record<number, number>>({});
+  const [returnPaymentMethod, setReturnPaymentMethod] = useState<PaymentMethodType>('CASH');
   const [selectedPaymentAccountId, setSelectedPaymentAccountId] = useState<number | undefined>();
+  const [returnChequeNumber, setReturnChequeNumber] = useState('');
+  const [returnChequeDate, setReturnChequeDate] = useState(new Date().toISOString().split('T')[0]);
+  const [returnChequeBank, setReturnChequeBank] = useState('');
   const [returnReason, setReturnReason] = useState<string>('Customer changed mind');
   const [returnNotes, setReturnNotes] = useState<string>('');
   const [returnSubmitting, setReturnSubmitting] = useState(false);
   const [returnError, setReturnError] = useState<string | null>(null);
+
+  const getFilteredRefundAccounts = (method: PaymentMethodType) => {
+    if (method === 'CASH') {
+      return paymentAccounts.filter(
+        (a) =>
+          (a.code.startsWith('101') || a.parent_code === '1010' || (a.name.toLowerCase().includes('cash') && !a.code.startsWith('102'))) &&
+          !a.name.toLowerCase().includes('jazz') &&
+          !a.name.toLowerCase().includes('easy') &&
+          !a.code.startsWith('102')
+      );
+    }
+    return paymentAccounts.filter(
+      (a) =>
+        a.code.startsWith('102') ||
+        a.parent_code === '1020' ||
+        a.name.toLowerCase().includes('bank') ||
+        a.name.toLowerCase().includes('card') ||
+        a.name.toLowerCase().includes('jazz') ||
+        a.name.toLowerCase().includes('easy')
+    );
+  };
 
   useEffect(() => {
     accountingService.getAccounts({ is_active: true, leaf_only: true })
@@ -85,17 +110,27 @@ export const SalesHistoryPage: React.FC = () => {
     setReturnTargetSale(sale);
     setReturnReason('Customer Return / Defective Item');
     setReturnNotes('');
+    setReturnPaymentMethod('CASH');
+    setReturnChequeNumber('');
+    setReturnChequeDate(new Date().toISOString().split('T')[0]);
+    setReturnChequeBank('');
     setReturnError(null);
-    if (paymentAccounts.length > 0 && !selectedPaymentAccountId) {
-      const defaultCash = paymentAccounts.find((a) => a.code === '1011') || paymentAccounts[0];
-      if (defaultCash) setSelectedPaymentAccountId(defaultCash.id);
-    }
+    const validAccs = getFilteredRefundAccounts('CASH');
+    setSelectedPaymentAccountId(validAccs[0]?.id || paymentAccounts[0]?.id);
     // Initialize return quantities with 0
     const initialQty: Record<number, number> = {};
     sale.items.forEach((item) => {
       initialQty[item.id] = 0;
     });
     setReturnQuantities(initialQty);
+  };
+
+  const handlePaymentMethodChange = (newMethod: PaymentMethodType) => {
+    setReturnPaymentMethod(newMethod);
+    const validAccs = getFilteredRefundAccounts(newMethod);
+    if (validAccs.length > 0) {
+      setSelectedPaymentAccountId(validAccs[0].id);
+    }
   };
 
   const handleReturnQuantityChange = (itemId: number, qty: number, maxReturnable: number) => {
@@ -123,13 +158,22 @@ export const SalesHistoryPage: React.FC = () => {
       return;
     }
 
+    if (returnPaymentMethod === 'CHEQUE' && !returnChequeNumber.trim()) {
+      setReturnError('Cheque Number is required.');
+      return;
+    }
+
     setReturnSubmitting(true);
     try {
       await salesService.processReturn({
         sale_id: returnTargetSale.id,
         items: itemsToReturn,
         reason: returnReason,
+        refund_method: returnPaymentMethod,
         payment_account: selectedPaymentAccountId,
+        cheque_number: returnPaymentMethod === 'CHEQUE' ? returnChequeNumber.trim() : undefined,
+        cheque_date: returnPaymentMethod === 'CHEQUE' ? returnChequeDate : undefined,
+        cheque_bank: returnPaymentMethod === 'CHEQUE' ? returnChequeBank.trim() : undefined,
         notes: returnNotes,
       });
       setReturnTargetSale(null);
@@ -561,32 +605,107 @@ export const SalesHistoryPage: React.FC = () => {
               </span>
             </div>
 
-            {/* Payout Payment Account Selection */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
-                Refund Payment Account (Paid from) *
-              </label>
-              <select
-                value={selectedPaymentAccountId || ''}
-                onChange={(e) => setSelectedPaymentAccountId(parseInt(e.target.value) || undefined)}
-                style={{
-                  width: '100%',
-                  padding: '0.55rem 0.75rem',
-                  backgroundColor: 'var(--bg-input)',
-                  border: '1px solid var(--border-medium)',
-                  borderRadius: '0.5rem',
-                  color: 'var(--text-main)',
-                  fontSize: '0.8125rem',
-                  outline: 'none',
-                }}
-              >
-                {paymentAccounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.code} - {acc.name} ({acc.parent_code === '1010' || acc.code.startsWith('101') ? 'Cash Drawer' : 'Bank'})
-                  </option>
-                ))}
-              </select>
+            {/* Refund Payment Mode & Account Selection */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                  Refund Payment Mode *
+                </label>
+                <select
+                  value={returnPaymentMethod}
+                  onChange={(e) => handlePaymentMethodChange(e.target.value as PaymentMethodType)}
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="CASH">Cash</option>
+                  <option value="CARD">Bank / Card</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
+                  {returnPaymentMethod === 'CASH' ? 'Refund From Cash Account (101x) *' : 'Refund From Bank Account (102x) *'}
+                </label>
+                <select
+                  value={selectedPaymentAccountId || ''}
+                  onChange={(e) => setSelectedPaymentAccountId(parseInt(e.target.value) || undefined)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.55rem 0.75rem',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                  }}
+                >
+                  {getFilteredRefundAccounts(returnPaymentMethod).map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      [{acc.code}] {acc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            {/* Dynamic Cheque Inputs when Payment Mode is Cheque */}
+            {returnPaymentMethod === 'CHEQUE' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.06)', border: '1px solid var(--border-subtle)', borderRadius: '0.375rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-400)' }}>
+                  Cheque Details
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. CHQ-88201"
+                      value={returnChequeNumber}
+                      onChange={(e) => setReturnChequeNumber(e.target.value)}
+                      style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={returnChequeDate}
+                      onChange={(e) => setReturnChequeDate(e.target.value)}
+                      style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                    Customer / Drawer Bank (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Meezan Bank, HBL, Allied Bank..."
+                    value={returnChequeBank}
+                    onChange={(e) => setReturnChequeBank(e.target.value)}
+                    style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Return Reason */}
             <div>
@@ -615,7 +734,7 @@ export const SalesHistoryPage: React.FC = () => {
                 disabled={totalRefundAmount <= 0}
                 icon={<RotateCcw size={16} />}
               >
-                Confirm Cash Refund (Rs. {formatMoney(totalRefundAmount)})
+                Confirm Refund (Rs. {formatMoney(totalRefundAmount)})
               </Button>
             </div>
           </form>

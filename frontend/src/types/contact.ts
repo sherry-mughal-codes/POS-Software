@@ -50,7 +50,7 @@ export interface SupplierFilterParams {
   is_active?: boolean;
 }
 
-export type PaymentMethodKind = 'CASH' | 'BANK' | 'CARD';
+export type PaymentMethodKind = 'CASH' | 'BANK' | 'CARD' | 'CHEQUE';
 export type PaymentStatusKind = 'DRAFT' | 'SUBMITTED' | 'CANCELLED';
 
 export interface CustomerPayment {
@@ -66,6 +66,9 @@ export interface CustomerPayment {
   payment_account: number;
   payment_account_name: string;
   payment_account_code: string;
+  cheque_number?: string | null;
+  cheque_date?: string | null;
+  cheque_bank?: string | null;
   reference?: string | null;
   screenshot?: string | null;
   notes?: string | null;
@@ -92,6 +95,9 @@ export interface CustomerPaymentPayload {
   date?: string;
   payment_method: PaymentMethodKind;
   payment_account?: number;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
   reference?: string;
   screenshot?: File | string | null;
   notes?: string;

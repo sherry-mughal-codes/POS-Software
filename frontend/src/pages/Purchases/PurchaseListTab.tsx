@@ -192,6 +192,11 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                       }}>
                         {p.purchase_number}
                       </code>
+                      {(p.returned_amount ?? 0) > 0 && (
+                        <div style={{ marginTop: '0.25rem' }}>
+                          <Badge variant="warning">Returned (Rs. {formatMoney(p.returned_amount)})</Badge>
+                        </div>
+                      )}
                     </td>
 
                     <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
@@ -385,6 +390,12 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                 <span>Grand Total:</span>
                 <span style={{ color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(selectedPurchase.grand_total)}</span>
               </div>
+              {(selectedPurchase.returned_amount ?? 0) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--warning)', fontWeight: 700 }}>
+                  <span>Returned Merchandise:</span>
+                  <span style={{ fontFamily: 'var(--font-mono)' }}>- Rs. {formatMoney(selectedPurchase.returned_amount)}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success)' }}>
                 <span>Paid Amount:</span>
                 <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(selectedPurchase.paid_amount)}</span>

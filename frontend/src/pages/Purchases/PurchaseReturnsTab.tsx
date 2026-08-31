@@ -31,6 +31,9 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
   const [returnQuantities, setReturnQuantities] = useState<Record<number, number>>({});
   const [refundMethod, setRefundMethod] = useState<PurchaseReturnRefundMethod>('CASH');
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [chequeNumber, setChequeNumber] = useState('');
+  const [chequeDate, setChequeDate] = useState(new Date().toISOString().split('T')[0]);
+  const [chequeBank, setChequeBank] = useState('');
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [returnNotes, setReturnNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -64,6 +67,9 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
 
   useEffect(() => {
     if (returnTargetPurchase) {
+      setChequeNumber('');
+      setChequeDate(new Date().toISOString().split('T')[0]);
+      setChequeBank('');
       if (Number(returnTargetPurchase.paid_amount) > 0) {
         setRefundMethod('CASH');
         const defaultCash = cashAccounts[0] || liquidAccounts[0];
@@ -123,6 +129,11 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
       return;
     }
 
+    if (refundMethod === 'CHEQUE' && !chequeNumber.trim()) {
+      setError('Cheque Number is required.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -131,11 +142,16 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
         purchase_id: returnTargetPurchase.id,
         refund_method: refundMethod,
         payment_account: selectedAccountId || undefined,
+        cheque_number: refundMethod === 'CHEQUE' ? chequeNumber.trim() : undefined,
+        cheque_date: refundMethod === 'CHEQUE' ? chequeDate : undefined,
+        cheque_bank: refundMethod === 'CHEQUE' ? chequeBank.trim() : undefined,
         notes: returnNotes,
         items: itemsToSubmit,
       });
       setReturnQuantities({});
       setReturnNotes('');
+      setChequeNumber('');
+      setChequeBank('');
       onCloseReturnModal();
       onRefresh();
     } catch (err: any) {
@@ -325,7 +341,7 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: refundMethod === 'PAYABLE_DEDUCTION' ? '1fr 1fr' : '1fr 1fr 1fr', gap: '0.75rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
-                  Refund / Settlement Method
+                  Refund / Settlement Method *
                 </label>
                 <select
                   value={refundMethod}
@@ -342,16 +358,16 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
                   }}
                 >
                   <option value="PAYABLE_DEDUCTION">Deduct from Supplier Payable (AP - 2010)</option>
-                  <option value="CASH">Cash Refund (Cash in Hand)</option>
-                  <option value="BANK">Bank Transfer Refund (Online / Wire)</option>
-                  <option value="CHEQUE">Cheque Refund</option>
+                  <option value="CASH">Cash</option>
+                  <option value="BANK">Bank / Card</option>
+                  <option value="CHEQUE">Cheque</option>
                 </select>
               </div>
 
               {refundMethod !== 'PAYABLE_DEDUCTION' && (
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.375rem' }}>
-                    Receiving Cash/Bank Account (Debit) *
+                    {refundMethod === 'CASH' ? 'Receiving Cash Account (101x) *' : 'Receiving Bank Account (102x) *'}
                   </label>
                   <select
                     value={selectedAccountId || ''}
@@ -385,6 +401,54 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
                 onChange={(e) => setReturnNotes(e.target.value)}
               />
             </div>
+
+            {/* Dynamic Cheque Inputs when Refund Method is Cheque */}
+            {refundMethod === 'CHEQUE' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.06)', border: '1px solid var(--border-subtle)', borderRadius: '0.375rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-400)' }}>
+                  Cheque Details
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. CHQ-99301"
+                      value={chequeNumber}
+                      onChange={(e) => setChequeNumber(e.target.value)}
+                      style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={chequeDate}
+                      onChange={(e) => setChequeDate(e.target.value)}
+                      style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                    Supplier / Drawer Bank (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Meezan Bank, HBL, Allied Bank..."
+                    value={chequeBank}
+                    onChange={(e) => setChequeBank(e.target.value)}
+                    style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div style={{
               display: 'flex',

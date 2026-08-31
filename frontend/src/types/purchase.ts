@@ -28,9 +28,14 @@ export interface Purchase {
   paid_amount: number;
   payable_amount: number;
   is_fully_paid: boolean;
+  returned_amount?: number;
+  returns_count?: number;
   payment_method?: number | null;
   payment_method_name?: string | null;
   payment_account?: number | null;
+  cheque_number?: string | null;
+  cheque_date?: string | null;
+  cheque_bank?: string | null;
   supplier_invoice_number?: string | null;
   supplier_invoice_file?: string | null;
   notes?: string | null;
@@ -49,6 +54,9 @@ export interface PurchaseCreatePayload {
   paid_amount?: number;
   payment_method?: number | null;
   payment_account?: number | null;
+  cheque_number?: string | null;
+  cheque_date?: string | null;
+  cheque_bank?: string | null;
   supplier_invoice_number?: string | null;
   supplier_invoice_file?: string | null;
   notes?: string;
@@ -88,10 +96,24 @@ export interface PurchaseReturn {
   payment_account?: number | null;
   payment_account_name?: string | null;
   payment_account_code?: string | null;
+  cheque_number?: string | null;
+  cheque_date?: string | null;
+  cheque_bank?: string | null;
   notes?: string | null;
   created_by_username?: string | null;
   items: PurchaseReturnItem[];
   created_at: string;
+}
+
+export interface PurchaseReturnCreatePayload {
+  purchase_id: number;
+  refund_method: PurchaseReturnRefundMethod;
+  payment_account?: number;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
+  notes?: string;
+  items: { purchase_item_id: number; quantity: number }[];
 }
 
 export type SupplierPaymentStatus = 'DRAFT' | 'SUBMITTED' | 'CANCELLED';
@@ -110,6 +132,9 @@ export interface SupplierPayment {
   payment_account: number;
   payment_account_name?: string;
   payment_account_code?: string;
+  cheque_number?: string | null;
+  cheque_date?: string | null;
+  cheque_bank?: string | null;
   reference?: string | null;
   notes?: string | null;
   status: SupplierPaymentStatus;
@@ -135,6 +160,9 @@ export interface SupplierPaymentCreatePayload {
   amount: number;
   payment_method: SupplierPaymentMethodType;
   payment_account: number;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
   date?: string;
   reference?: string;
   notes?: string;

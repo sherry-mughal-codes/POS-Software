@@ -150,9 +150,33 @@ export const EmployeesDashboardPage: React.FC = () => {
   const [disburseMethod, setDisburseMethod] = useState<EmployeePaymentMethodKind>('CASH');
   const [disburseAccountId, setDisburseAccountId] = useState<number>(0);
   const [disburseReference, setDisburseReference] = useState('');
+  const [disburseChequeNumber, setDisburseChequeNumber] = useState('');
+  const [disburseChequeDate, setDisburseChequeDate] = useState(new Date().toISOString().split('T')[0]);
+  const [disburseChequeBank, setDisburseChequeBank] = useState('');
   const [disburseNotes, setDisburseNotes] = useState('');
   const [disburseSubmitting, setDisburseSubmitting] = useState(false);
   const [disburseError, setDisburseError] = useState<string | null>(null);
+
+  const getFilteredDisburseAccounts = (method: EmployeePaymentMethodKind) => {
+    if (method === 'CASH') {
+      return paymentAccounts.filter(
+        (a) =>
+          (a.code.startsWith('101') || a.parent_code === '1010' || (a.name.toLowerCase().includes('cash') && !a.code.startsWith('102'))) &&
+          !a.name.toLowerCase().includes('jazz') &&
+          !a.name.toLowerCase().includes('easy') &&
+          !a.code.startsWith('102')
+      );
+    }
+    return paymentAccounts.filter(
+      (a) =>
+        a.code.startsWith('102') ||
+        a.parent_code === '1020' ||
+        a.name.toLowerCase().includes('bank') ||
+        a.name.toLowerCase().includes('card') ||
+        a.name.toLowerCase().includes('jazz') ||
+        a.name.toLowerCase().includes('easy')
+    );
+  };
 
   // View / Print Slip Modal
   const [viewingSlip, setViewingSlip] = useState<SalarySlip | null>(null);
@@ -202,9 +226,9 @@ export const EmployeesDashboardPage: React.FC = () => {
     } finally {
       setAttendanceLoading(false);
     }
-  }, [attendanceDate, attendanceStatusFilter, attendanceEmployeeFilter]);
+  }, [attendanceDate, attendanceEmployeeFilter, attendanceStatusFilter]);
 
-  // Fetch Payroll Slips
+  // Fetch Salary Slips
   const fetchSalarySlips = useCallback(async () => {
     setPayrollLoading(true);
     try {
@@ -219,23 +243,27 @@ export const EmployeesDashboardPage: React.FC = () => {
     }
   }, [payrollMonth, payrollYear, payrollStatusFilter]);
 
-  // Fetch Reports
-  const fetchReports = useCallback(async () => {
+  // Fetch Report
+  const fetchReport = useCallback(async () => {
     setReportsLoading(true);
     try {
-      const payRep = await employeeService.getPayrollReport({ month: payrollMonth, year: payrollYear });
-      setPayrollReport(payRep);
+      const data = await employeeService.getPayrollReport({
+        month: payrollMonth || undefined,
+        year: payrollYear || undefined,
+      });
+      setPayrollReport(data);
     } finally {
       setReportsLoading(false);
     }
   }, [payrollMonth, payrollYear]);
 
+  // Tab change triggers
   useEffect(() => {
     if (activeTab === 'employees') fetchEmployees();
     else if (activeTab === 'attendance') fetchAttendance();
     else if (activeTab === 'payroll') fetchSalarySlips();
-    else if (activeTab === 'reports') fetchReports();
-  }, [activeTab, fetchEmployees, fetchAttendance, fetchSalarySlips, fetchReports]);
+    else if (activeTab === 'reports') fetchReport();
+  }, [activeTab, fetchEmployees, fetchAttendance, fetchSalarySlips, fetchReport]);
 
   // Employee Form Handlers
   const handleOpenAddEmployee = () => {
@@ -424,25 +452,41 @@ export const EmployeesDashboardPage: React.FC = () => {
     setDisburseSlipTarget(slip);
     setDisburseAmount(slip.payable_amount.toString());
     setDisburseMethod('CASH');
-    const cashAccs = paymentAccounts.filter((a) => a.code.startsWith('101') || a.parent_code === '1010');
+    const cashAccs = getFilteredDisburseAccounts('CASH');
     setDisburseAccountId(cashAccs[0]?.id || paymentAccounts[0]?.id || 0);
     setDisburseReference('');
+    setDisburseChequeNumber('');
+    setDisburseChequeDate(new Date().toISOString().split('T')[0]);
+    setDisburseChequeBank('');
     setDisburseNotes('');
     setDisburseError(null);
+  };
+
+  const handleDisburseMethodChange = (newMethod: EmployeePaymentMethodKind) => {
+    setDisburseMethod(newMethod);
+    const validAccs = getFilteredDisburseAccounts(newMethod);
+    if (validAccs.length > 0) {
+      setDisburseAccountId(validAccs[0].id);
+    }
   };
 
   const handleSaveDisbursement = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!disburseSlipTarget) return;
     setDisburseError(null);
-    setDisburseSubmitting(true);
 
     const amt = parseFloat(disburseAmount);
     if (amt <= 0 || amt > disburseSlipTarget.payable_amount) {
       setDisburseError(`Payment amount must be between Rs. 0.01 and Rs. ${formatMoney(disburseSlipTarget.payable_amount)}.`);
-      setDisburseSubmitting(false);
       return;
     }
+
+    if (disburseMethod === 'CHEQUE' && !disburseChequeNumber.trim()) {
+      setDisburseError('Cheque Number is required.');
+      return;
+    }
+
+    setDisburseSubmitting(true);
 
     try {
       await employeeService.disburseSalaryPayment({
@@ -451,6 +495,9 @@ export const EmployeesDashboardPage: React.FC = () => {
         payment_method: disburseMethod,
         payment_account: disburseAccountId || undefined,
         reference: disburseReference,
+        cheque_number: disburseMethod === 'CHEQUE' ? disburseChequeNumber.trim() : undefined,
+        cheque_date: disburseMethod === 'CHEQUE' ? disburseChequeDate : undefined,
+        cheque_bank: disburseMethod === 'CHEQUE' ? disburseChequeBank.trim() : undefined,
         notes: disburseNotes,
       });
       setDisburseSlipTarget(null);
@@ -518,7 +565,7 @@ export const EmployeesDashboardPage: React.FC = () => {
     } else if (activeTab === 'payroll') {
       fetchSalarySlips();
     } else if (activeTab === 'reports') {
-      fetchReports();
+      fetchReport();
     }
   };
 
@@ -1368,18 +1415,64 @@ export const EmployeesDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              Email Address
-            </label>
-            <input
-              type="email"
-              placeholder="staff@apexpos.local"
-              value={employeeFormData.email}
-              onChange={(e) => setEmployeeFormData({ ...employeeFormData, email: e.target.value })}
-              style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                Email Address
+              </label>
+              <input
+                type="email"
+                placeholder="staff@apexpos.local"
+                value={employeeFormData.email}
+                onChange={(e) => setEmployeeFormData({ ...employeeFormData, email: e.target.value })}
+                style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                Preferred Payment Mode *
+              </label>
+              <select
+                value={employeeFormData.payment_method}
+                onChange={(e) => setEmployeeFormData({ ...employeeFormData, payment_method: e.target.value as EmployeePaymentMethodKind })}
+                style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+              >
+                <option value="CASH">Cash</option>
+                <option value="BANK">Bank / Card</option>
+                <option value="CHEQUE">Cheque</option>
+              </select>
+            </div>
           </div>
+
+          {employeeFormData.payment_method !== 'CASH' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.05)', border: '1px solid var(--border-subtle)', borderRadius: '0.375rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                  Bank Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Meezan Bank, HBL"
+                  value={employeeFormData.bank_name}
+                  onChange={(e) => setEmployeeFormData({ ...employeeFormData, bank_name: e.target.value })}
+                  style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                  Bank Account / IBAN #
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. PK00MEZN0001234567"
+                  value={employeeFormData.bank_account_number}
+                  onChange={(e) => setEmployeeFormData({ ...employeeFormData, bank_account_number: e.target.value })}
+                  style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                />
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
             <Button variant="outline" onClick={() => setIsEmployeeModalOpen(false)} disabled={employeeSubmitting}>
@@ -1750,22 +1843,11 @@ export const EmployeesDashboardPage: React.FC = () => {
                 </label>
                 <select
                   value={disburseMethod}
-                  onChange={(e) => {
-                    const newMethod = e.target.value as EmployeePaymentMethodKind;
-                    setDisburseMethod(newMethod);
-                    const validAccounts = paymentAccounts.filter((a) =>
-                      newMethod === 'CASH'
-                        ? a.code.startsWith('101') || a.parent_code === '1010'
-                        : a.code.startsWith('102') || a.parent_code === '1020'
-                    );
-                    if (validAccounts.length > 0) {
-                      setDisburseAccountId(validAccounts[0].id);
-                    }
-                  }}
+                  onChange={(e) => handleDisburseMethodChange(e.target.value as EmployeePaymentMethodKind)}
                   style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
                 >
                   <option value="CASH">Cash</option>
-                  <option value="BANK">Bank Transfer</option>
+                  <option value="BANK">Bank / Card</option>
                   <option value="CHEQUE">Cheque</option>
                 </select>
               </div>
@@ -1773,7 +1855,7 @@ export const EmployeesDashboardPage: React.FC = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Disburse From (Account) *
+                {disburseMethod === 'CASH' ? 'Disburse From Cash Account (101x) *' : 'Disburse From Bank Account (102x) *'}
               </label>
               <select
                 value={disburseAccountId}
@@ -1781,31 +1863,87 @@ export const EmployeesDashboardPage: React.FC = () => {
                 required
                 style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
               >
-                {paymentAccounts
-                  .filter((a) =>
-                    disburseMethod === 'CASH'
-                      ? a.code.startsWith('101') || a.parent_code === '1010'
-                      : a.code.startsWith('102') || a.parent_code === '1020'
-                  )
-                  .map((a) => (
-                    <option key={a.id} value={a.id}>
-                      [{a.code}] {a.name}
-                    </option>
-                  ))}
+                {getFilteredDisburseAccounts(disburseMethod).map((a) => (
+                  <option key={a.id} value={a.id}>
+                    [{a.code}] {a.name}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Reference / Cheque # (Optional)
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. SAL-TXN-901 or Cheque Ref"
-                value={disburseReference}
-                onChange={(e) => setDisburseReference(e.target.value)}
-                style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
-              />
+            {/* Dynamic Cheque Inputs when Disbursement Mode is Cheque */}
+            {disburseMethod === 'CHEQUE' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.06)', border: '1px solid var(--border-subtle)', borderRadius: '0.375rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-400)' }}>
+                  Cheque Details
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. CHQ-77201"
+                      value={disburseChequeNumber}
+                      onChange={(e) => setDisburseChequeNumber(e.target.value)}
+                      style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Cheque Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={disburseChequeDate}
+                      onChange={(e) => setDisburseChequeDate(e.target.value)}
+                      style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                    Employee / Payee Bank (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Meezan Bank, HBL, Allied Bank..."
+                    value={disburseChequeBank}
+                    onChange={(e) => setDisburseChequeBank(e.target.value)}
+                    style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Reference # (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. SAL-TXN-901"
+                  value={disburseReference}
+                  onChange={(e) => setDisburseReference(e.target.value)}
+                  style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                  Disbursement Notes (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Cleared through main branch"
+                  value={disburseNotes}
+                  onChange={(e) => setDisburseNotes(e.target.value)}
+                  style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>

@@ -10,9 +10,13 @@ export interface Expense {
   expense_account_code: string;
   description: string;
   amount: number;
+  payment_method?: 'CASH' | 'BANK' | 'CHEQUE';
   payment_account: number;
   payment_account_name: string;
   payment_account_code: string;
+  cheque_number?: string | null;
+  cheque_date?: string | null;
+  cheque_bank?: string | null;
   reference_no?: string;
   attachment?: string | null;
   notes?: string;
@@ -38,7 +42,11 @@ export interface ExpensePayload {
   expense_account: number;
   description: string;
   amount: number;
+  payment_method?: 'CASH' | 'BANK' | 'CHEQUE';
   payment_account: number;
+  cheque_number?: string;
+  cheque_date?: string;
+  cheque_bank?: string;
   reference_no?: string;
   notes?: string;
   submit_now?: boolean;

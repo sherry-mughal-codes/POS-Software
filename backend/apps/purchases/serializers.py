@@ -57,8 +57,16 @@ class PurchaseSerializer(serializers.ModelSerializer):
     tax_amount = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
     grand_total = serializers.DecimalField(max_digits=14, decimal_places=2, coerce_to_string=False)
     paid_amount = serializers.DecimalField(max_digits=14, decimal_places=2, coerce_to_string=False)
-    payable_amount = serializers.DecimalField(max_digits=14, decimal_places=2, coerce_to_string=False, read_only=True)
     is_fully_paid = serializers.BooleanField(read_only=True)
+    returned_amount = serializers.SerializerMethodField()
+    returns_count = serializers.SerializerMethodField()
+
+    def get_returned_amount(self, obj) -> float:
+        total = sum((r.total_amount for r in obj.returns.all()), Decimal("0.00"))
+        return float(total)
+
+    def get_returns_count(self, obj) -> int:
+        return obj.returns.count()
 
     class Meta:
         model = Purchase
@@ -77,9 +85,14 @@ class PurchaseSerializer(serializers.ModelSerializer):
             "paid_amount",
             "payable_amount",
             "is_fully_paid",
+            "returned_amount",
+            "returns_count",
             "payment_method",
             "payment_method_name",
             "payment_account",
+            "cheque_number",
+            "cheque_date",
+            "cheque_bank",
             "supplier_invoice_number",
             "supplier_invoice_file",
             "notes",
@@ -106,6 +119,9 @@ class PurchaseCreateSerializer(serializers.Serializer):
     paid_amount = serializers.DecimalField(max_digits=14, decimal_places=2, required=False, default=0)
     payment_method = serializers.IntegerField(required=False, allow_null=True)
     payment_account = serializers.IntegerField(required=False, allow_null=True)
+    cheque_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+    cheque_date = serializers.DateField(required=False, allow_null=True)
+    cheque_bank = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
     supplier_invoice_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     supplier_invoice_file = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True)
@@ -160,6 +176,9 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
             "payment_account",
             "payment_account_name",
             "payment_account_code",
+            "cheque_number",
+            "cheque_date",
+            "cheque_bank",
             "notes",
             "created_by_username",
             "items",
@@ -174,6 +193,9 @@ class PurchaseReturnCreateSerializer(serializers.Serializer):
         default="PAYABLE_DEDUCTION",
     )
     payment_account = serializers.IntegerField(required=False, allow_null=True)
+    cheque_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+    cheque_date = serializers.DateField(required=False, allow_null=True)
+    cheque_bank = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True)
     items = serializers.ListField(child=serializers.DictField(), required=True)
 
@@ -206,6 +228,9 @@ class SupplierPaymentSerializer(serializers.ModelSerializer):
             "payment_account",
             "payment_account_name",
             "payment_account_code",
+            "cheque_number",
+            "cheque_date",
+            "cheque_bank",
             "reference",
             "notes",
             "status",
@@ -256,6 +281,9 @@ class SupplierPaymentCreateSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=14, decimal_places=2, required=True)
     payment_method = serializers.ChoiceField(choices=["CASH", "BANK", "CHEQUE"], default="CASH")
     payment_account = serializers.IntegerField(required=True)
+    cheque_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
+    cheque_date = serializers.DateField(required=False, allow_null=True)
+    cheque_bank = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")
     date = serializers.DateField(required=False)
     reference = serializers.CharField(required=False, allow_blank=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")

@@ -156,10 +156,8 @@ class CustomerReceivableService:
 
         # Resolve payment account if not provided
         if not payment_account:
-            if payment_method == "BANK":
+            if payment_method in ["BANK", "CARD", "CHEQUE"]:
                 payment_account = Account.objects.filter(code="1021").first() or Account.objects.filter(parent__code="1020").first() or Account.objects.filter(code="1020").first()
-            elif payment_method == "CARD":
-                payment_account = Account.objects.filter(code="1025").first() or Account.objects.filter(code="1021").first() or Account.objects.filter(parent__code="1020").first()
             else:
                 payment_account = Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
 
@@ -184,6 +182,9 @@ class CustomerReceivableService:
             amount=amount,
             payment_method=payment_method,
             payment_account=payment_account,
+            cheque_number=data.get("cheque_number", ""),
+            cheque_date=data.get("cheque_date"),
+            cheque_bank=data.get("cheque_bank", ""),
             reference=reference,
             notes=notes,
             status=CustomerPaymentStatus.DRAFT,
@@ -327,30 +328,44 @@ class CustomerReceivableService:
                 "credit": 0.0,
             })
 
-            # B) Itemized Counter / Upfront Payments (Cash, Card)
+            # B) Itemized Counter / Upfront Payments (Cash, Card, Cheque, Split)
             if sale.payments.exists():
                 for p in sale.payments.all():
-                    if p.payment_method in [PaymentMethodType.CASH, PaymentMethodType.CARD] and p.amount > Decimal("0.00"):
-                        method_label = "Cash" if p.payment_method == PaymentMethodType.CASH else "Card / Bank"
+                    if p.payment_method != PaymentMethodType.CREDIT and p.amount > Decimal("0.00"):
+                        if p.payment_method == PaymentMethodType.CHEQUE:
+                            method_label = "Cheque"
+                            extra_desc = f" (Cheque #{sale.cheque_number})" if sale.cheque_number else ""
+                        elif p.payment_method == PaymentMethodType.CARD:
+                            method_label = "Card / Bank"
+                            extra_desc = ""
+                        else:
+                            method_label = "Cash"
+                            extra_desc = ""
+
                         events.append({
                             "date": sale.date,
                             "created_at": sale.created_at,
                             "type": "PAYMENT",
                             "type_display": f"Counter Payment ({method_label})",
                             "reference": sale.invoice_number,
-                            "description": f"Immediate checkout settlement via {method_label} for {sale.invoice_number}",
+                            "description": f"Immediate checkout settlement via {method_label}{extra_desc} for {sale.invoice_number}",
                             "debit": 0.0,
                             "credit": float(p.amount),
                         })
             else:
                 upfront_paid = Decimal("0.00")
                 method_label = ""
+                extra_desc = ""
                 if sale.payment_method == PaymentMethodType.CASH:
                     upfront_paid = sale.grand_total
                     method_label = "Cash"
                 elif sale.payment_method == PaymentMethodType.CARD:
                     upfront_paid = sale.grand_total
                     method_label = "Card / Bank"
+                elif sale.payment_method == PaymentMethodType.CHEQUE:
+                    upfront_paid = sale.grand_total
+                    method_label = "Cheque"
+                    extra_desc = f" (Cheque #{sale.cheque_number})" if sale.cheque_number else ""
                 elif sale.payment_method == PaymentMethodType.SPLIT:
                     upfront_paid = min(sale.paid_amount, sale.grand_total)
                     method_label = "Upfront Settlement"
@@ -362,7 +377,7 @@ class CustomerReceivableService:
                         "type": "PAYMENT",
                         "type_display": f"Counter Payment ({method_label})",
                         "reference": sale.invoice_number,
-                        "description": f"Immediate checkout settlement via {method_label} for {sale.invoice_number}",
+                        "description": f"Immediate checkout settlement via {method_label}{extra_desc} for {sale.invoice_number}",
                         "debit": 0.0,
                         "credit": float(upfront_paid),
                     })
@@ -375,18 +390,29 @@ class CustomerReceivableService:
             payments_qs = payments_qs.filter(date__lte=end_date)
 
         for pay in payments_qs:
+            account_name = pay.payment_account.name if pay.payment_account else "Payment Account"
+            if pay.payment_method == "CHEQUE":
+                type_display = f"Payment Voucher (Cheque #{pay.cheque_number})" if pay.cheque_number else "Payment Voucher (Cheque)"
+                desc = pay.notes or f"Cheque #{pay.cheque_number} ({pay.cheque_bank or account_name}) settlement" if pay.cheque_number else f"Cheque settlement via {account_name}"
+            elif pay.payment_method in ["BANK", "CARD"]:
+                type_display = "Payment Voucher (Bank / Card)"
+                desc = pay.notes or f"Bank / Card settlement via {account_name}"
+            else:
+                type_display = "Payment Voucher (Cash)"
+                desc = pay.notes or f"Cash settlement via {account_name}"
+
             events.append({
                 "date": pay.date,
                 "created_at": pay.created_at,
                 "type": "PAYMENT",
-                "type_display": f"Payment Voucher ({pay.get_payment_method_display()})",
+                "type_display": type_display,
                 "reference": pay.payment_number,
-                "description": pay.notes or f"Payment Voucher settlement via {pay.payment_account.name}",
+                "description": desc,
                 "debit": 0.0,
                 "credit": float(pay.amount),
             })
 
-        # 3. Sales Returns (Immediate cash payouts at counter)
+        # 3. Sales Returns (Immediate payouts / settlement at counter)
         returns_qs = SalesReturn.objects.filter(original_sale__customer=customer)
         if start_date:
             returns_qs = returns_qs.filter(date__gte=start_date)
@@ -394,14 +420,24 @@ class CustomerReceivableService:
             returns_qs = returns_qs.filter(date__lte=end_date)
 
         for ret in returns_qs:
-            orig = ret.original_sale
+            account_name = ret.payment_account.name if ret.payment_account else "Payment Account"
+            if ret.refund_method == "CHEQUE":
+                type_display = f"Sales Return (Cheque #{ret.cheque_number})" if ret.cheque_number else "Sales Return (Cheque)"
+                desc = f"Refund paid via Cheque #{ret.cheque_number} ({ret.cheque_bank or account_name}) - {ret.reason or 'Sales Return'}" if ret.cheque_number else f"Refund paid via Cheque ({account_name}) - {ret.reason or 'Sales Return'}"
+            elif ret.refund_method in ["BANK", "CARD"]:
+                type_display = "Sales Return (Bank / Card)"
+                desc = f"Refund paid via Bank Transfer ({account_name}) - {ret.reason or 'Sales Return'}"
+            else:
+                type_display = "Sales Return (Cash)"
+                desc = f"Refund paid in Cash ({account_name}) - {ret.reason or 'Sales Return'}"
+
             events.append({
                 "date": ret.date,
                 "created_at": ret.created_at,
                 "type": "RETURN",
-                "type_display": "Sales Return (Cash Paid Out)",
+                "type_display": type_display,
                 "reference": ret.return_number,
-                "description": f"Refund paid to customer in cash at counter ({ret.reason})",
+                "description": desc,
                 "debit": float(ret.refund_amount),
                 "credit": float(ret.refund_amount),
             })

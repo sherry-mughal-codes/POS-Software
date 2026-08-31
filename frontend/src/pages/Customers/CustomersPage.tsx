@@ -91,6 +91,9 @@ export const CustomersPage: React.FC = () => {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodKind>('CASH');
   const [paymentAccountId, setPaymentAccountId] = useState<number>(0);
+  const [paymentChequeNumber, setPaymentChequeNumber] = useState('');
+  const [paymentChequeDate, setPaymentChequeDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentChequeBank, setPaymentChequeBank] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
@@ -240,6 +243,9 @@ export const CustomersPage: React.FC = () => {
     setPaymentMethod('CASH');
     const cashAccs = getFilteredPaymentAccounts('CASH');
     setPaymentAccountId(cashAccs[0]?.id || paymentAccounts[0]?.id || 0);
+    setPaymentChequeNumber('');
+    setPaymentChequeDate(new Date().toISOString().split('T')[0]);
+    setPaymentChequeBank('');
     setPaymentDate(new Date().toISOString().split('T')[0]);
     setPaymentReference('');
     setPaymentNotes('');
@@ -269,14 +275,12 @@ export const CustomersPage: React.FC = () => {
     e.preventDefault();
     if (!selectedCustomerForPayment) return;
     setPaymentError(null);
-    setPaymentSubmitting(true);
 
     const amt = parseFloat(paymentAmount);
     const outstanding = selectedCustomerForPayment.outstanding_balance || 0;
 
     if (amt <= 0) {
       setPaymentError('Payment amount must be greater than zero.');
-      setPaymentSubmitting(false);
       return;
     }
 
@@ -284,9 +288,15 @@ export const CustomersPage: React.FC = () => {
       setPaymentError(
         `Payment amount (Rs. ${formatMoney(amt)}) exceeds customer's outstanding receivable (Rs. ${formatMoney(outstanding)}). Overpayment is not allowed.`
       );
-      setPaymentSubmitting(false);
       return;
     }
+
+    if (paymentMethod === 'CHEQUE' && !paymentChequeNumber.trim()) {
+      setPaymentError('Cheque Number is required.');
+      return;
+    }
+
+    setPaymentSubmitting(true);
 
     try {
       if (paymentScreenshotFile) {
@@ -295,6 +305,11 @@ export const CustomersPage: React.FC = () => {
         formData.append('amount', amt.toString());
         formData.append('payment_method', paymentMethod);
         if (paymentAccountId) formData.append('payment_account', paymentAccountId.toString());
+        if (paymentMethod === 'CHEQUE') {
+          formData.append('cheque_number', paymentChequeNumber.trim());
+          if (paymentChequeDate) formData.append('cheque_date', paymentChequeDate);
+          if (paymentChequeBank) formData.append('cheque_bank', paymentChequeBank.trim());
+        }
         if (paymentDate) formData.append('date', paymentDate);
         if (paymentReference) formData.append('reference', paymentReference);
         if (paymentNotes) formData.append('notes', paymentNotes);
@@ -307,6 +322,9 @@ export const CustomersPage: React.FC = () => {
           amount: amt,
           payment_method: paymentMethod,
           payment_account: paymentAccountId || undefined,
+          cheque_number: paymentMethod === 'CHEQUE' ? paymentChequeNumber.trim() : undefined,
+          cheque_date: paymentMethod === 'CHEQUE' ? paymentChequeDate : undefined,
+          cheque_bank: paymentMethod === 'CHEQUE' ? paymentChequeBank.trim() : undefined,
           date: paymentDate,
           reference: paymentReference,
           notes: paymentNotes,
@@ -1464,14 +1482,14 @@ export const CustomersPage: React.FC = () => {
                 style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', padding: '0.5rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}
               >
                 <option value="CASH">Cash</option>
-                <option value="BANK">Bank Transfer</option>
-                <option value="CARD">Credit / Debit Card</option>
+                <option value="BANK">Bank / Card</option>
+                <option value="CHEQUE">Cheque</option>
               </select>
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                {paymentMethod === 'CASH' ? 'Cash Account (101x) *' : 'Bank Account (102x) *'}
+                {paymentMethod === 'CASH' ? 'Cash Drawer Account (101x) *' : 'Bank Account (102x) *'}
               </label>
               <select
                 value={paymentAccountId}
@@ -1488,13 +1506,61 @@ export const CustomersPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Dynamic Cheque Inputs when Payment Method is Cheque */}
+          {paymentMethod === 'CHEQUE' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.06)', border: '1px solid var(--border-subtle)', borderRadius: '0.375rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-400)' }}>
+                Cheque Details
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                    Cheque Number *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. CHQ-104928"
+                    value={paymentChequeNumber}
+                    onChange={(e) => setPaymentChequeNumber(e.target.value)}
+                    style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                    Cheque Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={paymentChequeDate}
+                    onChange={(e) => setPaymentChequeDate(e.target.value)}
+                    style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                  Drawer / Customer Bank (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Meezan Bank, HBL, UBL..."
+                  value={paymentChequeBank}
+                  onChange={(e) => setPaymentChequeBank(e.target.value)}
+                  style={{ width: '100%', padding: '0.4rem 0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.25rem', color: 'var(--text-main)', fontSize: '0.75rem', outline: 'none' }}
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              Reference / Cheque # / Slip # (Optional)
+              Reference / Slip # (Optional)
             </label>
             <input
               type="text"
-              placeholder="e.g. CHEQUE-10291 or Bank Ref"
+              placeholder="e.g. Deposit Slip #, FT-10291"
               value={paymentReference}
               onChange={(e) => setPaymentReference(e.target.value)}
               style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-medium)', borderRadius: '0.375rem', color: 'var(--text-main)', fontSize: '0.8125rem', outline: 'none' }}

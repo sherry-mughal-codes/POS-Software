@@ -20,7 +20,8 @@ class SaleStatus(models.TextChoices):
 
 class PaymentMethodType(models.TextChoices):
     CASH = "CASH", "Cash"
-    CARD = "CARD", "Debit/Credit Card"
+    CARD = "CARD", "Bank / Card"
+    CHEQUE = "CHEQUE", "Cheque"
     CREDIT = "CREDIT", "Customer Credit / Receivable"
     SPLIT = "SPLIT", "Split / Multi-Payment"
 
@@ -104,6 +105,9 @@ class Sale(models.Model):
         related_name="sales_payments_received",
         help_text="Specific cash drawer or bank ledger account debited for this transaction",
     )
+    cheque_number = models.CharField(max_length=50, blank=True, null=True, help_text="Cheque number if paid by cheque")
+    cheque_date = models.DateField(blank=True, null=True, help_text="Cheque issue or clearing date")
+    cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Drawer / issuing bank name")
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(
         User,
@@ -205,7 +209,7 @@ class SaleItem(models.Model):
 
 class SalePayment(models.Model):
     """
-    Detailed payment breakdown for sales (e.g. split payment cash + card).
+    Detailed payment breakdown for sales (e.g. split payment cash + card + cheque).
     """
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name="payments")
     payment_method = models.CharField(max_length=20, choices=PaymentMethodType.choices)
@@ -218,6 +222,9 @@ class SalePayment(models.Model):
         help_text="Specific cash or bank ledger account debited for this payment",
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    cheque_number = models.CharField(max_length=50, blank=True, null=True, help_text="Cheque number for split cheque payment")
+    cheque_date = models.DateField(blank=True, null=True, help_text="Cheque issue or clearing date")
+    cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Drawer / issuing bank name")
     notes = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -254,6 +261,12 @@ class SalesReturn(models.Model):
         help_text="Total refund / credit issued to customer",
     )
     reason = models.CharField(max_length=200, help_text="Reason for customer return")
+    refund_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethodType.choices,
+        default=PaymentMethodType.CASH,
+        help_text="Payment method used to refund the customer",
+    )
     payment_account = models.ForeignKey(
         "accounting.Account",
         on_delete=models.SET_NULL,
@@ -262,6 +275,9 @@ class SalesReturn(models.Model):
         related_name="sales_returns_paid",
         help_text="Cash drawer or bank account from which refund was paid",
     )
+    cheque_number = models.CharField(max_length=50, blank=True, null=True, help_text="Refund cheque number")
+    cheque_date = models.DateField(blank=True, null=True, help_text="Refund cheque date")
+    cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Refund issuing bank")
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(
         User,

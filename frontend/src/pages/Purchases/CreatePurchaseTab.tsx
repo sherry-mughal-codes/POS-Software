@@ -68,6 +68,9 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
   );
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>('');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [chequeNumber, setChequeNumber] = useState<string>('');
+  const [chequeDate, setChequeDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [chequeBank, setChequeBank] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
 
   // UI state
@@ -138,6 +141,9 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
       setSupplierInvoiceFile(editingPurchase.supplier_invoice_file || null);
       setDiscountAmount(Number(editingPurchase.discount_amount) || 0);
       setPaidAmount(Number(editingPurchase.paid_amount) || 0);
+      setChequeNumber(editingPurchase.cheque_number || '');
+      setChequeDate(editingPurchase.cheque_date || new Date().toISOString().split('T')[0]);
+      setChequeBank(editingPurchase.cheque_bank || '');
       setNotes(editingPurchase.notes || '');
       if (editingPurchase.supplier_name) {
         setSupplierSearchText(editingPurchase.supplier_name);
@@ -194,22 +200,24 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
     );
   }, [products, productSearchText]);
 
-  // Restrict payment methods to Cash and Card
+  // Restrict payment methods to Cash, Bank / Card, and Cheque
   const purchasePaymentMethods = useMemo(() => {
     const cash = paymentMethods.find((pm) => (pm.code || '').toUpperCase() === 'CASH');
     const card = paymentMethods.find((pm) => {
       const c = (pm.code || '').toUpperCase();
       return c === 'CARD' || c === 'BANK';
     });
+    const cheque = paymentMethods.find((pm) => (pm.code || '').toUpperCase() === 'CHEQUE');
 
     const result: PaymentMethod[] = [];
     if (cash) result.push(cash);
     if (card) result.push(card);
+    if (cheque) result.push(cheque);
 
     return result.length > 0 ? result : paymentMethods;
   }, [paymentMethods]);
 
-  // Dynamic filter for accounts: Cash -> all cash accounts (1010s), Card -> all bank accounts (1020s)
+  // Dynamic filter for accounts: Cash -> all cash accounts (1010s), Card/Cheque -> all bank accounts (1020s)
   const filteredAccounts = useMemo(() => {
     const selectedPM = paymentMethods.find((pm) => pm.id.toString() === selectedPaymentMethodId);
     if (!selectedPM) {
@@ -222,7 +230,7 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
     if (isCash) {
       return accounts.filter((a) => a.code.startsWith('101') || a.parent_code === '1010');
     } else {
-      // Card / Bank -> All bank & card accounts (1020s)
+      // Card / Bank / Cheque -> All bank & card accounts (1020s)
       return accounts.filter((a) => a.code.startsWith('102') || a.parent_code === '1020');
     }
   }, [selectedPaymentMethodId, paymentMethods, accounts]);
@@ -333,6 +341,13 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
       return;
     }
 
+    const selectedPM = paymentMethods.find((pm) => pm.id.toString() === selectedPaymentMethodId);
+    const isCheque = (selectedPM?.code || '').toUpperCase() === 'CHEQUE';
+    if (isCheque && paidAmount > 0 && !chequeNumber.trim()) {
+      showError('Please enter the Cheque Number.', 'Cheque Number Required');
+      return;
+    }
+
     setSubmitting(true);
 
     const payload = {
@@ -343,6 +358,9 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
       paid_amount: paidAmount,
       payment_method: selectedPaymentMethodId ? parseInt(selectedPaymentMethodId) : null,
       payment_account: selectedAccountId ? parseInt(selectedAccountId) : undefined,
+      cheque_number: isCheque ? chequeNumber.trim() || undefined : undefined,
+      cheque_date: isCheque ? chequeDate || undefined : undefined,
+      cheque_bank: isCheque ? chequeBank.trim() || undefined : undefined,
       supplier_invoice_number: supplierInvoiceNumber.trim() || undefined,
       supplier_invoice_file: supplierInvoiceFile || undefined,
       notes,
@@ -917,7 +935,7 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                Payment Method (Cash / Card)
+                Payment Method (Cash, Bank / Card, Cheque)
               </label>
               <select
                 value={selectedPaymentMethodId}
@@ -935,12 +953,13 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
               >
                 {purchasePaymentMethods.map((pm) => {
                   const code = (pm.code || '').toUpperCase();
-                  const isCash = code === 'CASH';
-                  return (
-                    <option key={pm.id} value={pm.id}>
-                      {isCash ? 'Cash Payment (Cash Accounts)' : 'Card / Bank Payment (Bank Accounts)'}
-                    </option>
-                  );
+                  if (code === 'CASH') {
+                    return <option key={pm.id} value={pm.id}>Cash Payment</option>;
+                  } else if (code === 'CHEQUE') {
+                    return <option key={pm.id} value={pm.id}>Cheque Payment</option>;
+                  } else {
+                    return <option key={pm.id} value={pm.id}>Bank / Card Payment</option>;
+                  }
                 })}
               </select>
             </div>
@@ -971,6 +990,81 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
                 ))}
               </select>
             </div>
+
+            {/* Dynamic Cheque Inputs when Payment Method is Cheque */}
+            {(() => {
+              const selectedPM = paymentMethods.find((pm) => pm.id.toString() === selectedPaymentMethodId);
+              const isCheque = (selectedPM?.code || '').toUpperCase() === 'CHEQUE';
+              if (!isCheque) return null;
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.625rem', backgroundColor: 'rgba(56, 189, 248, 0.06)', border: '1px solid var(--border-subtle)', borderRadius: '0.375rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-400)' }}>
+                    Cheque Details
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                        Cheque Number *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. CHQ-88019"
+                        value={chequeNumber}
+                        onChange={(e) => setChequeNumber(e.target.value)}
+                        style={{
+                          width: '100%',
+                          backgroundColor: 'var(--bg-input)',
+                          border: '1px solid var(--border-medium)',
+                          borderRadius: '0.375rem',
+                          padding: '0.3rem 0.45rem',
+                          color: 'var(--text-main)',
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                        Cheque Date *
+                      </label>
+                      <input
+                        type="date"
+                        value={chequeDate}
+                        onChange={(e) => setChequeDate(e.target.value)}
+                        style={{
+                          width: '100%',
+                          backgroundColor: 'var(--bg-input)',
+                          border: '1px solid var(--border-medium)',
+                          borderRadius: '0.375rem',
+                          padding: '0.3rem 0.45rem',
+                          color: 'var(--text-main)',
+                          fontSize: '0.75rem',
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      Drawer / Supplier Bank (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Meezan Bank, HBL, Bank Alfalah..."
+                      value={chequeBank}
+                      onChange={(e) => setChequeBank(e.target.value)}
+                      style={{
+                        width: '100%',
+                        backgroundColor: 'var(--bg-input)',
+                        border: '1px solid var(--border-medium)',
+                        borderRadius: '0.375rem',
+                        padding: '0.3rem 0.45rem',
+                        color: 'var(--text-main)',
+                        fontSize: '0.75rem',
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
 
             <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'flex-end' }}>
               <div style={{ flex: 1 }}>
