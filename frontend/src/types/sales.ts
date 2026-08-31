@@ -33,6 +33,8 @@ export interface SaleItem {
   subtotal: number;
   returned_quantity: number;
   returnable_quantity: number;
+  warranty_period_days_snapshot?: number | null;
+  warranty_expiry_date?: string | null;
 }
 
 export interface SalePayment {

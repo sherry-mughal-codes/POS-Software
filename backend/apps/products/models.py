@@ -121,6 +121,11 @@ class Product(models.Model):
         db_index=True,
         help_text="When unchecked (Do not maintain stock), this product is stock-free/service and stock levels are not restricted.",
     )
+    warranty_period_days = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Warranty duration in days (e.g. 365 for 1 year, 180 for 6 months, null/0 for no warranty)",
+    )
     image = models.ImageField(upload_to="products/", null=True, blank=True)
     image_url = models.URLField(max_length=500, null=True, blank=True, help_text="External / fallback image URL")
     description = models.TextField(blank=True, null=True)

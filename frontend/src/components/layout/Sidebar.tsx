@@ -227,6 +227,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
+      id: 'warranty-claims-group',
+      title: 'Warranty Claims',
+      icon: <ShieldCheck size={18} />,
+      items: [
+        {
+          id: 'warranty',
+          name: 'Warranty Claims',
+          icon: <ShieldCheck size={16} />,
+          requiredPermissions: ['view_customer_warranty_claim', 'create_customer_warranty_claim', 'view_sale', 'view_supplier_warranty_claim', 'create_supplier_warranty_claim'],
+        },
+      ],
+    },
+    {
       id: 'expense-ledger',
       title: 'Expense & Accounting',
       icon: <BookOpen size={18} />,

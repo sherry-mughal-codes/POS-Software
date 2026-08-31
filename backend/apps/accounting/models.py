@@ -145,6 +145,8 @@ class ReferenceType(models.TextChoices):
     TRANSFER = "TRANSFER", "Account Transfer"
     CUSTOMER_PAYMENT = "CUSTOMER_PAYMENT", "Customer Receivable Payment"
     SUPPLIER_PAYMENT = "SUPPLIER_PAYMENT", "Supplier Payable Payment"
+    CUSTOMER_WARRANTY_CLAIM = "CUSTOMER_WARRANTY_CLAIM", "Customer Warranty Claim"
+    SUPPLIER_WARRANTY_CLAIM = "SUPPLIER_WARRANTY_CLAIM", "Supplier Warranty Claim"
     PAYROLL = "PAYROLL", "Payroll / Salary Accrual"
     SALARY_PAYMENT = "SALARY_PAYMENT", "Salary Disbursement"
     OPENING_BALANCE = "OPENING_BALANCE", "Opening Balance"

@@ -182,6 +182,16 @@ class SaleItem(models.Model):
         default=Decimal("0.00"),
         help_text="Total quantity returned against this line",
     )
+    warranty_period_days_snapshot = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Snapshot of product warranty duration (days) at time of sale",
+    )
+    warranty_expiry_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Calculated warranty expiration date (sale.date + warranty days)",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -75,6 +75,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "selling_price",
             "min_stock_level",
             "maintain_stock",
+            "warranty_period_days",
             "opening_stock",
             "current_stock",
             "profit_margin_amount",

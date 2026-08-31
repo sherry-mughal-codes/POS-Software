@@ -45,6 +45,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [sellingPrice, setSellingPrice] = useState('0');
   const [openingStock, setOpeningStock] = useState('0');
   const [minStockLevel, setMinStockLevel] = useState('10');
+  const [warrantyDuration, setWarrantyDuration] = useState<string>('');
+  const [warrantyUnit, setWarrantyUnit] = useState<'DAYS' | 'MONTHS' | 'YEARS'>('DAYS');
   const [doNotMaintainStock, setDoNotMaintainStock] = useState(false);
 
   // Image Upload / URL states
@@ -75,6 +77,22 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setSellingPrice(productToEdit.selling_price.toString());
         setOpeningStock(productToEdit.current_stock ? productToEdit.current_stock.toString() : '0');
         setMinStockLevel(productToEdit.min_stock_level ? productToEdit.min_stock_level.toString() : '10');
+        if (productToEdit.warranty_period_days) {
+          const days = productToEdit.warranty_period_days;
+          if (days % 365 === 0 && days >= 365) {
+            setWarrantyDuration((days / 365).toString());
+            setWarrantyUnit('YEARS');
+          } else if (days % 30 === 0 && days >= 30) {
+            setWarrantyDuration((days / 30).toString());
+            setWarrantyUnit('MONTHS');
+          } else {
+            setWarrantyDuration(days.toString());
+            setWarrantyUnit('DAYS');
+          }
+        } else {
+          setWarrantyDuration('');
+          setWarrantyUnit('DAYS');
+        }
         setDoNotMaintainStock(productToEdit.maintain_stock === false);
 
         if (productToEdit.image) {
@@ -102,6 +120,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setSellingPrice('0');
         setOpeningStock('0');
         setMinStockLevel('10');
+        setWarrantyDuration('');
+        setWarrantyUnit('DAYS');
         setDoNotMaintainStock(false);
         setImageMode('UPLOAD');
         setImagePreview(null);
@@ -124,6 +144,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const sPrice = parseFloat(sellingPrice) || 0;
   const marginAmount = sPrice - pPrice;
   const marginPercent = sPrice > 0 ? ((marginAmount / sPrice) * 100).toFixed(1) : '0.0';
+
+  const computeWarrantyDays = (): number | null => {
+    const num = parseFloat(warrantyDuration);
+    if (isNaN(num) || num <= 0) return null;
+    if (warrantyUnit === 'YEARS') return Math.round(num * 365);
+    if (warrantyUnit === 'MONTHS') return Math.round(num * 30);
+    return Math.round(num);
+  };
 
   const handleFileChange = (file?: File) => {
     if (!file) return;
@@ -178,6 +206,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         if (imageUrl.trim()) formData.append('image_url', imageUrl.trim());
         if (description.trim()) formData.append('description', description.trim());
         formData.append('is_active', isActive.toString());
+        const calcDays = computeWarrantyDays();
+        if (calcDays !== null) {
+          formData.append('warranty_period_days', calcDays.toString());
+        } else {
+          formData.append('warranty_period_days', '');
+        }
 
         if (!productToEdit && !doNotMaintainStock) {
           formData.append('opening_stock', (parseFloat(openingStock) || 0).toString());
@@ -203,6 +237,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           image_url: imageMode === 'URL' && imageUrl.trim() ? imageUrl.trim() : null,
           description: description.trim() || null,
           is_active: isActive,
+          warranty_period_days: computeWarrantyDays(),
         };
 
         if (!imagePreview && productToEdit?.image) {
@@ -462,6 +497,61 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               />
             </div>
           )}
+
+          {/* Warranty Configuration with Days / Months / Years */}
+          <div style={{ marginTop: '0.75rem' }}>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
+              Customer Warranty Coverage
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div style={{ flex: 1 }}>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="e.g. 1, 6, 12, 365"
+                  value={warrantyDuration}
+                  onChange={(e) => setWarrantyDuration(e.target.value)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.375rem',
+                    padding: '0.45rem 0.65rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+              <div style={{ width: '130px' }}>
+                <select
+                  value={warrantyUnit}
+                  onChange={(e) => setWarrantyUnit(e.target.value as 'DAYS' | 'MONTHS' | 'YEARS')}
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.375rem',
+                    padding: '0.45rem 0.65rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    outline: 'none',
+                  }}
+                >
+                  <option value="DAYS">Days</option>
+                  <option value="MONTHS">Months</option>
+                  <option value="YEARS">Years</option>
+                </select>
+              </div>
+            </div>
+            {computeWarrantyDays() !== null && (
+              <div style={{ fontSize: '0.7rem', color: 'var(--primary-400)', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
+                = {computeWarrantyDays()} days warranty expiry from sale date
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Row 6: Product Image (Upload from Computer / Gallery or HTTPS URL) */}

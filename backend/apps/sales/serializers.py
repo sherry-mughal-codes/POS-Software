@@ -46,6 +46,8 @@ class SaleItemSerializer(serializers.ModelSerializer):
             "subtotal",
             "returned_quantity",
             "returnable_quantity",
+            "warranty_period_days_snapshot",
+            "warranty_expiry_date",
         ]
 
 

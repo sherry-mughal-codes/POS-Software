@@ -15,6 +15,7 @@ import {
   Store,
   CheckCircle2,
   AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -389,6 +390,46 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
             </div>
             <div style={{ padding: '0.35rem', backgroundColor: 'rgba(168, 85, 247, 0.1)', borderRadius: '0.375rem', color: 'var(--primary-300)', flexShrink: 0 }}>
               <Package size={16} />
+            </div>
+          </div>
+        </Card>
+
+        {/* Warranty Claim Units (Asset 1060) */}
+        <Card
+          onClick={() => onNavigate('customer-warranty-claims')}
+          className="cursor-pointer hover:border-indigo-400 transition-colors"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                Warranty Claim Units
+              </div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#6366f1', marginTop: '0.15rem' }}>
+                {data?.warranty_summary?.warranty_claim_units || 0} Units
+              </div>
+            </div>
+            <div style={{ padding: '0.35rem', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.375rem', color: '#6366f1', flexShrink: 0 }}>
+              <ShieldCheck size={16} />
+            </div>
+          </div>
+        </Card>
+
+        {/* Warranty Claim Valuation (Asset 1060) */}
+        <Card
+          onClick={() => onNavigate('supplier-warranty-claims')}
+          className="cursor-pointer hover:border-indigo-400 transition-colors"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                Warranty Valuation
+              </div>
+              <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#818cf8', marginTop: '0.15rem' }}>
+                Rs. {formatMoney(data?.warranty_summary?.warranty_claim_valuation)}
+              </div>
+            </div>
+            <div style={{ padding: '0.35rem', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.375rem', color: '#818cf8', flexShrink: 0 }}>
+              <DollarSign size={16} />
             </div>
           </div>
         </Card>

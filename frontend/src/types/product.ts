@@ -41,6 +41,7 @@ export interface Product {
   maintain_stock?: boolean;
   opening_stock?: number;
   current_stock?: number;
+  warranty_period_days?: number | null;
   image?: string | null;
   image_url?: string | null;
   description?: string | null;

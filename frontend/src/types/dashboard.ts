@@ -145,6 +145,11 @@ export interface ActivePOSSessionSnapshot {
   opening_cash: number;
 }
 
+export interface DashboardWarrantySummary {
+  warranty_claim_units: number;
+  warranty_claim_valuation: number;
+}
+
 export interface ExecutiveDashboardData {
   period: DashboardPeriod | string;
   period_label: string;
@@ -158,6 +163,7 @@ export interface ExecutiveDashboardData {
   receivables_summary: DashboardReceivablesSummary;
   payables_summary: DashboardPayablesSummary;
   inventory_health: DashboardInventoryHealth;
+  warranty_summary?: DashboardWarrantySummary;
   sales_trend: SalesTrendPoint[];
   top_products_by_quantity: TopProductItem[];
   top_products_by_revenue: TopProductItem[];
@@ -166,3 +172,4 @@ export interface ExecutiveDashboardData {
   expense_categories: ExpenseCategoryBreakdownItem[];
   active_pos_session: ActivePOSSessionSnapshot | null;
 }
+

@@ -623,6 +623,12 @@ class DashboardService:
                 "opening_cash": float(active_pos_session.opening_cash),
             }
 
+        # -------------------------------------------------------------
+        # 14. WARRANTY CLAIM ASSET METRICS
+        # -------------------------------------------------------------
+        from apps.warranty.services import WarrantyService
+        warranty_metrics = WarrantyService.get_warranty_dashboard_metrics()
+
         return {
             "period": period,
             "period_label": period_label,
@@ -674,6 +680,10 @@ class DashboardService:
                 "out_of_stock_count": out_of_stock_count,
                 "total_inventory_valuation": float(total_inventory_valuation),
                 "low_stock_alerts": low_stock_items[:10],
+            },
+            "warranty_summary": {
+                "warranty_claim_units": warranty_metrics["warranty_claim_units"],
+                "warranty_claim_valuation": warranty_metrics["warranty_claim_valuation"],
             },
             "sales_trend": sales_trend,
             "top_products_by_quantity": top_by_qty,

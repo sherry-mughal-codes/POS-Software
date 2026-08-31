@@ -25,6 +25,8 @@ class Command(BaseCommand):
             {"code": "1030", "name": "Accounts Receivable (Customer Credit)", "type": AccountType.ASSET, "parent": "1000", "is_system": True},
             {"code": "1040", "name": "Inventory Asset (Merchandise)", "type": AccountType.ASSET, "parent": "1000", "is_system": True},
             {"code": "1050", "name": "Store Equipment & Fixtures", "type": AccountType.ASSET, "parent": "1000", "is_system": False},
+            {"code": "1060", "name": "Warranty Claim Asset", "type": AccountType.ASSET, "parent": "1000", "is_system": True},
+            {"code": "1070", "name": "Supplier Claim Asset", "type": AccountType.ASSET, "parent": "1000", "is_system": True},
 
             # 2000 - LIABILITIES
             {"code": "2000", "name": "Liabilities", "type": AccountType.LIABILITY, "parent": None, "is_system": True},

@@ -9,6 +9,7 @@ export interface CardProps {
   highlight?: boolean;
   className?: string;
   style?: React.CSSProperties;
+  onClick?: () => void;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -20,9 +21,10 @@ export const Card: React.FC<CardProps> = ({
   highlight = false,
   className = '',
   style,
+  onClick,
 }) => {
   return (
-    <div className={`glass-card ${highlight ? 'highlight' : ''} ${className}`} style={style}>
+    <div className={`glass-card ${highlight ? 'highlight' : ''} ${className}`} style={style} onClick={onClick}>
       {(title || action || icon) && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

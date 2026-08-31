@@ -74,6 +74,15 @@ class PosPermissionRegistry(models.Model):
             # Purchasing & Accounting
             ("approve_purchases", "Can approve supplier purchase orders"),
             ("view_financial_reports", "Can access executive financial statements, profit & loss, and balance sheet"),
+
+            # Warranty Claims Management
+            ("view_customer_warranty_claim", "Can view customer warranty claim records"),
+            ("create_customer_warranty_claim", "Can create customer warranty claim request"),
+            ("process_customer_warranty_claim", "Can complete customer warranty replacement and issue items"),
+            ("view_supplier_warranty_claim", "Can view supplier warranty claim batches"),
+            ("create_supplier_warranty_claim", "Can create supplier warranty claim batch"),
+            ("process_supplier_warranty_claim", "Can dispatch warranty claim batch to supplier (In Progress)"),
+            ("complete_supplier_warranty_claim", "Can receive supplier replacement stock (Warranty Completed)"),
         ]
 
 

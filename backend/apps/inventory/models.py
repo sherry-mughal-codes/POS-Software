@@ -18,6 +18,8 @@ class MovementType(models.TextChoices):
     ADJUSTMENT_IN = "ADJUSTMENT_IN", "Stock Adjustment In"
     ADJUSTMENT_OUT = "ADJUSTMENT_OUT", "Stock Adjustment Out"
     OPENING_STOCK = "OPENING_STOCK", "Initial Opening Stock"
+    WARRANTY_REPLACEMENT = "WARRANTY_REPLACEMENT", "Warranty Replacement Stock Out"
+    WARRANTY_SUPPLIER_RECEIPT = "WARRANTY_SUPPLIER_RECEIPT", "Warranty Supplier Replacement Stock In"
 
 
 class AdjustmentReason(models.TextChoices):

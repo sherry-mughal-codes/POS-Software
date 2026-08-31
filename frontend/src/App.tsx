@@ -22,6 +22,7 @@ import { ExpensesDashboardPage } from './pages/Expenses/ExpensesDashboardPage';
 import { EmployeesDashboardPage } from './pages/Employees/EmployeesDashboardPage';
 import { DaySessionsPage } from './pages/POS/DaySessionsPage';
 import { SettingsPage } from './pages/Settings/SettingsPage';
+import { WarrantyDashboardPage } from './pages/Warranty/WarrantyDashboardPage';
 import { NotFoundPage } from './pages/NotFound/NotFoundPage';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { Can } from './components/auth/Can';
@@ -285,6 +286,31 @@ const AppContent: React.FC = () => {
         </Can>
       )}
 
+      {(currentTab === 'warranty' || currentTab === 'customer-warranty-claims' || currentTab === 'supplier-warranty-claims') && (
+        <Can
+          anyOfPermissions={[
+            'view_customer_warranty_claim',
+            'create_customer_warranty_claim',
+            'view_supplier_warranty_claim',
+            'create_supplier_warranty_claim',
+            'view_sale',
+            'view_purchase',
+            'manage_products',
+            'access_pos_register'
+          ]}
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+              <h3>Access Denied (403 Forbidden)</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                Your assigned role does not have permission to view or manage Warranty Claims.
+              </p>
+            </div>
+          }
+        >
+          <WarrantyDashboardPage />
+        </Can>
+      )}
+
       {(currentTab === 'day-sessions' || currentTab === 'pos' || currentTab === 'pos-sessions' || currentTab === 'z-reports') && (
         <Can
           anyOfPermissions={['close_register_z_report', 'view_posdaysession', 'add_posdaysession']}
@@ -381,7 +407,9 @@ const AppContent: React.FC = () => {
         </Can>
       )}
 
-      {!['dashboard', 'reports', 'products', 'purchases', 'inventory', 'register', 'sales', 'sales-reports', 'expenses', 'employees', 'day-sessions', 'customers', 'suppliers', 'accounting', 'users', 'roles', 'audit-logs', 'settings'].includes(currentTab) && (
+
+
+      {!['dashboard', 'reports', 'products', 'purchases', 'inventory', 'register', 'sales', 'sales-reports', 'expenses', 'employees', 'day-sessions', 'customers', 'suppliers', 'accounting', 'users', 'roles', 'audit-logs', 'settings', 'warranty'].includes(currentTab) && (
         <NotFoundPage onGoHome={() => setCurrentTab('dashboard')} />
       )}
     </MainLayout>

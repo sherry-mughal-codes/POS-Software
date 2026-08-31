@@ -205,15 +205,25 @@ class SalesService:
         )
 
         # 5. Create Sale Items and Stock Movements
+        import datetime
         for v in validated_items:
+            prod = v["product"]
+            w_days = prod.warranty_period_days
+            w_expiry = None
+            if w_days and w_days > 0:
+                sale_d = sale.date if isinstance(sale.date, datetime.date) else timezone.now().date()
+                w_expiry = sale_d + datetime.timedelta(days=w_days)
+
             SaleItem.objects.create(
                 sale=sale,
-                product=v["product"],
+                product=prod,
                 quantity=v["quantity"],
                 unit_price=v["unit_price"],
                 unit_cost=v["unit_cost"],
                 discount=v["discount"],
                 subtotal=v["subtotal"],
+                warranty_period_days_snapshot=w_days,
+                warranty_expiry_date=w_expiry,
             )
 
             # Record stock decrement movement if maintain_stock is True
