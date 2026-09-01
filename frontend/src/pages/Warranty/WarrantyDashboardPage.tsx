@@ -48,9 +48,6 @@ export const WarrantyDashboardPage: React.FC = () => {
             <ShieldCheck size={18} color="#6366f1" />
             Warranty Claims
           </h2>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-            Customer replacements (1060) · Supplier RMA &amp; restock (1070) · Double-entry GL integrated
-          </p>
         </div>
         <Button
           variant="secondary"

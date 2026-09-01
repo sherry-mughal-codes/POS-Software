@@ -291,12 +291,11 @@ const AppContent: React.FC = () => {
           anyOfPermissions={[
             'view_customer_warranty_claim',
             'create_customer_warranty_claim',
+            'process_customer_warranty_claim',
             'view_supplier_warranty_claim',
             'create_supplier_warranty_claim',
-            'view_sale',
-            'view_purchase',
-            'manage_products',
-            'access_pos_register'
+            'process_supplier_warranty_claim',
+            'complete_supplier_warranty_claim',
           ]}
           fallback={
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>

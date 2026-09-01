@@ -298,7 +298,7 @@ export const CustomerBulkImportModal: React.FC<CustomerBulkImportModalProps> = (
                     Previewing {parsedRows.length} Customer(s) to Import:
                   </span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--primary-400)' }}>
-                    Auto-assigns sequential Customer ID if omitted
+                    Sequential Customer IDs (CUS-XXXXX) are generated automatically
                   </span>
                 </div>
 
@@ -313,9 +313,9 @@ export const CustomerBulkImportModal: React.FC<CustomerBulkImportModalProps> = (
                       <tr>
                         <th style={{ padding: '0.5rem' }}>#</th>
                         <th style={{ padding: '0.5rem' }}>Customer Name</th>
-                        <th style={{ padding: '0.5rem' }}>Customer ID</th>
                         <th style={{ padding: '0.5rem' }}>Phone</th>
                         <th style={{ padding: '0.5rem' }}>Email</th>
+                        <th style={{ padding: '0.5rem' }}>Address</th>
                         <th style={{ padding: '0.5rem' }}>Credit Allowed</th>
                         <th style={{ padding: '0.5rem', textAlign: 'right' }}>Opening Balance ({currencySymbol || 'Rs.'})</th>
                       </tr>
@@ -325,11 +325,9 @@ export const CustomerBulkImportModal: React.FC<CustomerBulkImportModalProps> = (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                           <td style={{ padding: '0.4rem 0.5rem', color: 'var(--text-muted)' }}>{idx + 1}</td>
                           <td style={{ padding: '0.4rem 0.5rem', fontWeight: 600 }}>{row.name}</td>
-                          <td style={{ padding: '0.4rem 0.5rem', fontFamily: 'var(--font-mono)', color: 'var(--primary-400)' }}>
-                            {row.customer_id || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Auto</span>}
-                          </td>
                           <td style={{ padding: '0.4rem 0.5rem' }}>{row.phone || '-'}</td>
                           <td style={{ padding: '0.4rem 0.5rem' }}>{row.email || '-'}</td>
+                          <td style={{ padding: '0.4rem 0.5rem' }}>{row.address || '-'}</td>
                           <td style={{ padding: '0.4rem 0.5rem' }}>{String(row.credit_enabled)}</td>
                           <td style={{ padding: '0.4rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: Number(row.opening_balance) > 0 ? 'var(--warning)' : 'var(--text-muted)' }}>
                             {Number(row.opening_balance).toFixed(2)}

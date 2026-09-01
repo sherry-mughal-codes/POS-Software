@@ -301,7 +301,7 @@ export const SupplierBulkImportModal: React.FC<SupplierBulkImportModalProps> = (
                     Previewing {parsedRows.length} Supplier(s) to Import:
                   </span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--primary-400)' }}>
-                    Auto-assigns sequential Supplier ID if omitted
+                    Sequential Supplier IDs (SUP-XXXXX) are generated automatically
                   </span>
                 </div>
 
@@ -315,10 +315,10 @@ export const SupplierBulkImportModal: React.FC<SupplierBulkImportModalProps> = (
                     <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-sidebar)', borderBottom: '1px solid var(--border-medium)' }}>
                       <tr>
                         <th style={{ padding: '0.5rem' }}>#</th>
-                        <th style={{ padding: '0.5rem' }}>Company Name</th>
                         <th style={{ padding: '0.5rem' }}>Contact Name</th>
-                        <th style={{ padding: '0.5rem' }}>Supplier ID</th>
+                        <th style={{ padding: '0.5rem' }}>Company Name</th>
                         <th style={{ padding: '0.5rem' }}>Phone</th>
+                        <th style={{ padding: '0.5rem' }}>Email</th>
                         <th style={{ padding: '0.5rem' }}>Tax / NTN</th>
                         <th style={{ padding: '0.5rem', textAlign: 'right' }}>Opening Balance ({currencySymbol || 'Rs.'})</th>
                       </tr>
@@ -327,12 +327,10 @@ export const SupplierBulkImportModal: React.FC<SupplierBulkImportModalProps> = (
                       {parsedRows.slice(0, 50).map((row, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                           <td style={{ padding: '0.4rem 0.5rem', color: 'var(--text-muted)' }}>{idx + 1}</td>
-                          <td style={{ padding: '0.4rem 0.5rem', fontWeight: 600 }}>{row.company_name || row.name}</td>
-                          <td style={{ padding: '0.4rem 0.5rem' }}>{row.name}</td>
-                          <td style={{ padding: '0.4rem 0.5rem', fontFamily: 'var(--font-mono)', color: 'var(--primary-400)' }}>
-                            {row.supplier_id || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Auto</span>}
-                          </td>
+                          <td style={{ padding: '0.4rem 0.5rem', fontWeight: 600 }}>{row.name}</td>
+                          <td style={{ padding: '0.4rem 0.5rem' }}>{row.company_name || '-'}</td>
                           <td style={{ padding: '0.4rem 0.5rem' }}>{row.phone || '-'}</td>
+                          <td style={{ padding: '0.4rem 0.5rem' }}>{row.email || '-'}</td>
                           <td style={{ padding: '0.4rem 0.5rem' }}>{row.tax_id || '-'}</td>
                           <td style={{ padding: '0.4rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: Number(row.opening_balance) > 0 ? 'var(--warning)' : 'var(--text-muted)' }}>
                             {Number(row.opening_balance).toFixed(2)}

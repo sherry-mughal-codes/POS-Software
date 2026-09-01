@@ -36,11 +36,19 @@ docker compose up --build -d
 ```
 Docker will download the images, build the frontend and backend, start the database, and automatically run database migrations.
 
-### 5. Seed the Database
-Initialize all system settings, user accounts, Chart of Accounts, sample products, categories, and inventory:
-```bash
-docker compose exec backend python manage.py seed_all_demo_data
-```
+### 5. Initialize the Database
+
+* **Option A: Clean Production Setup (Clean Install for Real Store Use):**
+  Initializes default settings, standard Chart of Accounts (all 0.00 balances), roles, units of measure, and default Walk-in Customer. Product catalog is empty, and all transaction sequences start from 1:
+  ```bash
+  docker compose exec backend python manage.py init_clean_system
+  ```
+
+* **Option B: Demo / Testing Setup (With Sample Products & Sales):**
+  Seeds sample catalog items, mock sales, and demo stock:
+  ```bash
+  docker compose exec backend python manage.py seed_all_demo_data
+  ```
 
 ### 6. Open the App
 Visit [http://localhost:5173](http://localhost:5173) in your web browser.
@@ -80,7 +88,13 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py seed_all_demo_data
+
+# For Clean Production:
+python manage.py init_clean_system
+
+# Or For Demo Testing:
+# python manage.py seed_all_demo_data
+
 python manage.py runserver 127.0.0.1:8000
 ```
 
@@ -104,6 +118,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | **Stop software** | `docker compose down` |
 | **Restart software** | `docker compose restart` |
 | **View real-time logs** | `docker compose logs -f` |
-| **Run automated test suite** | `docker compose exec backend python test_phase13_suite.py` |
-| **Create custom superuser** | `docker compose exec backend python manage.py createsuperuser` |
-| **Reset / Re-seed database** | `docker compose exec backend python manage.py seed_all_demo_data` |
+| **Clean Production Init** | `docker compose exec backend python manage.py init_clean_system` |
+| **Reset / Re-seed Demo** | `docker compose exec backend python manage.py seed_all_demo_data` |
+| **Clear Transactions Only** | `docker compose exec backend python manage.py clear_transactional_data` |
+| **Run Test Suites** | `docker compose exec backend python test_phase13_suite.py` |
+| **Create Custom Superuser** | `docker compose exec backend python manage.py createsuperuser` |

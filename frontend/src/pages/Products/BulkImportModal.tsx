@@ -103,6 +103,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
           else if (h.includes('sell') || h.includes('price') || h.includes('retail')) map.selling_price = idx;
           else if (h.includes('open') || h.includes('qty') || h.includes('quantity') || h.includes('stock')) map.opening_stock = idx;
           else if (h.includes('min') || h.includes('alert') || h.includes('threshold')) map.min_stock_level = idx;
+          else if (h.includes('warrant') || h.includes('guarantee')) map.warranty_period_days = idx;
           else if (h.includes('desc') || h.includes('note')) map.description = idx;
         });
 
@@ -122,6 +123,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
             selling_price: map.selling_price !== undefined ? parseFloat(rowData[map.selling_price]) || 0 : 0,
             opening_stock: map.opening_stock !== undefined ? parseFloat(rowData[map.opening_stock]) || 0 : 0,
             min_stock_level: map.min_stock_level !== undefined ? parseFloat(rowData[map.min_stock_level]) || 10 : 10,
+            warranty_period_days: map.warranty_period_days !== undefined ? parseInt(rowData[map.warranty_period_days]) || 0 : 0,
             description: map.description !== undefined ? String(rowData[map.description] || '').trim() : '',
           };
 
@@ -303,7 +305,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
                     Previewing {parsedRows.length} Product(s) to Import:
                   </span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--primary-400)' }}>
-                    Auto-completes missing SKU, Category, and Unit
+                    Sequential SKUs (PRD-XXXXX) are generated automatically
                   </span>
                 </div>
 
@@ -318,12 +320,13 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
                       <tr>
                         <th style={{ padding: '0.5rem' }}>#</th>
                         <th style={{ padding: '0.5rem' }}>Product Name</th>
-                        <th style={{ padding: '0.5rem' }}>SKU</th>
                         <th style={{ padding: '0.5rem' }}>Category</th>
                         <th style={{ padding: '0.5rem' }}>Unit</th>
+                        <th style={{ padding: '0.5rem' }}>Barcode</th>
                         <th style={{ padding: '0.5rem', textAlign: 'right' }}>Cost ({currencySymbol || 'Rs.'})</th>
                         <th style={{ padding: '0.5rem', textAlign: 'right' }}>Price ({currencySymbol || 'Rs.'})</th>
                         <th style={{ padding: '0.5rem', textAlign: 'right' }}>Opening Qty</th>
+                        <th style={{ padding: '0.5rem', textAlign: 'center' }}>Warranty</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -331,11 +334,9 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                           <td style={{ padding: '0.4rem 0.5rem', color: 'var(--text-muted)' }}>{idx + 1}</td>
                           <td style={{ padding: '0.4rem 0.5rem', fontWeight: 600 }}>{row.name}</td>
-                          <td style={{ padding: '0.4rem 0.5rem', fontFamily: 'var(--font-mono)', color: 'var(--primary-400)' }}>
-                            {row.sku || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Auto</span>}
-                          </td>
                           <td style={{ padding: '0.4rem 0.5rem' }}>{row.category}</td>
                           <td style={{ padding: '0.4rem 0.5rem' }}>{row.unit}</td>
+                          <td style={{ padding: '0.4rem 0.5rem', fontFamily: 'var(--font-mono)' }}>{row.barcode || '-'}</td>
                           <td style={{ padding: '0.4rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                             {Number(row.purchase_price).toFixed(2)}
                           </td>
@@ -344,6 +345,9 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
                           </td>
                           <td style={{ padding: '0.4rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: Number(row.opening_stock) > 0 ? 'var(--success)' : 'var(--text-muted)' }}>
                             {row.opening_stock}
+                          </td>
+                          <td style={{ padding: '0.4rem 0.5rem', textAlign: 'center', color: row.warranty_period_days ? 'var(--primary-400)' : 'var(--text-muted)' }}>
+                            {row.warranty_period_days ? `${row.warranty_period_days}d` : '-'}
                           </td>
                         </tr>
                       ))}

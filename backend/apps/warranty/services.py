@@ -20,6 +20,7 @@ from apps.inventory.models import StockMovement, MovementType
 from apps.inventory.services import InventoryService
 from apps.accounting.models import Account, AccountType, ReferenceType, JournalEntry
 from apps.accounting.services import AccountingService
+from apps.core.sequences import DocumentSequenceService
 from apps.warranty.models import (
     CustomerWarrantyClaim,
     CustomerWarrantyClaimStatus,
@@ -34,41 +35,13 @@ class WarrantyService:
 
     @staticmethod
     def _generate_customer_claim_number() -> str:
-        """Generates sequential customer claim number CLM-YYYY-XXXXX."""
-        year = timezone.now().year
-        prefix = f"CLM-{year}-"
-        last_claim = (
-            CustomerWarrantyClaim.objects.filter(claim_number__startswith=prefix)
-            .order_by("-claim_number")
-            .first()
-        )
-        if last_claim and last_claim.claim_number:
-            try:
-                seq = int(last_claim.claim_number.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = 1
-        else:
-            seq = 1
-        return f"{prefix}{seq:05d}"
+        """Generates sequential customer claim number via DocumentSequenceService."""
+        return DocumentSequenceService.generate_next_number("customer_warranty_claim")
 
     @staticmethod
     def _generate_supplier_claim_number() -> str:
-        """Generates sequential supplier claim number SUP-CLM-YYYY-XXXXX."""
-        year = timezone.now().year
-        prefix = f"SUP-CLM-{year}-"
-        last_claim = (
-            SupplierWarrantyClaim.objects.filter(claim_number__startswith=prefix)
-            .order_by("-claim_number")
-            .first()
-        )
-        if last_claim and last_claim.claim_number:
-            try:
-                seq = int(last_claim.claim_number.split("-")[-1]) + 1
-            except (ValueError, IndexError):
-                seq = 1
-        else:
-            seq = 1
-        return f"{prefix}{seq:05d}"
+        """Generates sequential supplier claim number via DocumentSequenceService."""
+        return DocumentSequenceService.generate_next_number("supplier_warranty_claim")
 
     @staticmethod
     def suggest_supplier_for_product(product_id: int) -> Optional[Dict[str, Any]]:
@@ -629,6 +602,7 @@ class WarrantyService:
         Computes authoritative warranty metrics for the dashboard cards:
         - warranty_claim_units: Total units currently held in Warranty Claim Asset.
         - warranty_claim_valuation: Total cost valuation of units currently held in Warranty Claim Asset.
+        - in_progress_supplier_claim_units: Total units currently dispatched to supplier and pending receipt.
         """
         completed_claims = CustomerWarrantyClaim.objects.filter(
             status=CustomerWarrantyClaimStatus.COMPLETED
@@ -643,7 +617,15 @@ class WarrantyService:
                 total_held_units += rem
                 total_held_valuation += (rem * claim.replacement_unit_cost)
 
+        in_progress_supplier_claims = SupplierWarrantyClaim.objects.filter(
+            status=SupplierWarrantyClaimStatus.IN_PROGRESS
+        )
+        in_progress_units = in_progress_supplier_claims.aggregate(
+            tot=models.Sum("total_quantity")
+        )["tot"] or Decimal("0.00")
+
         return {
             "warranty_claim_units": float(total_held_units),
             "warranty_claim_valuation": float(total_held_valuation.quantize(Decimal("0.01"))),
+            "in_progress_supplier_claim_units": float(in_progress_units),
         }

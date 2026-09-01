@@ -148,6 +148,7 @@ export interface ActivePOSSessionSnapshot {
 export interface DashboardWarrantySummary {
   warranty_claim_units: number;
   warranty_claim_valuation: number;
+  in_progress_supplier_claim_units?: number;
 }
 
 export interface ExecutiveDashboardData {

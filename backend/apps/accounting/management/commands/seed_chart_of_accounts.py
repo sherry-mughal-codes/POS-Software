@@ -106,24 +106,4 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(f"  + Created payment method: {method.name} -> [{linked_acc.code}] {linked_acc.name}")
 
-        # Seed Opening Balance if no journal entries exist
-        if not Account.objects.filter(journal_items__isnull=False).exists():
-            equity_acc = account_map.get("3010")
-            cash_acc = account_map.get("1010")
-            bank_acc = account_map.get("1020")
-            inventory_acc = account_map.get("1040")
-
-            if equity_acc and cash_acc and bank_acc and inventory_acc:
-                opening_entries = [
-                    {"account": cash_acc, "debit": Decimal("100000.00"), "credit": Decimal("0.00")},
-                    {"account": bank_acc, "debit": Decimal("250000.00"), "credit": Decimal("0.00")},
-                    {"account": inventory_acc, "debit": Decimal("500000.00"), "credit": Decimal("0.00")},
-                ]
-                entry = AccountingService.record_opening_balance(
-                    entry_date=timezone.now().date(),
-                    account_balances=opening_entries,
-                    equity_account=equity_acc,
-                )
-                self.stdout.write(self.style.SUCCESS(f"✓ Seeded system opening balances entry: {entry.entry_number} (Total: {entry.total_debit})"))
-
-        self.stdout.write(self.style.SUCCESS("=== Accounting Setup Completed Successfully! ==="))
+        self.stdout.write(self.style.SUCCESS("=== Accounting Setup Completed Successfully! (All accounts initialized at 0.00 balance) ==="))

@@ -28,6 +28,10 @@ class Command(BaseCommand):
             ("default_cogs_account", "5010", "ACCOUNTING", "Default GL Cost of Goods Sold Account"),
             ("default_ap_account", "2010", "ACCOUNTING", "Default GL Accounts Payable Account"),
             ("default_ar_account", "1030", "ACCOUNTING", "Default GL Accounts Receivable Account"),
+            ("customer_warranty_claim_prefix", "CLM-", "POS", "Prefix for Customer Warranty Claim slips"),
+            ("customer_warranty_claim_start_number", "1", "POS", "Start sequence number for Customer Warranty Claims"),
+            ("supplier_warranty_claim_prefix", "SUP-CLM-", "POS", "Prefix for Supplier Warranty Claim batches"),
+            ("supplier_warranty_claim_start_number", "1", "POS", "Start sequence number for Supplier Warranty Claims"),
         ]
 
         for key, val, grp, desc in default_settings:

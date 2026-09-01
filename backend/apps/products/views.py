@@ -112,6 +112,67 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         return qs
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        reasons = []
+
+        # 1. Check current inventory stock
+        current_stock = instance.get_current_stock()
+        if current_stock > 0:
+            unit_code = instance.unit.short_code if instance.unit else "units"
+            reasons.append(f"Active stock on hand ({current_stock} {unit_code})")
+
+        # 2. Check sales history
+        from apps.sales.models import SaleItem
+        sale_count = SaleItem.objects.filter(product=instance).count()
+        if sale_count > 0:
+            reasons.append(f"{sale_count} sales transaction(s)")
+
+        # 3. Check purchase history
+        from apps.purchases.models import PurchaseItem
+        purchase_count = PurchaseItem.objects.filter(product=instance).count()
+        if purchase_count > 0:
+            reasons.append(f"{purchase_count} purchase order(s)")
+
+        # 4. Check stock movements
+        from apps.inventory.models import StockMovement, StockAdjustmentItem
+        movement_count = StockMovement.objects.filter(product=instance).count()
+        if movement_count > 0:
+            reasons.append(f"{movement_count} stock movement record(s)")
+
+        # 5. Check stock adjustments
+        adj_count = StockAdjustmentItem.objects.filter(product=instance).count()
+        if adj_count > 0:
+            reasons.append(f"{adj_count} stock adjustment(s)")
+
+        # 6. Check warranty claims
+        from apps.warranty.models import CustomerWarrantyClaim, SupplierWarrantyClaimItem
+        warranty_count = CustomerWarrantyClaim.objects.filter(
+            models.Q(claimed_product=instance) | models.Q(replacement_product=instance)
+        ).count()
+        if warranty_count > 0:
+            reasons.append(f"{warranty_count} customer warranty claim(s)")
+
+        supplier_claim_count = SupplierWarrantyClaimItem.objects.filter(product=instance).count()
+        if supplier_claim_count > 0:
+            reasons.append(f"{supplier_claim_count} supplier warranty claim(s)")
+
+        if reasons:
+            reasons_str = ", ".join(reasons)
+            return Response(
+                {
+                    "detail": f"Cannot delete product '{instance.name}' ({instance.sku}) because it has existing inventory or transactional records: {reasons_str}. You can deactivate this product instead to hide it from sales while preserving audit integrity."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Free of all inventory and transactions - delete permanently
+        self.perform_destroy(instance)
+        return Response(
+            {"detail": f"Product '{instance.name}' has been permanently deleted."},
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
     @action(detail=False, methods=["get"], url_path="lookup-barcode")
     def lookup_barcode(self, request):
         """Instant exact barcode lookup for POS scanner input."""

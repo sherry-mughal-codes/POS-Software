@@ -143,6 +143,7 @@ export interface SupplierWarrantyClaimPayload {
 export interface WarrantyMetrics {
   warranty_claim_units: number;
   warranty_claim_valuation: number;
+  in_progress_supplier_claim_units?: number;
 }
 
 export type WarrantyDashboardMetrics = WarrantyMetrics;

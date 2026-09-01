@@ -147,6 +147,26 @@ class DocumentSequenceService:
             "model_path": "apps.employees.models.SalarySlip",
             "field_name": "slip_number",
         },
+        "customer_warranty_claim": {
+            "title": "Customer Warranty Claim",
+            "prefix_key": "customer_warranty_claim_prefix",
+            "start_key": "customer_warranty_claim_start_number",
+            "default_prefix": "CLM-",
+            "default_start": 1,
+            "padding": 5,
+            "model_path": "apps.warranty.models.CustomerWarrantyClaim",
+            "field_name": "claim_number",
+        },
+        "supplier_warranty_claim": {
+            "title": "Supplier Warranty Claim / RMA",
+            "prefix_key": "supplier_warranty_claim_prefix",
+            "start_key": "supplier_warranty_claim_start_number",
+            "default_prefix": "SUP-CLM-",
+            "default_start": 1,
+            "padding": 5,
+            "model_path": "apps.warranty.models.SupplierWarrantyClaim",
+            "field_name": "claim_number",
+        },
     }
 
     @classmethod

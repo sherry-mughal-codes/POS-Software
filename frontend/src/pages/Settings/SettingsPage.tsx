@@ -790,6 +790,26 @@ export const SettingsPage: React.FC = () => {
                     default_start: '1',
                     padding: 5,
                   },
+                  {
+                    key: 'customer_warranty_claim',
+                    title: 'Customer Warranty Claim #',
+                    desc: 'Slip serial prefix and sequence for customer warranty replacements',
+                    prefix_key: 'customer_warranty_claim_prefix',
+                    start_key: 'customer_warranty_claim_start_number',
+                    default_prefix: 'CLM-',
+                    default_start: '1',
+                    padding: 5,
+                  },
+                  {
+                    key: 'supplier_warranty_claim',
+                    title: 'Supplier Warranty Claim (RMA) #',
+                    desc: 'Batch serial prefix and sequence for supplier RMA dispatches',
+                    prefix_key: 'supplier_warranty_claim_prefix',
+                    start_key: 'supplier_warranty_claim_start_number',
+                    default_prefix: 'SUP-CLM-',
+                    default_start: '1',
+                    padding: 5,
+                  },
                 ].map((item) => {
                   const seqInfo = docSequences[item.key];
                   const currentPrefix = formData[item.prefix_key] !== undefined ? formData[item.prefix_key] : (seqInfo?.prefix || item.default_prefix);

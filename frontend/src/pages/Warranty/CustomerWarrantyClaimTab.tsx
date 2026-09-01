@@ -3,7 +3,6 @@ import {
   Search,
   ShieldCheck,
   AlertCircle,
-  CheckCircle2,
   RefreshCw,
   Printer,
 } from 'lucide-react';
@@ -24,9 +23,11 @@ import { Badge } from '../../components/common/Badge';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
 import { CustomerClaimSlipModal } from './CustomerClaimSlipModal';
+import { useToast } from '../../context/ToastContext';
 
 
 export const CustomerWarrantyClaimTab: React.FC = () => {
+  const { showSuccess, showError } = useToast();
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -48,7 +49,6 @@ export const CustomerWarrantyClaimTab: React.FC = () => {
   const [claimNotes, setClaimNotes] = useState('');
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
   const [claimModalError, setClaimModalError] = useState<string | null>(null);
-  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   // Print Slip Modal State
   const [activeSlipClaim, setActiveSlipClaim] = useState<CustomerWarrantyClaim | null>(null);
@@ -144,21 +144,29 @@ export const CustomerWarrantyClaimTab: React.FC = () => {
   const handleProcessClaim = async () => {
     if (!selectedSale || !selectedItem) return;
     if (!selectedReplacementProductId) {
-      setClaimModalError('Please select a replacement product');
+      const err = 'Please select a replacement product';
+      setClaimModalError(err);
+      showError(err, 'Missing Field');
       return;
     }
     if (!selectedSupplierId) {
-      setClaimModalError('Please select an authoritative warranty supplier');
+      const err = 'Please select an authoritative warranty supplier';
+      setClaimModalError(err);
+      showError(err, 'Missing Field');
       return;
     }
     if (claimQuantity <= 0 || claimQuantity > selectedItem.remaining_claimable_quantity) {
-      setClaimModalError(`Claim quantity must be between 1 and ${selectedItem.remaining_claimable_quantity}`);
+      const err = `Claim quantity must be between 1 and ${selectedItem.remaining_claimable_quantity}`;
+      setClaimModalError(err);
+      showError(err, 'Invalid Quantity');
       return;
     }
 
     const replacementProd = allProducts.find((p) => p.id === Number(selectedReplacementProductId));
     if (replacementProd && replacementProd.maintain_stock && (replacementProd.current_stock || 0) < claimQuantity) {
-      setClaimModalError(`Insufficient on-hand stock for replacement product (${replacementProd.current_stock || 0} available)`);
+      const err = `Insufficient on-hand stock for replacement product (${replacementProd.current_stock || 0} available)`;
+      setClaimModalError(err);
+      showError(err, 'Insufficient Stock');
       return;
     }
 
@@ -175,10 +183,7 @@ export const CustomerWarrantyClaimTab: React.FC = () => {
       };
 
       const resultClaim = await warrantyService.createCustomerClaim(payload);
-      setFeedbackMessage({
-        type: 'success',
-        text: `Warranty Replacement Claim ${resultClaim.claim_number} completed successfully!`,
-      });
+      showSuccess(`Warranty Replacement Claim ${resultClaim.claim_number} processed and completed successfully!`, 'Warranty Claim Processed');
 
       setIsClaimModalOpen(false);
       loadSuppliersAndProducts();
@@ -192,7 +197,9 @@ export const CustomerWarrantyClaimTab: React.FC = () => {
       setIsSlipModalOpen(true);
     } catch (error: any) {
       console.error('Claim processing failed:', error);
-      setClaimModalError(error?.response?.data?.detail || error?.message || 'Failed to process warranty claim.');
+      const errMsg = error?.response?.data?.detail || error?.message || 'Failed to process warranty claim.';
+      setClaimModalError(errMsg);
+      showError(errMsg, 'Claim Processing Error');
     } finally {
       setIsSubmittingClaim(false);
     }
@@ -223,33 +230,6 @@ export const CustomerWarrantyClaimTab: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-      {/* Toast / Global Feedback Message */}
-      {feedbackMessage && (
-        <div
-          style={{
-            padding: '0.75rem 1rem',
-            backgroundColor: feedbackMessage.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)',
-            border: `1px solid ${feedbackMessage.type === 'success' ? 'var(--success-border)' : 'var(--danger-border)'}`,
-            borderRadius: '0.5rem',
-            color: feedbackMessage.type === 'success' ? 'var(--success)' : 'var(--danger)',
-            fontSize: '0.875rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {feedbackMessage.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-            <span>{feedbackMessage.text}</span>
-          </div>
-          <button
-            onClick={() => setFeedbackMessage(null)}
-            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            ×
-          </button>
-        </div>
-      )}
 
       {/* 1. SEARCH & LOOKUP SECTION */}
       <Card>

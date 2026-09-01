@@ -414,7 +414,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </div>
         </Card>
 
-        {/* Warranty Claim Valuation (Asset 1060) */}
+        {/* In Progress Supplier Claim Units */}
         <Card
           onClick={() => onNavigate('supplier-warranty-claims')}
           className="cursor-pointer hover:border-indigo-400 transition-colors"
@@ -422,14 +422,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                Warranty Valuation
+                In Progress Supplier Claims
               </div>
               <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#818cf8', marginTop: '0.15rem' }}>
-                Rs. {formatMoney(data?.warranty_summary?.warranty_claim_valuation)}
+                {data?.warranty_summary?.in_progress_supplier_claim_units || 0} Units
               </div>
             </div>
             <div style={{ padding: '0.35rem', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.375rem', color: '#818cf8', flexShrink: 0 }}>
-              <DollarSign size={16} />
+              <Truck size={16} />
             </div>
           </div>
         </Card>

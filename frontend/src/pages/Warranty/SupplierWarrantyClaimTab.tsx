@@ -20,6 +20,7 @@ import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { Card } from '../../components/common/Card';
 import { SupplierClaimSlipModal } from './SupplierClaimSlipModal';
+import { useToast } from '../../context/ToastContext';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -27,6 +28,7 @@ const formatMoney = (val: number | string | undefined | null): string => {
 };
 
 export const SupplierWarrantyClaimTab: React.FC = () => {
+  const { showSuccess, showError } = useToast();
   // Master Suppliers
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | ''>('');
@@ -47,9 +49,6 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
   // Slip Modal State
   const [activeSlipClaim, setActiveSlipClaim] = useState<SupplierWarrantyClaim | null>(null);
   const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
-
-  // Global Feedback Message
-  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   // Supplier Claims History State
   const [supplierClaims, setSupplierClaims] = useState<SupplierWarrantyClaim[]>([]);
@@ -122,15 +121,13 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
     setIsCompletingReceipt(true);
     try {
       const result = await warrantyService.completeSupplierReceipt(claimId);
-      setFeedbackMessage({
-        type: 'success',
-        text: `Claim ${result.claim_number} completed — replacement stock restocked to inventory.`,
-      });
+      showSuccess(`Claim ${result.claim_number} completed — replacement stock restocked into active inventory.`, 'Replacement Stock Received');
       setCompletingClaimId(null);
       loadSupplierClaims();
       if (selectedSupplierId) loadAvailableItems(Number(selectedSupplierId));
     } catch (error: any) {
-      setFeedbackMessage({ type: 'danger', text: error.response?.data?.error || 'Failed to complete replacement receipt.' });
+      const errMsg = error.response?.data?.error || error.response?.data?.detail || error.message || 'Failed to complete replacement receipt.';
+      showError(errMsg, 'Receipt Error');
     } finally {
       setIsCompletingReceipt(false);
     }
@@ -152,11 +149,13 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
 
   const handleOpenDispatchModal = () => {
     if (!selectedSupplierId) {
-      setFeedbackMessage({ type: 'danger', text: 'Please select a supplier first' });
+      const msg = 'Please select an authoritative supplier first.';
+      showError(msg, 'Missing Supplier');
       return;
     }
     if (selectedItemIds.length === 0) {
-      setFeedbackMessage({ type: 'danger', text: 'Please select at least one defective item to dispatch' });
+      const msg = 'Please select at least one defective item to dispatch.';
+      showError(msg, 'No Items Selected');
       return;
     }
     setDispatchNotes('');
@@ -186,10 +185,7 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
       };
 
       const result = await warrantyService.processSupplierDispatch(payload);
-      setFeedbackMessage({
-        type: 'success',
-        text: `Supplier Claim Batch ${result.claim_number} dispatched successfully!`,
-      });
+      showSuccess(`Supplier Claim Batch ${result.claim_number} dispatched successfully!`, 'RMA Batch Dispatched');
 
       setIsDispatchModalOpen(false);
       loadSupplierClaims();
@@ -201,8 +197,9 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
       setIsSlipModalOpen(true);
     } catch (error: any) {
       console.error('Error processing supplier dispatch:', error);
-      const errMsg = error.response?.data?.error || error.response?.data?.detail || 'Failed to dispatch to supplier';
+      const errMsg = error.response?.data?.error || error.response?.data?.detail || error.message || 'Failed to dispatch to supplier';
       setDispatchModalError(errMsg);
+      showError(errMsg, 'Dispatch Error');
     } finally {
       setIsSubmittingDispatch(false);
     }
@@ -225,33 +222,6 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-      {/* Toast Feedback */}
-      {feedbackMessage && (
-        <div
-          style={{
-            padding: '0.75rem 1rem',
-            backgroundColor: feedbackMessage.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)',
-            border: `1px solid ${feedbackMessage.type === 'success' ? 'var(--success-border)' : 'var(--danger-border)'}`,
-            borderRadius: '0.5rem',
-            color: feedbackMessage.type === 'success' ? 'var(--success)' : 'var(--danger)',
-            fontSize: '0.875rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {feedbackMessage.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-            <span>{feedbackMessage.text}</span>
-          </div>
-          <button
-            onClick={() => setFeedbackMessage(null)}
-            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            ×
-          </button>
-        </div>
-      )}
 
       {/* 1. SUPPLIER RMA DISPATCH CREATION */}
       <Card>
@@ -614,10 +584,7 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
             <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '0.875rem', borderRadius: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-main)' }}>
               <p style={{ fontWeight: 700, marginBottom: '0.4rem' }}>Confirm Replacement Stock Received from Supplier</p>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                This action will automatically:<br />
-                • Restock replacement units into active inventory.<br />
-                • Create GL Journal Entry: <strong>DR 1040 Inventory Asset / CR 1070 Supplier Claim Asset</strong>.<br />
-                • Mark this RMA batch as <strong>WARRANTY_COMPLETED</strong>.
+                Mark this RMA batch as <strong>WARRANTY_COMPLETED</strong>.
               </p>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>

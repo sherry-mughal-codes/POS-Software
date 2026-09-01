@@ -684,6 +684,7 @@ class DashboardService:
             "warranty_summary": {
                 "warranty_claim_units": warranty_metrics["warranty_claim_units"],
                 "warranty_claim_valuation": warranty_metrics["warranty_claim_valuation"],
+                "in_progress_supplier_claim_units": warranty_metrics.get("in_progress_supplier_claim_units", 0),
             },
             "sales_trend": sales_trend,
             "top_products_by_quantity": top_by_qty,

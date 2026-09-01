@@ -51,6 +51,7 @@ class ProductService:
         opening_stock: Decimal = Decimal("0.00"),
         image_url: Optional[str] = None,
         description: Optional[str] = None,
+        warranty_period_days: Optional[int] = None,
         is_active: bool = True,
         created_by=None,
     ) -> Product:
@@ -76,6 +77,7 @@ class ProductService:
             purchase_price=Decimal(str(purchase_price or "0.00")),
             selling_price=Decimal(str(selling_price or "0.00")),
             min_stock_level=Decimal(str(min_stock_level or "10.00")),
+            warranty_period_days=warranty_period_days,
             image_url=image_url or "",
             description=description or "",
             is_active=is_active,
@@ -226,6 +228,11 @@ class ProductService:
                 opening_stock = Decimal("0.00")
 
             try:
+                warranty_days = int(row.get("warranty_period_days") or row.get("warranty_days") or row.get("warranty") or 0)
+            except Exception:
+                warranty_days = 0
+
+            try:
                 product = cls.create_product(
                     name=name,
                     category=category,
@@ -236,6 +243,7 @@ class ProductService:
                     barcode=barcode,
                     min_stock_level=min_stock,
                     opening_stock=opening_stock,
+                    warranty_period_days=warranty_days or None,
                     description=str(row.get("description") or ""),
                     created_by=created_by,
                 )
@@ -249,6 +257,7 @@ class ProductService:
                     "purchase_price": float(product.purchase_price),
                     "selling_price": float(product.selling_price),
                     "opening_stock": float(opening_stock),
+                    "warranty_period_days": product.warranty_period_days,
                 })
             except Exception as e:
                 errors.append(f"Row {index} ('{name}'): {str(e)}")
@@ -265,7 +274,8 @@ class ProductService:
     @classmethod
     def generate_excel_template(cls) -> bytes:
         """
-        Builds a styled sample Excel file with headers and example product rows for user download.
+        Builds a styled sample Excel file matching Product form fields.
+        SKU is auto-generated upon import, exactly matching manual product creation.
         """
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -273,24 +283,24 @@ class ProductService:
 
         headers = [
             "Product Name *",
-            "SKU (Optional)",
-            "Barcode (Optional)",
             "Category",
             "Unit (e.g. pcs, kg)",
+            "Barcode (Optional)",
             "Purchase Price (Rs.)",
-            "Selling Price (Rs.)",
+            "Selling Price (Rs.) *",
             "Opening Quantity",
             "Min Stock Level",
+            "Warranty Period (Days)",
             "Description",
         ]
         ws.append(headers)
 
         sample_rows = [
-            ["Nestle Everyday Milk Powder 1kg", "PRD-00101", "8964000123456", "Dairy & Milk", "pcs", 1450.00, 1600.00, 50, 10, "1kg pouch pack"],
-            ["Olpers Full Cream Milk 1 Liter", "PRD-00102", "8964000123457", "Dairy & Milk", "pcs", 270.00, 295.00, 120, 24, "1000ml Tetra pack"],
-            ["Dalda Cooking Oil 5 Liter", "PRD-00103", "8964000123458", "Edible Oil & Ghee", "bottle", 2650.00, 2850.00, 30, 5, "5L Can with handle"],
-            ["Tapal Danedar Black Tea 450g", "PRD-00104", "8964000123459", "Beverages", "pcs", 620.00, 680.00, 45, 10, "450g Hard Pack"],
-            ["National Himalayan Pink Salt 800g", "PRD-00105", "8964000123460", "Spices & Salt", "pcs", 95.00, 120.00, 80, 15, "800g jar"],
+            ["Nestle Everyday Milk Powder 1kg", "Dairy & Milk", "pcs", "8964000123456", 1450.00, 1600.00, 50, 10, 0, "1kg pouch pack"],
+            ["Olpers Full Cream Milk 1 Liter", "Dairy & Milk", "pcs", "8964000123457", 270.00, 295.00, 120, 24, 0, "1000ml Tetra pack"],
+            ["Dalda Cooking Oil 5 Liter", "Edible Oil & Ghee", "bottle", "8964000123458", 2650.00, 2850.00, 30, 5, 0, "5L Can with handle"],
+            ["Tapal Danedar Black Tea 450g", "Beverages", "pcs", "8964000123459", 620.00, 680.00, 45, 10, 0, "450g Hard Pack"],
+            ["GFC Deluxe Ceiling Fan 56 inch", "Electronics & Appliances", "pcs", "8964000123460", 4500.00, 5800.00, 15, 5, 730, "56 inch Copper Winding with 2 Year Warranty"],
         ]
 
         for r in sample_rows:

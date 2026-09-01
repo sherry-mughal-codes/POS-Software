@@ -10,6 +10,8 @@ import {
   Scale,
   Edit2,
   Power,
+  Trash2,
+  AlertTriangle,
   RefreshCw,
   Sparkles,
   FileSpreadsheet,
@@ -18,6 +20,7 @@ import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
+import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ProductModal } from './ProductModal';
 import { CategoryManagerModal } from './CategoryManagerModal';
@@ -57,6 +60,9 @@ export const ProductCatalogPage: React.FC = () => {
   // Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
@@ -92,6 +98,25 @@ export const ProductCatalogPage: React.FC = () => {
       fetchCatalogData();
     } catch (err: any) {
       showError(err?.message || 'Failed to update product status.', 'Product Error');
+    }
+  };
+
+  // Delete product
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await productService.deleteProduct(productToDelete.id);
+      showSuccess(`Product "${productToDelete.name}" (${productToDelete.sku}) has been permanently deleted.`, 'Product Deleted');
+      setProductToDelete(null);
+      fetchCatalogData();
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || err?.message || 'Failed to delete product.';
+      setDeleteError(msg);
+      showError(msg, 'Cannot Delete Product');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -425,6 +450,20 @@ export const ProductCatalogPage: React.FC = () => {
                     }}
                     onClick={() => handleToggleStatus(p)}
                   />
+                  <Button
+                    variant="outline"
+                    icon={<Trash2 size={12} />}
+                    title="Delete Product"
+                    style={{
+                      padding: '0.25rem 0.45rem',
+                      color: 'var(--danger)',
+                      borderColor: 'rgba(239, 68, 68, 0.3)',
+                    }}
+                    onClick={() => {
+                      setDeleteError(null);
+                      setProductToDelete(p);
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -516,6 +555,20 @@ export const ProductCatalogPage: React.FC = () => {
                           }}
                           onClick={() => handleToggleStatus(p)}
                         />
+                        <Button
+                          variant="outline"
+                          icon={<Trash2 size={13} />}
+                          title="Delete Product"
+                          style={{
+                            padding: '0.25rem 0.45rem',
+                            color: 'var(--danger)',
+                            borderColor: 'rgba(239, 68, 68, 0.3)',
+                          }}
+                          onClick={() => {
+                            setDeleteError(null);
+                            setProductToDelete(p);
+                          }}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -558,6 +611,106 @@ export const ProductCatalogPage: React.FC = () => {
         onClose={() => setIsBulkImportModalOpen(false)}
         onSuccess={fetchCatalogData}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!productToDelete}
+        onClose={() => {
+          if (!isDeleting) {
+            setProductToDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        title="Confirm Product Deletion"
+        maxWidth="480px"
+      >
+        {productToDelete && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: '0.5rem',
+                padding: '0.875rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.625rem',
+              }}
+            >
+              <AlertTriangle size={20} style={{ color: 'var(--danger)', flexShrink: 0, marginTop: '0.1rem' }} />
+              <div>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                  Permanently delete this product?
+                </h4>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0', lineHeight: 1.4 }}>
+                  This will permanently delete this product from the catalog. Products that have existing stock on hand, purchase history, sales, or warranty records cannot be deleted.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: '0.375rem', padding: '0.75rem', fontSize: '0.8125rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Product Name:</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{productToDelete.name}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>SKU:</span>
+                <code style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--primary-400)' }}>{productToDelete.sku}</code>
+              </div>
+              {productToDelete.barcode && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Barcode:</span>
+                  <code style={{ fontFamily: 'var(--font-mono)' }}>{productToDelete.barcode}</code>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Selling Price:</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                  {currencySymbol || 'Rs.'} {formatMoney(productToDelete.selling_price)}
+                </span>
+              </div>
+            </div>
+
+            {deleteError && (
+              <div
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid var(--danger)',
+                  borderRadius: '0.375rem',
+                  padding: '0.625rem 0.75rem',
+                  fontSize: '0.78125rem',
+                  color: 'var(--text-main)',
+                  lineHeight: 1.4,
+                }}
+              >
+                <div style={{ fontWeight: 700, color: 'var(--danger)', marginBottom: '0.2rem' }}>Cannot Delete Product</div>
+                {deleteError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.25rem' }}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setProductToDelete(null);
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                icon={<Trash2 size={14} />}
+                onClick={handleConfirmDelete}
+                loading={isDeleting}
+              >
+                Confirm Delete
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

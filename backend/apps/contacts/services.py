@@ -649,7 +649,8 @@ class CustomerReceivableService:
     @classmethod
     def generate_customer_excel_template(cls) -> bytes:
         """
-        Builds a styled sample Excel file with headers and example customer rows.
+        Builds a styled sample Excel file matching Customer form fields.
+        Customer ID is auto-generated upon import, exactly matching manual customer creation.
         """
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -657,7 +658,6 @@ class CustomerReceivableService:
 
         headers = [
             "Customer Name *",
-            "Customer Code (Optional)",
             "Phone Number",
             "Email Address",
             "Billing Address",
@@ -668,9 +668,9 @@ class CustomerReceivableService:
         ws.append(headers)
 
         sample_rows = [
-            ["Ahmed Enterprises", "CUS-00101", "+92 300 1234567", "ahmed@example.com", "Shop 4, Commercial Plaza, Lahore", "Yes", 15000.00, "Regular wholesale buyer"],
-            ["Fatima Super Store", "CUS-00102", "+92 321 7654321", "fatima@store.pk", "Main Market, Gulberg, Lahore", "Yes", 0.00, "Cash & Credit customer"],
-            ["Usman Trader", "CUS-00103", "+92 333 9876543", "usman.traders@gmail.com", "DHA Phase 5, Lahore", "No", 0.00, "Walk-in cash only customer"],
+            ["Ahmed Enterprises", "+92 300 1234567", "ahmed@example.com", "Shop 4, Commercial Plaza, Lahore", "Yes", 15000.00, "Regular wholesale buyer"],
+            ["Fatima Super Store", "+92 321 7654321", "fatima@store.pk", "Main Market, Gulberg, Lahore", "Yes", 0.00, "Cash & Credit customer"],
+            ["Usman Trader", "+92 333 9876543", "usman.traders@gmail.com", "DHA Phase 5, Lahore", "No", 0.00, "Walk-in cash only customer"],
         ]
 
         for r in sample_rows:
@@ -696,7 +696,7 @@ class CustomerReceivableService:
             for col_idx in range(1, len(headers) + 1):
                 cell = ws.cell(row=row_idx, column=col_idx)
                 cell.border = border
-                if col_idx == 7:  # Opening balance
+                if col_idx == 6:  # Opening balance
                     cell.number_format = "#,##0.00"
 
         # Auto-adjust column width
@@ -804,16 +804,16 @@ class CustomerReceivableService:
     @classmethod
     def generate_supplier_excel_template(cls) -> bytes:
         """
-        Builds a styled sample Excel file with headers and example supplier rows.
+        Builds a styled sample Excel file matching Supplier form fields.
+        Supplier ID is auto-generated upon import, exactly matching manual supplier creation.
         """
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Supplier Import Template"
 
         headers = [
-            "Company / Business Name *",
             "Contact Person Name *",
-            "Supplier Code (Optional)",
+            "Company / Business Name",
             "Phone Number",
             "Email Address",
             "Office / Factory Address",
@@ -824,9 +824,9 @@ class CustomerReceivableService:
         ws.append(headers)
 
         sample_rows = [
-            ["Nestle Pakistan Ltd", "Kamran Sheikh", "SUP-000101", "+92 42 111 637853", "orders@nestle.com.pk", "308 Upper Mall, Lahore", "NTN-0891234-1", 45000.00, "Net 15 days credit"],
-            ["Unilever Pakistan", "Saima Tariq", "SUP-000102", "+92 21 111 864538", "supply@unilever.com", "Avari Plaza, Fatima Jinnah Road, Karachi", "NTN-0765432-8", 25000.00, "Direct distributor"],
-            ["National Foods Limited", "Zubair Hashmi", "SUP-000103", "+92 21 35077001", "corporate@nfoods.com", "F-133, SITE, Karachi", "NTN-1423876-5", 0.00, "Spices & food condiments"],
+            ["Kamran Sheikh", "Nestle Pakistan Ltd", "+92 42 111 637853", "orders@nestle.com.pk", "308 Upper Mall, Lahore", "NTN-0891234-1", 45000.00, "Net 15 days credit"],
+            ["Saima Tariq", "Unilever Pakistan", "+92 21 111 864538", "supply@unilever.com", "Avari Plaza, Fatima Jinnah Road, Karachi", "NTN-0765432-8", 25000.00, "Direct distributor"],
+            ["Zubair Hashmi", "National Foods Limited", "+92 21 35077001", "corporate@nfoods.com", "F-133, SITE, Karachi", "NTN-1423876-5", 0.00, "Spices & food condiments"],
         ]
 
         for r in sample_rows:

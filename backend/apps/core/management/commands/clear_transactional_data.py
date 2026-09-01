@@ -10,17 +10,25 @@ from apps.expenses.models import Expense, AccountTransfer
 from apps.employees.models import SalarySlip, SalaryPayment, Attendance, Employee
 from apps.contacts.models import Customer, Supplier, CustomerPayment
 from apps.products.models import Product, Category, Unit
+from apps.warranty.models import CustomerWarrantyClaim, SupplierWarrantyClaim, SupplierWarrantyClaimItem
 from apps.core.models import SystemSetting
 from apps.core.sequences import DocumentSequenceService
 
 
 class Command(BaseCommand):
-    help = "Clears all transactional data and demo contacts/employees while preserving master structures, settings, Chart of Accounts, and default Walk-in Customer. Resets all document sequences to start from 00001."
+    help = "Clears all transactional data, warranties, and demo contacts/employees while preserving master structures, settings, Chart of Accounts, and default Walk-in Customer. Resets all document sequences to start from 00001."
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.NOTICE("=== [ApexPOS] Clearing All Transactional Data & Resetting Sequences ==="))
 
         with transaction.atomic():
+            # 0. Warranty Claims
+            self.stdout.write("0. Clearing Warranty Claims & RMA Records...")
+            swci = SupplierWarrantyClaimItem.objects.all().delete()[0]
+            swc = SupplierWarrantyClaim.objects.all().delete()[0]
+            cwc = CustomerWarrantyClaim.objects.all().delete()[0]
+            self.stdout.write(f"   Deleted {cwc} Customer Claims, {swc} Supplier RMA Batches, {swci} Claim Items.")
+
             # 1. Sales & Returns
             self.stdout.write("1. Clearing Sales, Split Payments, Returns & POS Registers...")
             sr_items = SalesReturnItem.objects.all().delete()[0]
