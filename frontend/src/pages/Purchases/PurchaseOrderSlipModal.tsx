@@ -115,43 +115,44 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
           className="pos-thermal-receipt"
           style={{
             backgroundColor: '#ffffff',
-            color: '#111827',
+            color: '#000000',
             padding: '1.25rem 1rem',
             borderRadius: '0.5rem',
-            fontFamily: "'Courier New', Courier, monospace",
-            fontSize: paperWidth === '58mm' ? '0.72rem' : '0.8125rem',
-            lineHeight: 1.35,
+            fontFamily: "'Courier New', Courier, monospace, system-ui, sans-serif",
+            fontSize: paperWidth === '58mm' ? '0.8125rem' : '0.875rem',
+            fontWeight: 700,
+            lineHeight: 1.4,
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
             width: '100%',
-            maxWidth: paperWidth === '58mm' ? '320px' : '400px',
+            maxWidth: paperWidth === '58mm' ? '330px' : '400px',
             margin: '0 auto',
           }}
         >
           {/* Header & Logo */}
-          <div style={{ textAlign: 'center', marginBottom: '0.875rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.75rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '0.875rem', borderBottom: '1.5px dashed #000000', paddingBottom: '0.75rem' }}>
             {companyLogo && (
               <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
                 <img
                   src={companyLogo}
                   alt="Store Logo"
-                  style={{ maxHeight: '45px', maxWidth: '140px', objectFit: 'contain' }}
+                  style={{ maxHeight: '50px', maxWidth: '150px', objectFit: 'contain' }}
                 />
               </div>
             )}
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 900, margin: '0 0 0.25rem 0', letterSpacing: '0.05em' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: '0 0 0.25rem 0', letterSpacing: '0.05em', color: '#000000' }}>
               {companyName}
             </h3>
-            {companyAddress && <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>{companyAddress}</div>}
-            <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>
+            {companyAddress && <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>{companyAddress}</div>}
+            <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>
               {companyPhone && `Tel: ${companyPhone}`} {taxId && ` | NTN: ${taxId}`}
             </div>
             <div style={{
-              fontSize: '0.875rem',
+              fontSize: '0.9375rem',
               fontWeight: 900,
               letterSpacing: '0.1em',
               marginTop: '0.35rem',
               textTransform: 'uppercase',
-              color: '#0f172a',
+              color: '#000000',
             }}>
               === PURCHASE ORDER ===
             </div>
@@ -159,13 +160,12 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
               <div style={{
                 display: 'inline-block',
                 marginTop: '0.25rem',
-                padding: '0.1rem 0.5rem',
-                backgroundColor: '#fef3c7',
-                border: '1px solid #f59e0b',
-                color: '#b45309',
+                padding: '0.15rem 0.5rem',
+                border: '1.5px solid #000000',
+                color: '#000000',
                 borderRadius: '0.25rem',
-                fontSize: '0.6875rem',
-                fontWeight: 800,
+                fontSize: '0.75rem',
+                fontWeight: 900,
               }}>
                 [ DRAFT ORDER - PENDING APPROVAL ]
               </div>
@@ -174,13 +174,12 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
               <div style={{
                 display: 'inline-block',
                 marginTop: '0.25rem',
-                padding: '0.1rem 0.5rem',
-                backgroundColor: '#dcfce7',
-                border: '1px solid #22c55e',
-                color: '#15803d',
+                padding: '0.15rem 0.5rem',
+                border: '1.5px solid #000000',
+                color: '#000000',
                 borderRadius: '0.25rem',
-                fontSize: '0.6875rem',
-                fontWeight: 800,
+                fontSize: '0.75rem',
+                fontWeight: 900,
               }}>
                 [ SUBMITTED & RESTOCKED ]
               </div>
@@ -189,13 +188,12 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
               <div style={{
                 display: 'inline-block',
                 marginTop: '0.25rem',
-                padding: '0.1rem 0.5rem',
-                backgroundColor: '#fee2e2',
-                border: '1px solid #ef4444',
-                color: '#b91c1c',
+                padding: '0.15rem 0.5rem',
+                border: '1.5px solid #000000',
+                color: '#000000',
                 borderRadius: '0.25rem',
-                fontSize: '0.6875rem',
-                fontWeight: 800,
+                fontSize: '0.75rem',
+                fontWeight: 900,
               }}>
                 [ ORDER CANCELLED ]
               </div>
@@ -205,13 +203,12 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
                 display: 'inline-block',
                 marginTop: '0.25rem',
                 marginLeft: '0.35rem',
-                padding: '0.1rem 0.5rem',
-                backgroundColor: '#fef3c7',
-                border: '1px solid #f59e0b',
-                color: '#b45309',
+                padding: '0.15rem 0.5rem',
+                border: '1.5px solid #000000',
+                color: '#000000',
                 borderRadius: '0.25rem',
-                fontSize: '0.6875rem',
-                fontWeight: 800,
+                fontSize: '0.75rem',
+                fontWeight: 900,
               }}>
                 [ RETURNED: {currencySymbol} {formatMoney(purchase.returned_amount)} ]
               </div>
@@ -219,51 +216,51 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
           </div>
 
           {/* Meta details */}
-          <div style={{ fontSize: '0.75rem', marginBottom: '0.75rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.75rem' }}>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.75rem', borderBottom: '1.5px dashed #000000', paddingBottom: '0.75rem', color: '#000000' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>PO #: <strong>{purchase.purchase_number}</strong></span>
-              <span>Date: <strong>{purchase.date}</strong></span>
+              <span>PO #: <strong style={{ fontWeight: 900, fontSize: '0.875rem' }}>{purchase.purchase_number}</strong></span>
+              <span>Date: <strong style={{ fontWeight: 800 }}>{purchase.date}</strong></span>
             </div>
             <div style={{ marginTop: '0.2rem' }}>
-              <span>Supplier: <strong>{purchase.supplier_company || purchase.supplier_name}</strong></span>
+              <span>Supplier: <strong style={{ fontWeight: 900 }}>{purchase.supplier_company || purchase.supplier_name}</strong></span>
               {purchase.supplier_company && purchase.supplier_name && (
-                <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>Attn: {purchase.supplier_name}</div>
+                <div style={{ fontSize: '0.75rem', color: '#000000', fontWeight: 700 }}>Attn: {purchase.supplier_name}</div>
               )}
             </div>
             {purchase.supplier_invoice_number && (
-              <div style={{ marginTop: '0.15rem' }}>
-                <span>Supplier Inv Ref: <strong>{purchase.supplier_invoice_number}</strong></span>
+              <div style={{ marginTop: '0.2rem' }}>
+                <span>Supplier Inv Ref: <strong style={{ fontWeight: 800 }}>{purchase.supplier_invoice_number}</strong></span>
               </div>
             )}
-            <div style={{ marginTop: '0.15rem' }}>
-              <span>Payment Mode: <strong>{purchase.payment_method_name || 'Cash / Credit'}</strong></span>
+            <div style={{ marginTop: '0.2rem' }}>
+              <span>Payment Mode: <strong style={{ fontWeight: 800 }}>{purchase.payment_method_name || 'Cash / Credit'}</strong></span>
             </div>
           </div>
 
           {/* Items Table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '0.75rem', fontSize: '0.75rem' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '0.75rem', fontSize: '0.8125rem', fontWeight: 700, color: '#000000' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #111827', textAlign: 'left' }}>
-                <th style={{ padding: '0.25rem 0' }}>Item</th>
-                <th style={{ padding: '0.25rem 0', textAlign: 'center' }}>Qty</th>
-                <th style={{ padding: '0.25rem 0', textAlign: 'right' }}>Rate</th>
-                <th style={{ padding: '0.25rem 0', textAlign: 'right' }}>Total</th>
+              <tr style={{ borderBottom: '1.5px solid #000000', textAlign: 'left' }}>
+                <th style={{ padding: '0.35rem 0', fontWeight: 900, color: '#000000' }}>Item</th>
+                <th style={{ padding: '0.35rem 0', textAlign: 'center', fontWeight: 900, color: '#000000' }}>Qty</th>
+                <th style={{ padding: '0.35rem 0', textAlign: 'right', fontWeight: 900, color: '#000000' }}>Rate</th>
+                <th style={{ padding: '0.35rem 0', textAlign: 'right', fontWeight: 900, color: '#000000' }}>Total</th>
               </tr>
             </thead>
             <tbody>
               {purchase.items.map((item: PurchaseItem) => (
-                <tr key={item.id} style={{ borderBottom: '1px dotted #e5e7eb' }}>
-                  <td style={{ padding: '0.35rem 0' }}>
-                    <div style={{ fontWeight: 600 }}>{item.product_name}</div>
-                    <code style={{ fontSize: '0.65rem', color: '#6b7280' }}>{item.product_sku}</code>
+                <tr key={item.id} style={{ borderBottom: '1px dotted #000000' }}>
+                  <td style={{ padding: '0.4rem 0' }}>
+                    <div style={{ fontWeight: 900, color: '#000000' }}>{item.product_name}</div>
+                    <code style={{ fontSize: '0.75rem', color: '#000000', fontWeight: 700 }}>{item.product_sku}</code>
                   </td>
-                  <td style={{ padding: '0.35rem 0', textAlign: 'center', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '0.4rem 0', textAlign: 'center', fontFamily: 'monospace', fontWeight: 800 }}>
                     {item.quantity}
                   </td>
-                  <td style={{ padding: '0.35rem 0', textAlign: 'right', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '0.4rem 0', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
                     {formatMoney(item.purchase_rate)}
                   </td>
-                  <td style={{ padding: '0.35rem 0', textAlign: 'right', fontWeight: 700, fontFamily: 'monospace' }}>
+                  <td style={{ padding: '0.4rem 0', textAlign: 'right', fontWeight: 900, fontFamily: 'monospace' }}>
                     {formatMoney(item.subtotal)}
                   </td>
                 </tr>
@@ -272,33 +269,33 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
           </table>
 
           {/* Totals Breakdown */}
-          <div style={{ borderTop: '1px dashed #9ca3af', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.75rem' }}>
+          <div style={{ borderTop: '1.5px dashed #000000', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8125rem', fontWeight: 700, color: '#000000' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Subtotal:</span>
-              <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.subtotal)}</span>
+              <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{currencySymbol} {formatMoney(purchase.subtotal)}</span>
             </div>
 
             {purchase.discount_amount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000' }}>
                 <span>Discount:</span>
-                <span style={{ fontFamily: 'monospace' }}>- {currencySymbol} {formatMoney(purchase.discount_amount)}</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>- {currencySymbol} {formatMoney(purchase.discount_amount)}</span>
               </div>
             )}
 
             {purchase.tax_amount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span>Tax / Freight:</span>
-                <span style={{ fontFamily: 'monospace' }}>+ {currencySymbol} {formatMoney(purchase.tax_amount)}</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>+ {currencySymbol} {formatMoney(purchase.tax_amount)}</span>
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: '0.9375rem', marginTop: '0.25rem', borderTop: '1px solid #111827', paddingTop: '0.35rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: '1.0625rem', marginTop: '0.25rem', borderTop: '2px solid #000000', paddingTop: '0.4rem', color: '#000000' }}>
               <span>GRAND TOTAL:</span>
               <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.grand_total)}</span>
             </div>
 
             {(purchase.returned_amount ?? 0) > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#b45309', fontWeight: 700, marginTop: '0.15rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000', fontWeight: 800, marginTop: '0.15rem' }}>
                 <span>Returned Merchandise:</span>
                 <span style={{ fontFamily: 'monospace' }}>- {currencySymbol} {formatMoney(purchase.returned_amount)}</span>
               </div>
@@ -306,12 +303,12 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
 
             {isDraft ? (
               <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem', color: '#4b5563' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem', color: '#000000' }}>
                   <span>Paid Amount:</span>
-                  <span style={{ fontFamily: 'monospace' }}>{currencySymbol} 0.00 <span style={{ fontSize: '0.65rem', color: '#b45309', fontWeight: 600 }}>(Draft - Unpaid)</span></span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{currencySymbol} 0.00 <span style={{ fontSize: '0.75rem', color: '#000000', fontWeight: 900 }}>(Draft - Unpaid)</span></span>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#b45309' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, color: '#000000', fontSize: '0.875rem' }}>
                   <span>Estimated Payable:</span>
                   <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.grand_total)}</span>
                 </div>
@@ -320,10 +317,10 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
                   <span>Paid Amount:</span>
-                  <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.paid_amount)}</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{currencySymbol} {formatMoney(purchase.paid_amount)}</span>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: purchase.payable_amount > 0 ? '#b45309' : '#15803d' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 900, color: '#000000', fontSize: '0.875rem' }}>
                   <span>Balance Payable:</span>
                   <span style={{ fontFamily: 'monospace' }}>{currencySymbol} {formatMoney(purchase.payable_amount)}</span>
                 </div>
@@ -333,29 +330,29 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
 
           {/* Notes */}
           {purchase.notes && (
-            <div style={{ fontSize: '0.6875rem', marginTop: '0.75rem', borderTop: '1px dashed #9ca3af', paddingTop: '0.5rem', color: '#4b5563' }}>
+            <div style={{ fontSize: '0.75rem', marginTop: '0.75rem', borderTop: '1.5px dashed #000000', paddingTop: '0.5rem', color: '#000000', fontWeight: 700 }}>
               <strong>Notes / Terms:</strong> {purchase.notes}
             </div>
           )}
 
           {/* Dual Signature Blocks */}
-          <div style={{ marginTop: '1.75rem', paddingTop: '0.75rem', borderTop: '1px dashed #9ca3af' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', color: '#374151' }}>
+          <div style={{ marginTop: '1.75rem', paddingTop: '0.75rem', borderTop: '1.5px dashed #000000' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#000000', fontWeight: 800 }}>
               <div style={{ textAlign: 'center', width: '45%' }}>
-                <div style={{ borderBottom: '1px solid #111827', marginBottom: '0.25rem', height: '1.25rem' }}></div>
+                <div style={{ borderBottom: '1.5px solid #000000', marginBottom: '0.25rem', height: '1.25rem' }}></div>
                 <strong>Prepared By</strong>
               </div>
               <div style={{ textAlign: 'center', width: '45%' }}>
-                <div style={{ borderBottom: '1px solid #111827', marginBottom: '0.25rem', height: '1.25rem' }}></div>
+                <div style={{ borderBottom: '1.5px solid #000000', marginBottom: '0.25rem', height: '1.25rem' }}></div>
                 <strong>Authorized Receiver</strong>
               </div>
             </div>
           </div>
 
           {/* Slip Footer */}
-          <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.6875rem', color: '#6b7280' }}>
+          <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.75rem', color: '#000000', fontWeight: 800 }}>
             <div>System Generated Purchase Order • ApexPOS</div>
-            <div style={{ fontSize: '0.625rem', marginTop: '0.15rem' }}>Printed on: {new Date().toLocaleString()}</div>
+            <div style={{ fontSize: '0.7rem', marginTop: '0.15rem' }}>Printed on: {new Date().toLocaleString()}</div>
           </div>
         </div>
 

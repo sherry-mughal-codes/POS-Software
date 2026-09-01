@@ -360,13 +360,15 @@ button:active:not(:disabled) svg.lucide-refresh-cw {
     padding: 0 !important;
     background: #ffffff !important;
     color: #000000 !important;
+    font-weight: 700 !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     overflow: visible !important;
+    -webkit-font-smoothing: antialiased !important;
   }
 
-  /* Hide everything on screen except the thermal receipt */
+  /* Hide everything on screen except printable receipts/slips */
   body * {
     visibility: hidden !important;
   }
@@ -374,12 +376,29 @@ button:active:not(:disabled) svg.lucide-refresh-cw {
   #pos-thermal-receipt,
   #pos-thermal-receipt *,
   .pos-thermal-receipt,
-  .pos-thermal-receipt * {
+  .pos-thermal-receipt *,
+  #customer-warranty-slip,
+  #customer-warranty-slip *,
+  #supplier-warranty-slip,
+  #supplier-warranty-slip *,
+  #po-thermal-slip,
+  #po-thermal-slip *,
+  #customer-statement-thermal-slip,
+  #customer-statement-thermal-slip *,
+  #supplier-statement-thermal-slip,
+  #supplier-statement-thermal-slip * {
     visibility: visible !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
   }
 
   #pos-thermal-receipt,
-  .pos-thermal-receipt {
+  .pos-thermal-receipt,
+  #customer-warranty-slip,
+  #supplier-warranty-slip,
+  #po-thermal-slip,
+  #customer-statement-thermal-slip,
+  #supplier-statement-thermal-slip {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
@@ -393,10 +412,17 @@ button:active:not(:disabled) svg.lucide-refresh-cw {
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    font-family: 'Courier New', Courier, monospace !important;
-    font-size: 11px !important;
-    line-height: 1.3 !important;
+    font-family: 'Courier New', Courier, monospace, system-ui, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
     z-index: 999999 !important;
+  }
+
+  /* Force strong bold on headings, values, and total lines */
+  h1, h2, h3, h4, strong, b, th {
+    font-weight: 900 !important;
+    color: #000000 !important;
   }
 
   /* Hide interactive modal controls from print */

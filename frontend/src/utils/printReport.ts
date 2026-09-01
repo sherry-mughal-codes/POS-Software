@@ -71,19 +71,23 @@ export const printReportElement = (
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            color: #000000 !important;
+            font-weight: 700 !important;
           }
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            color: #0f172a;
+            color: #000000;
             background: #ffffff;
-            font-size: 9.5pt;
-            line-height: 1.4;
+            font-size: 10.5pt;
+            font-weight: 700;
+            line-height: 1.45;
             padding: 14mm 14mm 14mm 14mm !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            -webkit-font-smoothing: antialiased !important;
           }
           .report-header {
-            border-bottom: 2px solid #0f172a;
+            border-bottom: 2.5px solid #000000;
             padding-bottom: 8px;
             margin-bottom: 12px;
             display: flex;
@@ -91,29 +95,31 @@ export const printReportElement = (
             align-items: flex-start;
           }
           .store-name {
-            font-size: 15pt;
-            font-weight: 800;
-            color: #0f172a;
+            font-size: 16pt;
+            font-weight: 900;
+            color: #000000;
             text-transform: uppercase;
             letter-spacing: -0.02em;
           }
           .store-contact {
-            font-size: 8.5pt;
-            color: #475569;
+            font-size: 9.5pt;
+            color: #000000;
+            font-weight: 700;
             margin-top: 2px;
           }
           .report-meta {
             text-align: right;
           }
           .report-title-badge {
-            font-size: 11pt;
-            font-weight: 800;
-            color: #0f172a;
+            font-size: 12pt;
+            font-weight: 900;
+            color: #000000;
             text-transform: uppercase;
           }
           .report-period {
-            font-size: 8.5pt;
-            color: #475569;
+            font-size: 9.5pt;
+            color: #000000;
+            font-weight: 700;
             margin-top: 2px;
           }
           .kpi-grid {
@@ -123,21 +129,21 @@ export const printReportElement = (
           }
           .kpi-box {
             flex: 1;
-            border: 1px solid #cbd5e1;
-            background-color: #f8fafc;
+            border: 1.5px solid #000000;
+            background-color: #ffffff;
             border-radius: 4px;
-            padding: 7px 9px;
+            padding: 8px 10px;
           }
           .kpi-title {
-            font-size: 7.5pt;
-            font-weight: 700;
+            font-size: 8.5pt;
+            font-weight: 800;
             text-transform: uppercase;
-            color: #64748b;
+            color: #000000;
           }
           .kpi-value {
-            font-size: 11.5pt;
-            font-weight: 800;
-            color: #0f172a;
+            font-size: 13pt;
+            font-weight: 900;
+            color: #000000;
             font-family: 'JetBrains Mono', 'Courier New', monospace;
             margin-top: 2px;
           }
@@ -145,27 +151,29 @@ export const printReportElement = (
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 10px;
-            font-size: 9pt;
+            font-size: 10pt;
+            font-weight: 700;
           }
           th {
             background-color: #f1f5f9;
-            color: #1e293b;
-            font-weight: 700;
+            color: #000000;
+            font-weight: 900;
             text-align: left;
-            padding: 6px 8px;
-            border-top: 1px solid #cbd5e1;
-            border-bottom: 1.5px solid #94a3b8;
-            font-size: 8.5pt;
+            padding: 7px 9px;
+            border-top: 1.5px solid #000000;
+            border-bottom: 2px solid #000000;
+            font-size: 9.5pt;
             text-transform: uppercase;
             letter-spacing: 0.02em;
           }
           td {
-            padding: 5.5px 8px;
-            border-bottom: 1px solid #e2e8f0;
-            color: #1e293b;
+            padding: 6px 9px;
+            border-bottom: 1px solid #000000;
+            color: #000000;
+            font-weight: 700;
           }
           tr:nth-child(even) td {
-            background-color: #fafafa;
+            background-color: #f8fafc;
           }
           .text-right {
             text-align: right;
@@ -175,20 +183,22 @@ export const printReportElement = (
           }
           .font-mono {
             font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-weight: 700;
           }
           .badge {
             display: inline-block;
             padding: 2px 6px;
             border-radius: 3px;
-            font-size: 7.5pt;
-            font-weight: 700;
-            border: 1px solid #cbd5e1;
+            font-size: 8.5pt;
+            font-weight: 800;
+            border: 1.5px solid #000000;
+            color: #000000;
           }
           .card-title-bar, .card-header h3, h3 {
-            font-size: 10pt;
-            font-weight: 700;
-            color: #0f172a;
-            border-bottom: 1px solid #e2e8f0;
+            font-size: 11pt;
+            font-weight: 900;
+            color: #000000;
+            border-bottom: 1.5px solid #000000;
             padding-bottom: 4px;
             margin-bottom: 6px;
             margin-top: 8px;

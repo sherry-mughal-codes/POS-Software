@@ -55,99 +55,100 @@ export const CustomerClaimSlipModal: React.FC<CustomerClaimSlipModalProps> = ({
           className="pos-thermal-receipt"
           style={{
             backgroundColor: '#ffffff',
-            color: '#111827',
+            color: '#000000',
             padding: '1.25rem 1rem',
             borderRadius: '0.5rem',
-            fontFamily: "'Courier New', Courier, monospace",
-            fontSize: is58 ? '0.75rem' : '0.8125rem',
+            fontFamily: "'Courier New', Courier, monospace, system-ui, sans-serif",
+            fontSize: is58 ? '0.8125rem' : '0.875rem',
+            fontWeight: 700,
             lineHeight: 1.4,
             boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
             width: '100%',
-            maxWidth: is58 ? '320px' : '380px',
+            maxWidth: is58 ? '330px' : '400px',
             margin: '0 auto',
           }}
         >
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '0.875rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.75rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '0.875rem', borderBottom: '1.5px dashed #000000', paddingBottom: '0.75rem' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.35rem' }}>
-              <ShieldCheck size={is58 ? 18 : 22} color="#059669" />
+              <ShieldCheck size={is58 ? 20 : 24} color="#000000" />
             </div>
-            <div style={{ fontSize: is58 ? '1rem' : '1.125rem', fontWeight: 900, letterSpacing: '0.05em' }}>{companyName}</div>
-            {companyAddress && <div style={{ fontSize: '0.6875rem', color: '#4b5563', marginTop: '0.125rem' }}>{companyAddress}</div>}
-            <div style={{ fontSize: '0.6875rem', color: '#4b5563' }}>
+            <div style={{ fontSize: is58 ? '1.125rem' : '1.25rem', fontWeight: 900, letterSpacing: '0.05em', color: '#000000' }}>{companyName}</div>
+            {companyAddress && <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700, marginTop: '0.125rem' }}>{companyAddress}</div>}
+            <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>
               {companyPhone && `Tel: ${companyPhone}`}{taxId && ` | NTN: ${taxId}`}
             </div>
-            <div style={{ fontWeight: 700, fontSize: '0.75rem', marginTop: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <div style={{ fontWeight: 900, fontSize: '0.875rem', marginTop: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#000000' }}>
               *** WARRANTY REPLACEMENT SLIP ***
             </div>
           </div>
 
           {/* Claim Meta */}
-          <div style={{ fontSize: '0.75rem', marginBottom: '0.75rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.625rem' }}>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.75rem', borderBottom: '1.5px dashed #000000', paddingBottom: '0.625rem', color: '#000000' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Claim #:</span>
-              <strong style={{ fontWeight: 900 }}>{claim.claim_number}</strong>
+              <strong style={{ fontWeight: 900, fontSize: '0.875rem' }}>{claim.claim_number}</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.125rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.2rem' }}>
               <span>Date:</span>
-              <span>{claim.claim_date}</span>
+              <span style={{ fontWeight: 800 }}>{claim.claim_date}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.125rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.2rem' }}>
               <span>Invoice #:</span>
-              <span>{claim.sale_invoice_number}</span>
+              <span style={{ fontWeight: 800 }}>{claim.sale_invoice_number}</span>
             </div>
           </div>
 
           {/* Customer */}
-          <div style={{ fontSize: '0.75rem', marginBottom: '0.625rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.625rem' }}>
-            <div style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.6875rem', color: '#6b7280', marginBottom: '0.2rem' }}>Customer</div>
-            <div style={{ fontWeight: 700 }}>{claim.customer_name}</div>
-            {claim.customer_phone && <div style={{ color: '#4b5563' }}>{claim.customer_phone}</div>}
+          <div style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.625rem', borderBottom: '1.5px dashed #000000', paddingBottom: '0.625rem', color: '#000000' }}>
+            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '0.75rem', color: '#000000', marginBottom: '0.2rem' }}>Customer</div>
+            <div style={{ fontWeight: 900, fontSize: '0.875rem' }}>{claim.customer_name}</div>
+            {claim.customer_phone && <div style={{ color: '#000000', fontWeight: 700 }}>{claim.customer_phone}</div>}
           </div>
 
           {/* Items */}
-          <div style={{ fontSize: '0.75rem', marginBottom: '0.625rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.625rem' }}>
-            <div style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.6875rem', color: '#6b7280', marginBottom: '0.35rem' }}>Replacement Details</div>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.625rem', borderBottom: '1.5px dashed #000000', paddingBottom: '0.625rem', color: '#000000' }}>
+            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '0.75rem', color: '#000000', marginBottom: '0.35rem' }}>Replacement Details</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.125rem' }}>
-              <span style={{ color: '#6b7280', fontSize: '0.6875rem' }}>DEFECTIVE RETURNED:</span>
+              <span style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 800 }}>DEFECTIVE RETURNED:</span>
             </div>
-            <div style={{ fontWeight: 700, color: '#dc2626' }}>{claim.claimed_product_name}</div>
-            <div style={{ fontSize: '0.6875rem', color: '#6b7280' }}>SKU: {claim.claimed_product_sku} | Qty: {claim.quantity}</div>
+            <div style={{ fontWeight: 900, color: '#000000', fontSize: '0.875rem' }}>{claim.claimed_product_name}</div>
+            <div style={{ fontSize: '0.75rem', color: '#000000', fontWeight: 700 }}>SKU: {claim.claimed_product_sku} | Qty: {claim.quantity}</div>
 
-            <div style={{ borderTop: '1px dotted #e5e7eb', margin: '0.375rem 0' }} />
+            <div style={{ borderTop: '1px solid #000000', margin: '0.4rem 0' }} />
 
-            <div style={{ color: '#6b7280', fontSize: '0.6875rem' }}>REPLACEMENT ISSUED:</div>
-            <div style={{ fontWeight: 700, color: '#15803d' }}>{claim.replacement_product_name}</div>
-            <div style={{ fontSize: '0.6875rem', color: '#6b7280' }}>SKU: {claim.replacement_product_sku} | Qty: {claim.quantity}</div>
+            <div style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 800 }}>REPLACEMENT ISSUED:</div>
+            <div style={{ fontWeight: 900, color: '#000000', fontSize: '0.875rem' }}>{claim.replacement_product_name}</div>
+            <div style={{ fontSize: '0.75rem', color: '#000000', fontWeight: 700 }}>SKU: {claim.replacement_product_sku} | Qty: {claim.quantity}</div>
           </div>
 
           {/* Supplier & Warranty */}
-          <div style={{ fontSize: '0.75rem', marginBottom: '0.625rem', borderBottom: '1px dashed #9ca3af', paddingBottom: '0.625rem' }}>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.625rem', borderBottom: '1.5px dashed #000000', paddingBottom: '0.625rem', color: '#000000' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#6b7280' }}>Supplier:</span>
-              <span style={{ fontWeight: 600 }}>{claim.supplier_company || claim.supplier_name}</span>
+              <span style={{ color: '#000000' }}>Supplier:</span>
+              <span style={{ fontWeight: 800 }}>{claim.supplier_company || claim.supplier_name}</span>
             </div>
             {claim.warranty_expiry_date && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.125rem' }}>
-                <span style={{ color: '#6b7280' }}>Warranty Expiry:</span>
-                <span style={{ fontWeight: 600 }}>{claim.warranty_expiry_date}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+                <span style={{ color: '#000000' }}>Warranty Expiry:</span>
+                <span style={{ fontWeight: 800 }}>{claim.warranty_expiry_date}</span>
               </div>
             )}
             {claim.notes && (
-              <div style={{ marginTop: '0.375rem', fontSize: '0.6875rem', color: '#92400e', backgroundColor: '#fef3c7', border: '1px solid #fde68a', padding: '0.25rem 0.375rem', borderRadius: '0.25rem' }}>
+              <div style={{ marginTop: '0.375rem', fontSize: '0.75rem', color: '#000000', fontWeight: 700, border: '1px solid #000000', padding: '0.35rem', borderRadius: '0.25rem' }}>
                 Note: {claim.notes}
               </div>
             )}
           </div>
 
           {/* Signatures */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.6875rem', color: '#6b7280' }}>
-            <div style={{ borderTop: '1px solid #d1d5db', paddingTop: '0.375rem' }}>Customer Signature</div>
-            <div style={{ borderTop: '1px solid #d1d5db', paddingTop: '0.375rem' }}>Store Authorized</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', paddingTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: '#000000', fontWeight: 800 }}>
+            <div style={{ borderTop: '1.5px solid #000000', paddingTop: '0.375rem' }}>Customer Signature</div>
+            <div style={{ borderTop: '1.5px solid #000000', paddingTop: '0.375rem' }}>Store Authorized</div>
           </div>
 
           {/* Footer */}
-          <div style={{ textAlign: 'center', marginTop: '0.875rem', borderTop: '1px dashed #9ca3af', paddingTop: '0.625rem', fontSize: '0.6875rem', color: '#9ca3af' }}>
+          <div style={{ textAlign: 'center', marginTop: '0.875rem', borderTop: '1.5px dashed #000000', paddingTop: '0.625rem', fontSize: '0.75rem', color: '#000000', fontWeight: 800 }}>
             Processed per standard warranty terms. Thank you.
           </div>
         </div>

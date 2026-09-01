@@ -91,6 +91,8 @@ export const printPayrollSlip = (
               box-sizing: border-box;
               margin: 0;
               padding: 0;
+              color: #000000 !important;
+              font-weight: 700 !important;
             }
             body {
               width: ${paperWidth};
@@ -98,47 +100,54 @@ export const printPayrollSlip = (
               min-width: ${paperWidth};
               margin: 0 auto;
               padding: 2mm 3mm 8mm 3mm;
-              font-family: 'Courier New', Courier, monospace, system-ui;
-              font-size: ${paperWidth === '58mm' ? '10.5px' : '12px'};
-              line-height: 1.35;
+              font-family: 'Courier New', Courier, monospace, system-ui, sans-serif;
+              font-size: ${paperWidth === '58mm' ? '11.5px' : '13px'};
+              line-height: 1.4;
               color: #000000;
               background: #ffffff;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
+              -webkit-font-smoothing: antialiased;
             }
             .divider {
-              border-top: 1px dashed #000000;
+              border-top: 1.5px dashed #000000;
               margin: 6px 0;
             }
             .row {
               display: flex;
               justify-content: space-between;
-              padding: 1.5px 0;
+              padding: 2px 0;
+              font-size: inherit;
             }
             .title {
               text-align: center;
               font-weight: 900;
-              font-size: ${paperWidth === '58mm' ? '13px' : '15px'};
+              font-size: ${paperWidth === '58mm' ? '14px' : '16px'};
               text-transform: uppercase;
+              color: #000000;
             }
             .subtitle {
               text-align: center;
-              font-size: ${paperWidth === '58mm' ? '9.5px' : '11px'};
+              font-size: ${paperWidth === '58mm' ? '10.5px' : '12px'};
               margin-top: 2px;
+              color: #000000;
+              font-weight: 700;
             }
             .badge {
               text-align: center;
-              font-weight: 800;
-              font-size: 11px;
+              font-weight: 900;
+              font-size: ${paperWidth === '58mm' ? '11.5px' : '13px'};
               margin: 4px 0;
-              padding: 2px;
-              border: 1px solid #000000;
+              padding: 3px;
+              border: 1.5px solid #000000;
+              color: #000000;
             }
             .total-box {
-              border-top: 1px solid #000000;
-              border-bottom: 1px solid #000000;
-              padding: 4px 0;
-              margin: 4px 0;
+              border-top: 2px solid #000000;
+              border-bottom: 2px solid #000000;
+              padding: 5px 0;
+              margin: 5px 0;
+              color: #000000;
             }
           </style>
         </head>

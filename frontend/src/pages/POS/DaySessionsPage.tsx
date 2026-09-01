@@ -21,14 +21,10 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
-import {
-  POSDaySession,
-  XReportData,
-  ZReportData,
-  DaySessionsReport,
-} from '../../types/daySession';
+import { POSDaySession, XReportData, ZReportData, DaySessionsReport } from '../../types/daySession';
 import { daySessionService } from '../../services/daySessionService';
 import { useToast } from '../../context/ToastContext';
+import { printThermalElement } from '../../utils/printReceipt';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -940,79 +936,81 @@ export const DaySessionsPage: React.FC = () => {
           maxWidth="560px"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ borderBottom: '2px solid var(--border-medium)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>ApexPOS Retail Financial Core</h3>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Operational X-Report (Non-Closing Snapshot)</div>
+            <div id="day-session-x-report-slip" className="pos-thermal-receipt" style={{ backgroundColor: '#ffffff', color: '#000000', padding: '1rem', borderRadius: '0.5rem', fontFamily: "'Courier New', Courier, monospace, system-ui, sans-serif", fontSize: '0.875rem', fontWeight: 700, lineHeight: 1.4 }}>
+              <div style={{ borderBottom: '1.5px dashed #000000', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#000000', margin: 0 }}>ApexPOS Retail Financial Core</h3>
+                  <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>Operational X-Report (Non-Closing Snapshot)</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <strong style={{ fontWeight: 900, color: '#000000', fontSize: '0.9375rem' }}>{liveXReport.session_number}</strong>
+                  <div style={{ fontSize: '0.75rem', color: '#000000', fontWeight: 700 }}>Generated: {new Date().toLocaleTimeString()}</div>
+                </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <code style={{ fontWeight: 800, color: 'var(--primary-400)' }}>{liveXReport.session_number}</code>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>Generated: {new Date().toLocaleTimeString()}</div>
-              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', fontWeight: 700, color: '#000000', border: '1.5px solid #000000' }}>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 800 }}>Opening Cash Drawer Float</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>
+                      Rs. {formatMoney(liveXReport.opening_cash)}
+                    </td>
+                  </tr>
+
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Gross Sales Subtotal</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                      Rs. {formatMoney(liveXReport.sales.gross_sales)}
+                    </td>
+                  </tr>
+
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Cash Sales Received</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>
+                      + Rs. {formatMoney(liveXReport.sales.cash_sales)}
+                    </td>
+                  </tr>
+
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Card Sales (Non-Drawer)</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                      Rs. {formatMoney(liveXReport.sales.card_sales)}
+                    </td>
+                  </tr>
+
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Credit Sales / Receivables (Non-Drawer)</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                      Rs. {formatMoney(liveXReport.sales.credit_sales)}
+                    </td>
+                  </tr>
+
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Customer Payments Collected (Cash)</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>
+                      + Rs. {formatMoney(liveXReport.customer_payments.cash)}
+                    </td>
+                  </tr>
+
+                  <tr style={{ borderBottom: '1.5px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Customer Cash Refunds</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>
+                      - Rs. {formatMoney(liveXReport.returns.cash_refunds)}
+                    </td>
+                  </tr>
+
+                  <tr style={{ borderTop: '2px solid #000000' }}>
+                    <td style={{ padding: '0.625rem 0.75rem', fontWeight: 900, fontSize: '1rem' }}>Expected Drawer Cash Right Now</td>
+                    <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900, fontSize: '1.2rem' }}>
+                      Rs. {formatMoney(liveXReport.cash_drawer.expected_cash)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', border: '1px solid var(--border-subtle)' }}>
-              <tbody>
-                <tr style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700 }}>Opening Cash Drawer Float</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                    Rs. {formatMoney(liveXReport.opening_cash)}
-                  </td>
-                </tr>
-
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem' }}>Gross Sales Subtotal</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                    Rs. {formatMoney(liveXReport.sales.gross_sales)}
-                  </td>
-                </tr>
-
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--success)' }}>Cash Sales Received</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>
-                    + Rs. {formatMoney(liveXReport.sales.cash_sales)}
-                  </td>
-                </tr>
-
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-muted)' }}>Card Sales (Non-Drawer)</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                    Rs. {formatMoney(liveXReport.sales.card_sales)}
-                  </td>
-                </tr>
-
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-muted)' }}>Credit Sales / Receivables (Non-Drawer)</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                    Rs. {formatMoney(liveXReport.sales.credit_sales)}
-                  </td>
-                </tr>
-
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--success)' }}>Customer Payments Collected (Cash)</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>
-                    + Rs. {formatMoney(liveXReport.customer_payments.cash)}
-                  </td>
-                </tr>
-
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--danger)' }}>Customer Cash Refunds</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>
-                    - Rs. {formatMoney(liveXReport.returns.cash_refunds)}
-                  </td>
-                </tr>
-
-                <tr style={{ backgroundColor: 'var(--bg-card)', borderTop: '2px solid var(--border-medium)' }}>
-                  <td style={{ padding: '0.625rem 0.75rem', fontWeight: 800, fontSize: '0.9375rem' }}>Expected Drawer Cash Right Now</td>
-                  <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900, fontSize: '1.125rem', color: 'var(--primary-400)' }}>
-                    Rs. {formatMoney(liveXReport.cash_drawer.expected_cash)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
-              <Button variant="outline" onClick={() => window.print()} icon={<Printer size={14} />}>
+              <Button variant="outline" onClick={() => printThermalElement('day-session-x-report-slip', { paperWidth: '80mm', title: `X_Report_${liveXReport.session_number}` })} icon={<Printer size={14} />}>
                 Print X-Report
               </Button>
               <Button variant="primary" onClick={() => setIsXReportModalOpen(false)}>
@@ -1032,84 +1030,85 @@ export const DaySessionsPage: React.FC = () => {
           maxWidth="580px"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ borderBottom: '2px solid var(--border-medium)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>ApexPOS Retail Financial Core</h3>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Official Daily Z-Report (Closed & Audited)</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <code style={{ fontWeight: 800, color: 'var(--primary-400)' }}>{viewingZReport.session_number}</code>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>Closed on: {viewingZReport.closing_audit.closed_at ? new Date(viewingZReport.closing_audit.closed_at).toLocaleString() : viewingZReport.date}</div>
-              </div>
-            </div>
-
-            {/* Reconciliation Comparison Callout */}
-            <div style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: '0.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', textAlign: 'center' }}>
-              <div>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Expected Drawer Cash</div>
-                <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(viewingZReport.closing_audit.expected_cash)}</div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Counted Actual Cash</div>
-                <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>Rs. {formatMoney(viewingZReport.closing_audit.actual_cash)}</div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600 }}>Variance / Difference</div>
-                <div style={{
-                  fontSize: '1.125rem',
-                  fontWeight: 900,
-                  fontFamily: 'var(--font-mono)',
-                  color: viewingZReport.closing_audit.cash_difference === 0 ? 'var(--success)' : 'var(--danger)',
-                }}>
-                  {viewingZReport.closing_audit.cash_difference > 0
-                    ? `+ Rs. ${formatMoney(viewingZReport.closing_audit.cash_difference)}`
-                    : viewingZReport.closing_audit.cash_difference < 0
-                    ? `- Rs. ${formatMoney(Math.abs(viewingZReport.closing_audit.cash_difference))}`
-                    : 'Balanced (Rs. 0)'}
+            <div id="day-session-z-report-slip" className="pos-thermal-receipt" style={{ backgroundColor: '#ffffff', color: '#000000', padding: '1rem', borderRadius: '0.5rem', fontFamily: "'Courier New', Courier, monospace, system-ui, sans-serif", fontSize: '0.875rem', fontWeight: 700, lineHeight: 1.4 }}>
+              <div style={{ borderBottom: '1.5px dashed #000000', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#000000', margin: 0 }}>ApexPOS Retail Financial Core</h3>
+                  <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>Official Daily Z-Report (Closed & Audited)</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <strong style={{ fontWeight: 900, color: '#000000', fontSize: '0.9375rem' }}>{viewingZReport.session_number}</strong>
+                  <div style={{ fontSize: '0.75rem', color: '#000000', fontWeight: 700 }}>Closed on: {viewingZReport.closing_audit.closed_at ? new Date(viewingZReport.closing_audit.closed_at).toLocaleString() : viewingZReport.date}</div>
                 </div>
               </div>
-            </div>
 
-            {viewingZReport.closing_audit.difference_reason && (
-              <div style={{ padding: '0.625rem 0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '0.375rem', fontSize: '0.75rem' }}>
-                <strong>Discrepancy Reason:</strong> {viewingZReport.closing_audit.difference_reason}
+              {/* Reconciliation Comparison Callout */}
+              <div style={{ padding: '0.875rem 1rem', border: '1.5px solid #000000', borderRadius: '0.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', textAlign: 'center', marginBottom: '0.75rem', color: '#000000' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>Expected Drawer Cash</div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 900, fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(viewingZReport.closing_audit.expected_cash)}</div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>Counted Actual Cash</div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 900, fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(viewingZReport.closing_audit.actual_cash)}</div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>Variance / Diff</div>
+                  <div style={{
+                    fontSize: '1.125rem',
+                    fontWeight: 900,
+                    fontFamily: 'var(--font-mono)',
+                  }}>
+                    {viewingZReport.closing_audit.cash_difference > 0
+                      ? `+ Rs. ${formatMoney(viewingZReport.closing_audit.cash_difference)}`
+                      : viewingZReport.closing_audit.cash_difference < 0
+                      ? `- Rs. ${formatMoney(Math.abs(viewingZReport.closing_audit.cash_difference))}`
+                      : 'Balanced (Rs. 0)'}
+                  </div>
+                </div>
               </div>
-            )}
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', border: '1px solid var(--border-subtle)' }}>
-              <tbody>
-                <tr style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700 }}>Starting Drawer Opening Float</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(viewingZReport.opening_cash)}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem' }}>Gross Invoiced Sales ({viewingZReport.sales.invoices_count} sales)</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(viewingZReport.sales.gross_sales)}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--success)' }}>Cash Sales Received</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>+ Rs. {formatMoney(viewingZReport.sales.cash_sales)}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--success)' }}>Customer Payments in Cash</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)' }}>+ Rs. {formatMoney(viewingZReport.customer_payments.cash)}</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.5rem 0.75rem', color: 'var(--danger)' }}>Customer Refunds Paid in Cash</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>- Rs. {formatMoney(viewingZReport.returns.cash_refunds)}</td>
-                </tr>
-              </tbody>
-            </table>
+              {viewingZReport.closing_audit.difference_reason && (
+                <div style={{ padding: '0.625rem 0.75rem', border: '1.5px solid #000000', borderRadius: '0.375rem', fontSize: '0.8125rem', fontWeight: 700, color: '#000000', marginBottom: '0.75rem' }}>
+                  <strong>Discrepancy Reason:</strong> {viewingZReport.closing_audit.difference_reason}
+                </div>
+              )}
 
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Closed by: <strong>{viewingZReport.closing_audit.closed_by}</strong></span>
-              <span>Audited Status: <strong>IMMUTABLE (Z-REPORT)</strong></span>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', fontWeight: 700, color: '#000000', border: '1.5px solid #000000', marginBottom: '0.75rem' }}>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 800 }}>Starting Drawer Opening Float</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>Rs. {formatMoney(viewingZReport.opening_cash)}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Gross Invoiced Sales ({viewingZReport.sales.invoices_count} sales)</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>Rs. {formatMoney(viewingZReport.sales.gross_sales)}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Cash Sales Received</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>+ Rs. {formatMoney(viewingZReport.sales.cash_sales)}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Customer Payments in Cash</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>+ Rs. {formatMoney(viewingZReport.customer_payments.cash)}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Customer Refunds Paid in Cash</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>- Rs. {formatMoney(viewingZReport.returns.cash_refunds)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 800, display: 'flex', justifyContent: 'space-between' }}>
+                <span>Closed by: <strong>{viewingZReport.closing_audit.closed_by}</strong></span>
+                <span>Audited Status: <strong>IMMUTABLE (Z-REPORT)</strong></span>
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
-              <Button variant="outline" onClick={() => window.print()} icon={<Printer size={14} />}>
+              <Button variant="outline" onClick={() => printThermalElement('day-session-z-report-slip', { paperWidth: '80mm', title: `Z_Report_${viewingZReport.session_number}` })} icon={<Printer size={14} />}>
                 Print Z-Report
               </Button>
               <Button variant="primary" onClick={() => setViewingZReport(null)}>

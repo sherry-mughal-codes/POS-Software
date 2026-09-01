@@ -61,6 +61,10 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           html, body {
             width: 100% !important;
@@ -70,19 +74,21 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
             max-height: none !important;
             overflow: visible !important;
             margin: 0 auto !important;
-            padding: 3mm 2mm !important;
-            font-family: 'Courier New', Courier, monospace, system-ui;
-            font-size: ${paperWidth === '58mm' ? '9px' : paperWidth === 'A4' ? '12px' : '10.5px'};
-            line-height: 1.35;
-            color: #000000;
-            background: #ffffff;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            padding: 3mm 2.5mm !important;
+            font-family: 'Courier New', Courier, monospace, system-ui, sans-serif !important;
+            font-size: ${paperWidth === '58mm' ? '11.5px' : paperWidth === 'A4' ? '14px' : '13px'} !important;
+            font-weight: 700 !important;
+            line-height: 1.4 !important;
+            color: #000000 !important;
+            background: #ffffff !important;
+            -webkit-font-smoothing: antialiased !important;
           }
           .pos-thermal-receipt,
           #customer-statement-thermal-slip,
           #supplier-statement-thermal-slip,
           #po-thermal-slip,
+          #customer-warranty-slip,
+          #supplier-warranty-slip,
           #pos-receipt-print-area {
             width: 100% !important;
             max-width: 100% !important;
@@ -95,6 +101,9 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
             max-height: none !important;
             overflow: visible !important;
             page-break-after: auto !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-size: ${paperWidth === '58mm' ? '11.5px' : paperWidth === 'A4' ? '14px' : '13px'} !important;
           }
           table {
             width: 100% !important;
@@ -103,19 +112,31 @@ export const printThermalElement = (elementId: string, options: ThermalPrintOpti
             table-layout: fixed;
             word-wrap: break-word;
             page-break-inside: auto !important;
+            font-weight: 700 !important;
           }
           th, td {
-            color: #000000;
+            color: #000000 !important;
+            font-weight: 700 !important;
             overflow-wrap: break-word;
             word-break: break-word;
+            font-size: inherit !important;
+          }
+          th {
+            font-weight: 900 !important;
+            border-bottom: 1.5px solid #000000 !important;
           }
           tr {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
+          h1, h2, h3, h4, strong, b {
+            font-weight: 900 !important;
+            color: #000000 !important;
+          }
           img {
             max-width: 100%;
             height: auto;
+            filter: contrast(150%) brightness(90%);
           }
           .no-print {
             display: none !important;

@@ -140,106 +140,110 @@ export const CustomerStatementSlipModal: React.FC<CustomerStatementSlipModalProp
         }}>
           <div
             id="customer-statement-thermal-slip"
+            className="pos-thermal-receipt"
             style={{
-              width: paperWidth === '58mm' ? '220px' : paperWidth === 'A4' ? '680px' : '320px',
+              width: paperWidth === '58mm' ? '230px' : paperWidth === 'A4' ? '700px' : '340px',
               backgroundColor: '#ffffff',
               color: '#000000',
-              padding: is58 ? '8px 6px' : isA4 ? '24px 20px' : '14px 10px',
-              fontFamily: "'Courier New', Courier, monospace, system-ui",
-              fontSize: is58 ? '10px' : isA4 ? '13px' : '11.5px',
-              lineHeight: 1.35,
+              padding: is58 ? '10px 8px' : isA4 ? '24px 20px' : '16px 12px',
+              fontFamily: "'Courier New', Courier, monospace, system-ui, sans-serif",
+              fontSize: is58 ? '11px' : isA4 ? '14px' : '12.5px',
+              fontWeight: 700,
+              lineHeight: 1.4,
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
               borderRadius: '2px',
             }}
           >
             {/* Store Header */}
-            <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-              <div style={{ fontSize: is58 ? '13px' : '15px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+            <div style={{ textAlign: 'center', marginBottom: '8px', color: '#000000' }}>
+              <div style={{ fontSize: is58 ? '14px' : '16px', fontWeight: 900, textTransform: 'uppercase', color: '#000000' }}>
                 {companyName || 'APEXPOS STORE'}
               </div>
               {companyAddress && (
-                <div style={{ fontSize: is58 ? '9px' : '10px', color: '#444', marginTop: '2px' }}>
+                <div style={{ fontSize: is58 ? '10.5px' : '12px', color: '#000000', fontWeight: 700, marginTop: '2px' }}>
                   {companyAddress}
                 </div>
               )}
               {companyPhone && (
-                <div style={{ fontSize: is58 ? '9px' : '10px', color: '#444' }}>
+                <div style={{ fontSize: is58 ? '10.5px' : '12px', color: '#000000', fontWeight: 700 }}>
                   Tel: {companyPhone}
                 </div>
               )}
               {taxId && (
-                <div style={{ fontSize: is58 ? '9px' : '10px', color: '#444' }}>
+                <div style={{ fontSize: is58 ? '10.5px' : '12px', color: '#000000', fontWeight: 700 }}>
                   NTN: {taxId}
                 </div>
               )}
-              <div style={{ margin: '6px 0 4px 0', borderBottom: '1px dashed #000' }} />
-              <div style={{ fontSize: is58 ? '11px' : '12.5px', fontWeight: 'bold', letterSpacing: '1px' }}>
+              <div style={{ margin: '6px 0 4px 0', borderBottom: '1.5px dashed #000000' }} />
+              <div style={{ fontSize: is58 ? '12px' : '14px', fontWeight: 900, letterSpacing: '1px', color: '#000000' }}>
                 STATEMENT OF ACCOUNT
               </div>
-              <div style={{ fontSize: '9px', color: '#666' }}>
+              <div style={{ fontSize: is58 ? '10px' : '11.5px', color: '#000000', fontWeight: 700 }}>
                 {startDate && endDate ? `${startDate} to ${endDate}` : `As of ${new Date().toISOString().split('T')[0]}`}
               </div>
-              <div style={{ margin: '4px 0 6px 0', borderBottom: '1px dashed #000' }} />
+              <div style={{ margin: '4px 0 6px 0', borderBottom: '1.5px dashed #000000' }} />
             </div>
 
             {/* Customer Details */}
-            <div style={{ marginBottom: '8px', fontSize: is58 ? '9.5px' : '11px' }}>
-              <div><strong>Customer:</strong> {customer.name}</div>
-              <div><strong>Account ID:</strong> {customer.customer_id}</div>
-              {customer.phone && <div><strong>Phone:</strong> {customer.phone}</div>}
-              {customer.address && <div><strong>Address:</strong> {customer.address}</div>}
+            <div style={{ marginBottom: '8px', fontSize: is58 ? '11px' : '12.5px', color: '#000000', fontWeight: 700 }}>
+              <div><strong style={{ fontWeight: 900 }}>Customer:</strong> {customer.name}</div>
+              <div><strong style={{ fontWeight: 900 }}>Account ID:</strong> {customer.customer_id}</div>
+              {customer.phone && <div><strong style={{ fontWeight: 900 }}>Phone:</strong> {customer.phone}</div>}
+              {customer.address && <div><strong style={{ fontWeight: 900 }}>Address:</strong> {customer.address}</div>}
             </div>
 
             {/* Summary Box */}
             <div style={{
-              border: '1px solid #000',
-              padding: '6px',
+              border: '1.5px solid #000000',
+              padding: '8px',
               marginBottom: '8px',
-              backgroundColor: '#fafafa',
-              fontSize: is58 ? '9.5px' : '11px',
+              backgroundColor: '#ffffff',
+              fontSize: is58 ? '11px' : '12.5px',
+              fontWeight: 700,
+              color: '#000000',
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                 <span>Opening Balance:</span>
-                <span style={{ fontWeight: 'bold' }}>{currencySymbol || 'Rs.'} {formatMoney(statement.summary.opening_balance || 0)}</span>
+                <span style={{ fontWeight: 900 }}>{currencySymbol || 'Rs.'} {formatMoney(statement.summary.opening_balance || 0)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                 <span>Total Invoiced (+):</span>
-                <span>{currencySymbol || 'Rs.'} {formatMoney(statement.summary.total_debit)}</span>
+                <span style={{ fontWeight: 800 }}>{currencySymbol || 'Rs.'} {formatMoney(statement.summary.total_debit)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                 <span>Total Payments (-):</span>
-                <span>{currencySymbol || 'Rs.'} {formatMoney(statement.summary.total_payments ?? statement.summary.total_credit)}</span>
+                <span style={{ fontWeight: 800 }}>{currencySymbol || 'Rs.'} {formatMoney(statement.summary.total_payments ?? statement.summary.total_credit)}</span>
               </div>
               {(statement.summary.total_returns ?? 0) > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                   <span>Sales Returns:</span>
-                  <span>{currencySymbol || 'Rs.'} {formatMoney(statement.summary.total_returns || 0)}</span>
+                  <span style={{ fontWeight: 800 }}>{currencySymbol || 'Rs.'} {formatMoney(statement.summary.total_returns || 0)}</span>
                 </div>
               )}
-              <div style={{ borderTop: '1px dashed #000', margin: '4px 0', paddingTop: '4px', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: is58 ? '10.5px' : '12px' }}>
+              <div style={{ borderTop: '1.5px dashed #000000', margin: '4px 0', paddingTop: '4px', display: 'flex', justifyContent: 'space-between', fontWeight: 900, fontSize: is58 ? '12px' : '13.5px', color: '#000000' }}>
                 <span>NET DUE BALANCE:</span>
                 <span>{currencySymbol || 'Rs.'} {formatMoney(closingBal)}</span>
               </div>
             </div>
 
             {/* Itemized Transactions Table */}
-            <div style={{ marginBottom: '8px' }}>
-              <div style={{ fontWeight: 'bold', fontSize: is58 ? '9px' : '10px', textTransform: 'uppercase', marginBottom: '4px', borderBottom: '1px solid #000', paddingBottom: '2px' }}>
+            <div style={{ marginBottom: '8px', color: '#000000' }}>
+              <div style={{ fontWeight: 900, fontSize: is58 ? '11px' : '12px', textTransform: 'uppercase', marginBottom: '4px', borderBottom: '1.5px solid #000000', paddingBottom: '2px', color: '#000000' }}>
                 Transaction History
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: is58 ? '8.5px' : '10px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: is58 ? '10px' : '11.5px', color: '#000000', fontWeight: 700 }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px dashed #666', textAlign: 'left' }}>
-                    <th style={{ width: '38%', padding: '2px 0' }}>Date/Ref</th>
-                    <th style={{ width: '20%', padding: '2px 0', textAlign: 'right' }}>Dr(+)</th>
-                    <th style={{ width: '20%', padding: '2px 0', textAlign: 'right' }}>Cr(-)</th>
-                    <th style={{ width: '22%', padding: '2px 0', textAlign: 'right' }}>Bal</th>
+                  <tr style={{ borderBottom: '1.5px solid #000000', textAlign: 'left' }}>
+                    <th style={{ width: '38%', padding: '3px 0', fontWeight: 900, color: '#000000' }}>Date/Ref</th>
+                    <th style={{ width: '20%', padding: '3px 0', textAlign: 'right', fontWeight: 900, color: '#000000' }}>Dr(+)</th>
+                    <th style={{ width: '20%', padding: '3px 0', textAlign: 'right', fontWeight: 900, color: '#000000' }}>Cr(-)</th>
+                    <th style={{ width: '22%', padding: '3px 0', textAlign: 'right', fontWeight: 900, color: '#000000' }}>Bal</th>
                   </tr>
                 </thead>
                 <tbody>
                   {statement.rows.length === 0 ? (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '6px 0', color: '#666' }}>
+                      <td colSpan={4} style={{ textAlign: 'center', padding: '6px 0', color: '#000000', fontWeight: 700 }}>
                         No transactions recorded
                       </td>
                     </tr>
@@ -247,23 +251,23 @@ export const CustomerStatementSlipModal: React.FC<CustomerStatementSlipModalProp
                     statement.rows.map((r, i) => (
                       <React.Fragment key={i}>
                         <tr style={{ verticalAlign: 'top' }}>
-                          <td style={{ width: '38%', padding: '2px 0', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                            <div style={{ fontWeight: 'bold' }}>{r.date}</div>
-                            <div style={{ color: '#444' }}>{r.reference}</div>
+                          <td style={{ width: '38%', padding: '3px 0', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                            <div style={{ fontWeight: 900 }}>{r.date}</div>
+                            <div style={{ color: '#000000', fontWeight: 700 }}>{r.reference}</div>
                           </td>
-                          <td style={{ padding: '2px 0', textAlign: 'right' }}>
+                          <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: 700 }}>
                             {r.debit > 0 ? formatMoney(r.debit) : '-'}
                           </td>
-                          <td style={{ padding: '2px 0', textAlign: 'right' }}>
+                          <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: 700 }}>
                             {r.credit > 0 ? formatMoney(r.credit) : '-'}
                           </td>
-                          <td style={{ padding: '2px 0', textAlign: 'right', fontWeight: 'bold' }}>
+                          <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: 900 }}>
                             {formatMoney(r.running_balance)}
                           </td>
                         </tr>
                         {r.description && (
-                          <tr style={{ borderBottom: '1px dotted #ccc' }}>
-                            <td colSpan={4} style={{ padding: '0 0 3px 0', fontSize: is58 ? '7.5px' : '9px', color: '#555' }}>
+                          <tr style={{ borderBottom: '1px dotted #000000' }}>
+                            <td colSpan={4} style={{ padding: '0 0 3px 0', fontSize: is58 ? '9px' : '10.5px', color: '#000000', fontWeight: 700 }}>
                               {r.description}
                             </td>
                           </tr>
@@ -276,10 +280,10 @@ export const CustomerStatementSlipModal: React.FC<CustomerStatementSlipModalProp
             </div>
 
             {/* Slip Footer */}
-            <div style={{ textAlign: 'center', marginTop: '10px', paddingTop: '6px', borderTop: '1px dashed #000', fontSize: is58 ? '8.5px' : '9.5px', color: '#333' }}>
+            <div style={{ textAlign: 'center', marginTop: '10px', paddingTop: '6px', borderTop: '1.5px dashed #000000', fontSize: is58 ? '10px' : '11px', color: '#000000', fontWeight: 800 }}>
               <div>This is a computer generated statement.</div>
-              <div style={{ marginTop: '2px', fontWeight: 'bold' }}>Thank you for your business!</div>
-              <div style={{ fontSize: '8px', color: '#888', marginTop: '3px' }}>
+              <div style={{ marginTop: '2px', fontWeight: 900 }}>Thank you for your business!</div>
+              <div style={{ fontSize: '9px', color: '#000000', marginTop: '3px', fontWeight: 700 }}>
                 Printed: {new Date().toLocaleString()}
               </div>
             </div>
