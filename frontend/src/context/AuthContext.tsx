@@ -61,10 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       refreshUser();
     };
     window.addEventListener('apexpos_permissions_updated', handlePermissionsUpdated);
-    window.addEventListener('focus', handlePermissionsUpdated);
     return () => {
       window.removeEventListener('apexpos_permissions_updated', handlePermissionsUpdated);
-      window.removeEventListener('focus', handlePermissionsUpdated);
     };
   }, [initializeAuth, refreshUser]);
 
@@ -90,20 +88,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const hasPermission = (permission: string): boolean => {
+  const hasPermission = useCallback((permission: string): boolean => {
     if (!user) return false;
     if (user.is_superuser && (!user.roles || user.roles.length === 0)) return true;
 
     // Check direct matching or app_label.codename matching
     const perms = user.effective_permissions || [];
     return perms.some((p) => p === permission || p.endsWith(`.${permission}`));
-  };
+  }, [user]);
 
-  const hasRole = (role: string): boolean => {
+  const hasRole = useCallback((role: string): boolean => {
     if (!user) return false;
     if (user.is_superuser && (!user.roles || user.roles.length === 0)) return true;
     return (user.roles || []).includes(role);
-  };
+  }, [user]);
 
   return (
     <AuthContext.Provider

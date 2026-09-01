@@ -27,7 +27,6 @@ export const SuppliersPage: React.FC = () => {
   const { showError, showSuccess } = useToast();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,16 +39,15 @@ export const SuppliersPage: React.FC = () => {
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const data = await contactService.getSuppliers();
       setSuppliers(data || []);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load suppliers.');
+      showError(err?.message || 'Failed to load suppliers.', 'Failed to Load Suppliers');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     fetchSuppliers();
@@ -227,10 +225,6 @@ export const SuppliersPage: React.FC = () => {
       >
         {loading ? (
           <LoadingSpinner label="Loading supplier master records..." />
-        ) : error ? (
-          <div style={{ padding: '1.5rem', backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', borderRadius: '0.5rem' }}>
-            {error}
-          </div>
         ) : filteredSuppliers.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
             No suppliers match the search criteria.

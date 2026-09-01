@@ -31,6 +31,7 @@ import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useSettings } from '../../context/SettingsContext';
+import { useToast } from '../../context/ToastContext';
 import { settingsService, DocumentSequenceInfo } from '../../services/settingsService';
 import { Account } from '../../types/accounting';
 import { accountingService } from '../../services/accountingService';
@@ -67,11 +68,11 @@ const CURRENCY_OPTIONS: CurrencyOption[] = [
 
 export const SettingsPage: React.FC = () => {
   const { updateSettings: ctxUpdateSettings } = useSettings();
+  const { showSuccess, showError } = useToast();
+  const logoInputRef = React.useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<SettingsTab>('store');
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [docSequences, setDocSequences] = useState<Record<string, DocumentSequenceInfo>>({});
 
@@ -80,7 +81,6 @@ export const SettingsPage: React.FC = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      setError(null);
       const [res, accs] = await Promise.all([
         settingsService.getSettings(),
         accountingService.getAccounts({ is_active: true }),
@@ -92,7 +92,7 @@ export const SettingsPage: React.FC = () => {
       setAccounts(accs || []);
     } catch (err: any) {
       console.error('Failed to load system settings:', err);
-      setError(err?.message || 'Failed to load system configuration');
+      showError(err?.message || 'Failed to load system configuration', 'Settings Error');
     } finally {
       setLoading(false);
     }
@@ -112,13 +112,14 @@ export const SettingsPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        setError('Logo image size must be under 2MB.');
+        showError('Logo image size must be under 2MB.', 'Invalid Image Size');
         return;
       }
       const reader = new FileReader();
       reader.onload = (uploadEvent) => {
         const base64Str = uploadEvent.target?.result as string;
         handleChange('company_logo', base64Str);
+        showSuccess('Store logo selected. Click "Save Changes" to apply.', 'Logo Selected');
       };
       reader.readAsDataURL(file);
     }
@@ -126,6 +127,7 @@ export const SettingsPage: React.FC = () => {
 
   const handleRemoveLogo = () => {
     handleChange('company_logo', '');
+    showSuccess('Logo removed. Click "Save Changes" to apply.', 'Logo Cleared');
   };
 
   // Database Backup & Dropbox States
@@ -164,17 +166,15 @@ export const SettingsPage: React.FC = () => {
   const handleCreateBackupNow = async () => {
     try {
       setCreatingBackup(true);
-      setError(null);
       const res = await backupService.createBackup();
       if (res.success) {
-        setSuccessMsg(`Database .SQL backup (${res.filename}) generated successfully!`);
-        setTimeout(() => setSuccessMsg(null), 5000);
+        showSuccess(`Database .SQL backup (${res.filename}) generated successfully!`, 'Backup Created');
         fetchBackups();
       } else {
-        setError(res.error || 'Failed to create database backup.');
+        showError(res.error || 'Failed to create database backup.', 'Backup Error');
       }
     } catch (err: any) {
-      setError(err?.response?.data?.error || err?.message || 'Database backup failed.');
+      showError(err?.response?.data?.error || err?.message || 'Database backup failed.', 'Backup Error');
     } finally {
       setCreatingBackup(false);
     }
@@ -184,24 +184,22 @@ export const SettingsPage: React.FC = () => {
     try {
       await backupService.downloadBackup(b.id, b.filename);
     } catch (err: any) {
-      setError('Failed to download .SQL file.');
+      showError('Failed to download .SQL file.', 'Download Error');
     }
   };
 
   const handleManualSyncToDropbox = async (b: BackupItem) => {
     try {
       setSyncingDropboxId(b.id);
-      setError(null);
       const res = await backupService.syncToDropbox(b.id);
       if (res.success) {
-        setSuccessMsg(`Backup ${b.filename} successfully synced to Dropbox!`);
-        setTimeout(() => setSuccessMsg(null), 4000);
+        showSuccess(`Backup ${b.filename} successfully synced to Dropbox!`, 'Dropbox Synced');
         fetchBackups();
       } else {
-        setError(res.error || 'Failed to sync backup to Dropbox.');
+        showError(res.error || 'Failed to sync backup to Dropbox.', 'Dropbox Error');
       }
     } catch (err: any) {
-      setError(err?.response?.data?.error || err?.message || 'Dropbox sync failed.');
+      showError(err?.response?.data?.error || err?.message || 'Dropbox sync failed.', 'Dropbox Error');
     } finally {
       setSyncingDropboxId(null);
     }
@@ -213,11 +211,18 @@ export const SettingsPage: React.FC = () => {
       setDropboxTestResult(null);
       const res = await backupService.testDropbox(formData.dropbox_access_token);
       setDropboxTestResult(res);
+      if (res.success) {
+        showSuccess('Dropbox connection verified successfully!', 'Connection Verified');
+      } else {
+        showError(res.error || 'Dropbox connection failed.', 'Connection Failed');
+      }
     } catch (err: any) {
+      const errMsg = err?.response?.data?.error || err?.message || 'Dropbox connection failed.';
       setDropboxTestResult({
         success: false,
-        error: err?.response?.data?.error || err?.message || 'Dropbox connection failed.',
+        error: errMsg,
       });
+      showError(errMsg, 'Connection Error');
     } finally {
       setTestingDropbox(false);
     }
@@ -236,12 +241,11 @@ export const SettingsPage: React.FC = () => {
 
   const handleExecuteRestore = async () => {
     if (selectedFilesForRestore.length === 0 && !selectedBackupForRestore) {
-      setError('Please select one or more .SQL backup files or a folder to restore.');
+      showError('Please select one or more .SQL backup files or a folder to restore.', 'Missing Backup File');
       return;
     }
     try {
       setRestoringBackup(true);
-      setError(null);
       const res = await backupService.restoreBackup({
         files: selectedFilesForRestore.length > 0 ? selectedFilesForRestore : undefined,
         backupId: selectedBackupForRestore ? selectedBackupForRestore.id : undefined,
@@ -249,15 +253,15 @@ export const SettingsPage: React.FC = () => {
       if (res.success) {
         setRestoreModalOpen(false);
         const countMsg = res.restored_count ? `(${res.restored_count} files restored)` : '';
-        setSuccessMsg(`Database has been successfully restored from backup ${countMsg}! Reloading application...`);
+        showSuccess(`Database has been successfully restored from backup ${countMsg}! Reloading...`, 'Database Restored');
         setTimeout(() => {
           window.location.reload();
         }, 2200);
       } else {
-        setError(res.error || 'Database restore failed.');
+        showError(res.error || 'Database restore failed.', 'Restore Error');
       }
     } catch (err: any) {
-      setError(err?.response?.data?.error || err?.message || 'Failed to execute database restore.');
+      showError(err?.response?.data?.error || err?.message || 'Failed to execute database restore.', 'Restore Error');
     } finally {
       setRestoringBackup(false);
     }
@@ -269,11 +273,10 @@ export const SettingsPage: React.FC = () => {
       await backupService.deleteBackup(backupToDelete.id);
       setDeleteModalOpen(false);
       setBackupToDelete(null);
-      setSuccessMsg('Backup file deleted successfully.');
-      setTimeout(() => setSuccessMsg(null), 3000);
+      showSuccess('Backup file deleted successfully.', 'Backup Deleted');
       fetchBackups();
     } catch (err: any) {
-      setError('Failed to delete backup file.');
+      showError('Failed to delete backup file.', 'Delete Error');
     }
   };
 
@@ -281,8 +284,6 @@ export const SettingsPage: React.FC = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      setError(null);
-      setSuccessMsg(null);
       const res = await settingsService.updateSettings(formData);
       if (res.settings) {
         setFormData(res.settings);
@@ -291,11 +292,10 @@ export const SettingsPage: React.FC = () => {
         setDocSequences(res.document_sequences);
       }
       await ctxUpdateSettings(formData);
-      setSuccessMsg('System configuration, prefixes, and start sequences saved successfully.');
-      setTimeout(() => setSuccessMsg(null), 4000);
+      showSuccess('System configuration, prefixes, and start sequences saved successfully.', 'Settings Saved');
     } catch (err: any) {
       console.error('Failed to save settings:', err);
-      setError(err?.message || 'Failed to save configuration settings');
+      showError(err?.message || 'Failed to save configuration settings', 'Save Error');
     } finally {
       setSaving(false);
     }
@@ -341,44 +341,6 @@ export const SettingsPage: React.FC = () => {
           </Button>
         </div>
       </div>
-
-      {successMsg && (
-        <div
-          style={{
-            padding: '0.5rem 0.75rem',
-            backgroundColor: 'rgba(16, 185, 129, 0.12)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: '0.375rem',
-            color: 'var(--success)',
-            fontSize: '0.8125rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-          }}
-        >
-          <CheckCircle2 size={16} />
-          <span>{successMsg}</span>
-        </div>
-      )}
-
-      {error && (
-        <div
-          style={{
-            padding: '0.5rem 0.75rem',
-            backgroundColor: 'rgba(239, 68, 68, 0.12)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '0.375rem',
-            color: 'var(--danger)',
-            fontSize: '0.8125rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-          }}
-        >
-          <AlertCircle size={16} />
-          <span>{error}</span>
-        </div>
-      )}
 
       {/* Tabs */}
       <div
@@ -457,7 +419,9 @@ export const SettingsPage: React.FC = () => {
                   {/* Actions & File Input */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <label
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -474,13 +438,14 @@ export const SettingsPage: React.FC = () => {
                       >
                         <Upload size={14} />
                         Upload New Logo
-                        <input
-                          type="file"
-                          accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp"
-                          onChange={handleLogoUpload}
-                          style={{ display: 'none' }}
-                        />
-                      </label>
+                      </button>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp"
+                        onChange={handleLogoUpload}
+                        style={{ display: 'none' }}
+                      />
 
                       {formData.company_logo && (
                         <button

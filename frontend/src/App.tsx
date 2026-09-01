@@ -31,9 +31,11 @@ const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, hasPermission } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [isPOSSidebarOpen, setIsPOSSidebarOpen] = useState<boolean>(false);
+  const hasInitialRouted = React.useRef(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !hasInitialRouted.current) {
+      hasInitialRouted.current = true;
       if (hasPermission('view_dashboard') || hasPermission('view_dashboard_analytics')) {
         setCurrentTab('dashboard');
       } else if (hasPermission('access_pos_register')) {
@@ -64,6 +66,8 @@ const AppContent: React.FC = () => {
       } else {
         setCurrentTab('register');
       }
+    } else if (!isAuthenticated) {
+      hasInitialRouted.current = false;
     }
   }, [isAuthenticated, hasPermission]);
 

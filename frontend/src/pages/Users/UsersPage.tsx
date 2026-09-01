@@ -34,7 +34,6 @@ export const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Modals state
@@ -57,7 +56,6 @@ export const UsersPage: React.FC = () => {
 
   const fetchUsersAndRoles = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const [usersData, rolesData] = await Promise.all([
         userService.getUsers(),
@@ -66,11 +64,11 @@ export const UsersPage: React.FC = () => {
       setUsers(usersData);
       setRoles(rolesData);
     } catch (err: any) {
-      setError(formatErrorMessage(err));
+      showError(formatErrorMessage(err), 'Failed to Load Users');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     fetchUsersAndRoles();
@@ -245,17 +243,6 @@ export const UsersPage: React.FC = () => {
       >
         {loading ? (
           <LoadingSpinner label="Fetching user accounts..." />
-        ) : error ? (
-          <div style={{
-            padding: '1rem',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '0.5rem',
-            color: 'var(--danger)',
-            fontSize: '0.875rem',
-          }}>
-            <div>{error}</div>
-          </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
