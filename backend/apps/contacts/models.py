@@ -65,6 +65,31 @@ class Customer(models.Model):
             if not self.is_active:
                 raise ValidationError("The default Walk-in Customer cannot be deactivated.")
 
+    @property
+    def outstanding_balance(self) -> Decimal:
+        """
+        Dynamically calculates customer's current outstanding accounts receivable balance.
+        """
+        if self.is_walkin:
+            return Decimal("0.00")
+        try:
+            from apps.contacts.services import CustomerReceivableService
+            info = CustomerReceivableService.get_customer_outstanding(self.id)
+            return info.get("outstanding_balance", Decimal("0.00"))
+        except Exception:
+            return Decimal("0.00")
+
+    @property
+    def credit_limit(self) -> Decimal | None:
+        """
+        Optional customer credit limit. Defaults to None (no limit).
+        """
+        return getattr(self, "_credit_limit", None)
+
+    @credit_limit.setter
+    def credit_limit(self, value):
+        self._credit_limit = value
+
     def save(self, *args, **kwargs):
         if self.is_walkin:
             self.credit_enabled = False

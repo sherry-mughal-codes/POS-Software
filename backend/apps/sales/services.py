@@ -171,13 +171,19 @@ class SalesService:
                     "Credit / partial payment is not allowed for Walk-in Customer. Please assign a registered customer or tender full payment."
                 )
 
-            current_outstanding = customer.outstanding_balance
-            if customer.credit_limit is not None and customer.credit_limit > Decimal("0.00"):
+            if not getattr(customer, "credit_enabled", True):
+                raise ValidationError(
+                    f"Credit purchases are disabled for customer '{customer.name}'."
+                )
+
+            current_outstanding = getattr(customer, "outstanding_balance", Decimal("0.00"))
+            credit_limit = getattr(customer, "credit_limit", None)
+            if credit_limit is not None and credit_limit > Decimal("0.00"):
                 new_total_due = current_outstanding + due_amount
-                if new_total_due > customer.credit_limit:
+                if new_total_due > credit_limit:
                     raise ValidationError(
                         f"Sale exceeds customer credit limit! Current due: Rs. {current_outstanding}, "
-                        f"New due: Rs. {due_amount}, Limit: Rs. {customer.credit_limit}"
+                        f"New due: Rs. {due_amount}, Limit: Rs. {credit_limit}"
                     )
 
         invoice_number = cls.generate_invoice_number()
