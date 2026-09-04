@@ -171,6 +171,17 @@ class SystemSettingsView(APIView):
                 )
                 updated_keys.append(key)
 
+        # If low_stock_default_threshold was updated, apply to products
+        if "low_stock_default_threshold" in payload:
+            try:
+                from decimal import Decimal
+                from apps.products.models import Product
+                new_threshold = Decimal(str(payload["low_stock_default_threshold"]))
+                if new_threshold >= Decimal("0.00"):
+                    Product.objects.filter(maintain_stock=True).update(min_stock_level=new_threshold)
+            except Exception:
+                pass
+
         # Audit logging
         username = request.user.username if request.user and request.user.is_authenticated else "admin"
         AuditLog.objects.create(

@@ -4,8 +4,25 @@ import { Product, Category, Unit, ProductFilterParams } from '../types/product';
 export const productService = {
   // Products
   async getProducts(params?: ProductFilterParams): Promise<Product[]> {
-    const response = await apiClient.get<Product[]>('/products/', { params });
-    return response.data;
+    const response = await apiClient.get<any>('/products/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  },
+
+  async getProductsPaginated(params?: ProductFilterParams): Promise<{ results: Product[]; count: number }> {
+    const response = await apiClient.get<any>('/products/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getProduct(id: number): Promise<Product> {
@@ -76,8 +93,14 @@ export const productService = {
 
   // Categories
   async getCategories(): Promise<Category[]> {
-    const response = await apiClient.get<Category[]>('/categories/');
-    return response.data;
+    const response = await apiClient.get<any>('/categories/', { params: { all: true } });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   async createCategory(data: Partial<Category>): Promise<Category> {
@@ -96,8 +119,14 @@ export const productService = {
 
   // Units
   async getUnits(): Promise<Unit[]> {
-    const response = await apiClient.get<Unit[]>('/units/');
-    return response.data;
+    const response = await apiClient.get<any>('/units/', { params: { all: true } });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   async createUnit(data: Partial<Unit>): Promise<Unit> {

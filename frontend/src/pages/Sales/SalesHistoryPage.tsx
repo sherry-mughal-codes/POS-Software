@@ -15,6 +15,7 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { POSReceiptModal } from '../POS/components/POSReceiptModal';
 import { Sale, PaymentMethodType } from '../../types/sales';
 import { Account } from '../../types/accounting';
@@ -28,8 +29,11 @@ const formatMoney = (val: number | string | undefined | null): string => {
 
 export const SalesHistoryPage: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [paymentAccounts, setPaymentAccounts] = useState<Account[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,7 +50,7 @@ export const SalesHistoryPage: React.FC = () => {
   const [returnChequeNumber, setReturnChequeNumber] = useState('');
   const [returnChequeDate, setReturnChequeDate] = useState(new Date().toISOString().split('T')[0]);
   const [returnChequeBank, setReturnChequeBank] = useState('');
-  const [returnReason, setReturnReason] = useState<string>('Customer changed mind');
+  const [returnReason, setReturnReason] = useState<string>('Customer Return / Defective Item');
   const [returnNotes, setReturnNotes] = useState<string>('');
   const [returnSubmitting, setReturnSubmitting] = useState(false);
   const [returnError, setReturnError] = useState<string | null>(null);
@@ -89,22 +93,29 @@ export const SalesHistoryPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await salesService.getSales({
+        page: currentPage,
+        page_size: pageSize,
         search: searchTerm || undefined,
         payment_method: selectedPaymentMethod || undefined,
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
       });
-      setSales(data || []);
+      setSales(data.results || []);
+      setTotalCount(data.count ?? (data.results ? data.results.length : 0));
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedPaymentMethod, dateFrom, dateTo]);
+  }, [currentPage, pageSize, searchTerm, selectedPaymentMethod, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchSales();
   }, [fetchSales]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedPaymentMethod, dateFrom, dateTo]);
 
   const handleOpenReturnModal = (sale: Sale) => {
     setReturnTargetSale(sale);
@@ -334,7 +345,7 @@ export const SalesHistoryPage: React.FC = () => {
       </div>
 
       {/* Sales Invoices Table */}
-      <Card title={`Sales Invoices (${sales.length})`} icon={<Receipt size={20} />}>
+      <Card title={`Sales Invoices (${totalCount})`} icon={<Receipt size={20} />}>
         {loading ? (
           <LoadingSpinner label="Loading sales history..." />
         ) : (
@@ -394,8 +405,36 @@ export const SalesHistoryPage: React.FC = () => {
                       </td>
 
                       <td style={{ padding: '0.875rem 1rem' }}>
-                        {sale.payment_method === 'CASH' && <Badge variant="success">Cash</Badge>}
-                        {sale.payment_method === 'CARD' && <Badge variant="info">Card</Badge>}
+                        {sale.payment_method === 'CASH' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                            <Badge variant="success">Cash</Badge>
+                            {(sale.payment_account_name || sale.payment_account_code) && (
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                                {sale.payment_account_name || `[${sale.payment_account_code}]`}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {sale.payment_method === 'CARD' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                            <Badge variant="info">Bank / Card</Badge>
+                            {(sale.payment_account_name || sale.payment_account_code) && (
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                                {sale.payment_account_name || `[${sale.payment_account_code}]`}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {sale.payment_method === 'CHEQUE' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                            <Badge variant="phase">Cheque</Badge>
+                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                              {sale.cheque_number ? `#${sale.cheque_number}` : ''}
+                              {sale.cheque_bank ? ` (${sale.cheque_bank})` : ''}
+                              {!sale.cheque_number && !sale.cheque_bank && (sale.payment_account_name ? sale.payment_account_name : '')}
+                            </span>
+                          </div>
+                        )}
                         {sale.payment_method === 'CREDIT' && (
                           sale.due_amount <= 0 ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
@@ -412,11 +451,28 @@ export const SalesHistoryPage: React.FC = () => {
                           )
                         )}
                         {sale.payment_method === 'SPLIT' && (
-                          sale.due_amount <= 0 ? (
-                            <Badge variant="success">Split (Paid)</Badge>
-                          ) : (
-                            <Badge variant="phase">Split (Due)</Badge>
-                          )
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                            {sale.due_amount <= 0 ? (
+                              <Badge variant="success">Split (Paid)</Badge>
+                            ) : (
+                              <Badge variant="phase">Split (Due)</Badge>
+                            )}
+                            {sale.payments && sale.payments.length > 0 && (
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                                {sale.payments.map((p) => p.payment_method_display || p.payment_method).join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {!['CASH', 'CARD', 'CHEQUE', 'CREDIT', 'SPLIT'].includes(sale.payment_method) && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                            <Badge variant="phase">{sale.payment_method_display || sale.payment_method}</Badge>
+                            {sale.payment_account_name && (
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                                {sale.payment_account_name}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
 
@@ -449,13 +505,15 @@ export const SalesHistoryPage: React.FC = () => {
                             style={{ padding: '0.3rem 0.45rem' }}
                           />
 
-                          <Button
-                            variant="outline"
-                            icon={<RotateCcw size={14} />}
-                            onClick={() => handleOpenReturnModal(sale)}
-                            title="Process Return / Refund"
-                            style={{ padding: '0.3rem 0.45rem' }}
-                          />
+                          {sale.status === 'COMPLETED' && (
+                            <Button
+                              variant="outline"
+                              icon={<RotateCcw size={14} />}
+                              onClick={() => handleOpenReturnModal(sale)}
+                              title="Return Items"
+                              style={{ padding: '0.3rem 0.45rem', color: 'var(--warning)', borderColor: 'rgba(245, 158, 11, 0.3)' }}
+                            />
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -464,6 +522,16 @@ export const SalesHistoryPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+        )}
+
+        {!loading && totalCount > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalCount}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         )}
       </Card>
 

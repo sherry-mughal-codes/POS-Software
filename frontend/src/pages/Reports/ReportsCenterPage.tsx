@@ -11,6 +11,7 @@ import {
   Receipt,
   Layers,
   CheckCircle2,
+  Calendar,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -132,7 +133,7 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'nowrap' }}>
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as DashboardPeriod)}
@@ -144,6 +145,7 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
               borderRadius: '0.375rem',
               color: 'var(--text-main)',
               outline: 'none',
+              cursor: 'pointer',
             }}
           >
             <option value="today">Today</option>
@@ -156,35 +158,48 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
           </select>
 
           {period === 'custom' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              padding: '0.15rem 0.4rem',
+              borderRadius: '0.375rem',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+            }}>
+              <Calendar size={13} style={{ color: '#ffffff', flexShrink: 0 }} />
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 style={{
-                  padding: '0.2rem 0.4rem',
+                  padding: '0.18rem 0.35rem',
                   fontSize: '0.71875rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
                   borderRadius: '0.25rem',
-                  color: 'var(--text-main)',
+                  color: '#ffffff',
+                  colorScheme: 'dark',
+                  outline: 'none',
                 }}
               />
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
+              <span style={{ color: '#ffffff', fontSize: '0.71875rem', fontWeight: 700 }}>→</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 style={{
-                  padding: '0.2rem 0.4rem',
+                  padding: '0.18rem 0.35rem',
                   fontSize: '0.71875rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
                   borderRadius: '0.25rem',
-                  color: 'var(--text-main)',
+                  color: '#ffffff',
+                  colorScheme: 'dark',
+                  outline: 'none',
                 }}
               />
-              <Button variant="primary" style={{ padding: '0.2rem 0.45rem', fontSize: '0.71875rem' }} onClick={fetchReportData}>
+              <Button variant="primary" style={{ padding: '0.18rem 0.45rem', fontSize: '0.71875rem' }} onClick={fetchReportData}>
                 Apply
               </Button>
             </div>
@@ -301,12 +316,12 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
                       <td className="text-right" style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-subtle)' }}>—</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                      <td style={{ padding: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1.5rem' }}>Less: Sales Discounts</td>
+                      <td style={{ padding: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1.5rem' }}>Sales Discounts</td>
                       <td className="text-right font-mono" style={{ padding: '0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>-Rs. {formatMoney(dashboardData.sales_summary.discounts)}</td>
                       <td className="text-right" style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-subtle)' }}>—</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                      <td style={{ padding: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1.5rem' }}>Less: Sales Returns & Customer Refunds</td>
+                      <td style={{ padding: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1.5rem' }}>Sales Returns & Customer Refunds</td>
                       <td className="text-right font-mono" style={{ padding: '0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>-Rs. {formatMoney(dashboardData.sales_summary.sales_returns)}</td>
                       <td className="text-right" style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-subtle)' }}>—</td>
                     </tr>
@@ -316,7 +331,7 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
                       <td className="text-right" style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 700 }}>100.0%</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                      <td style={{ padding: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1.5rem' }}>Less: Cost of Goods Sold (COGS recognized)</td>
+                      <td style={{ padding: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1.5rem' }}>Cost of Goods Sold (COGS)</td>
                       <td className="text-right font-mono" style={{ padding: '0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--warning)' }}>-Rs. {formatMoney(dashboardData.profit_overview.cogs)}</td>
                       <td className="text-right font-mono" style={{ padding: '0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{((dashboardData.profit_overview.cogs / (dashboardData.profit_overview.net_sales || 1)) * 100).toFixed(1)}%</td>
                     </tr>
@@ -326,7 +341,7 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
                       <td className="text-right" style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{dashboardData.profit_overview.gross_margin_percentage}%</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                      <td style={{ padding: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1.5rem' }}>Less: Operating & Administrative Expenses</td>
+                      <td style={{ padding: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1.5rem' }}>Operating & Administrative Expenses</td>
                       <td className="text-right font-mono" style={{ padding: '0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--danger)' }}>-Rs. {formatMoney(dashboardData.profit_overview.operating_expenses)}</td>
                       <td className="text-right font-mono" style={{ padding: '0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{((dashboardData.profit_overview.operating_expenses / (dashboardData.profit_overview.net_sales || 1)) * 100).toFixed(1)}%</td>
                     </tr>

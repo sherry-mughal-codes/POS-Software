@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { RotateCcw, AlertCircle, CheckCircle2, Search } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
+import { Pagination } from '../../components/common/Pagination';
 import { Purchase, PurchaseItem, PurchaseReturn, PurchaseReturnRefundMethod } from '../../types/purchase';
 import { Account } from '../../types/accounting';
 import { purchaseService } from '../../services/purchaseService';
@@ -23,21 +24,52 @@ const formatMoney = (val: number | string | undefined | null): string => {
 };
 
 export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
-  returns,
+  returns: initialReturns,
   onRefresh,
   returnTargetPurchase,
   onCloseReturnModal,
 }) => {
+  const [returns, setReturns] = useState<PurchaseReturn[]>(initialReturns || []);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [returnQuantities, setReturnQuantities] = useState<Record<number, number>>({});
   const [refundMethod, setRefundMethod] = useState<PurchaseReturnRefundMethod>('CASH');
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const [chequeNumber, setChequeNumber] = useState('');
   const [chequeDate, setChequeDate] = useState(new Date().toISOString().split('T')[0]);
   const [chequeBank, setChequeBank] = useState('');
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [returnNotes, setReturnNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+
+  const fetchReturns = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await purchaseService.getPurchaseReturns({
+        page: currentPage,
+        page_size: pageSize,
+        search: searchQuery || undefined,
+      });
+      setReturns(data.results || []);
+      setTotalCount(data.count ?? (data.results ? data.results.length : 0));
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, searchQuery]);
+
+  useEffect(() => {
+    fetchReturns();
+  }, [fetchReturns]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     accountingService.getAccounts({ is_active: true, leaf_only: true })
@@ -165,12 +197,33 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Return Logs Table */}
       <Card
-        title="Purchase Returns & Restocking Credits"
+        title={`Purchase Returns & Restocking Credits (${totalCount})`}
         icon={<RotateCcw size={18} />}
+        action={
+          <div style={{ position: 'relative', width: '240px' }}>
+            <Search size={13} style={{ position: 'absolute', left: '0.55rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
+            <input
+              type="text"
+              placeholder="Search returns, supplier..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '0.375rem',
+                padding: '0.3rem 0.5rem 0.3rem 1.8rem',
+                color: 'var(--text-main)',
+                fontSize: '0.75rem',
+                outline: 'none',
+              }}
+            />
+          </div>
+        }
       >
         {returns.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            No purchase returns recorded yet. To initiate a return, navigate to the Purchases tab and click "Return" on any submitted order.
+            No purchase returns found.
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -254,6 +307,16 @@ export const PurchaseReturnsTab: React.FC<PurchaseReturnsTabProps> = ({
               </tbody>
             </table>
           </div>
+        )}
+
+        {!loading && totalCount > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalCount}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         )}
       </Card>
 

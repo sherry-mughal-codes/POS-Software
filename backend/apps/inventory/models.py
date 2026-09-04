@@ -134,7 +134,7 @@ class StockAdjustment(models.Model):
         db_index=True,
         help_text="Unique adjustment identifier (e.g. ADJ-2026-00001)",
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     adjustment_type = models.CharField(
         max_length=10,
         choices=AdjustmentType.choices,
@@ -160,7 +160,7 @@ class StockAdjustment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Stock Adjustment"
         verbose_name_plural = "Stock Adjustments"
 

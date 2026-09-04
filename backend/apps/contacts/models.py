@@ -45,7 +45,7 @@ class Customer(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["-created_at", "-id"]
         verbose_name = "Customer"
         verbose_name_plural = "Customers"
 
@@ -127,7 +127,7 @@ class Supplier(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["-created_at", "-id"]
         verbose_name = "Supplier"
         verbose_name_plural = "Suppliers"
 
@@ -164,7 +164,7 @@ class CustomerPayment(models.Model):
         db_index=True,
         help_text="Customer making the payment",
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     amount = models.DecimalField(
         max_digits=14,
         decimal_places=2,
@@ -253,7 +253,7 @@ class CustomerPayment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Customer Payment"
         verbose_name_plural = "Customer Payments"
 

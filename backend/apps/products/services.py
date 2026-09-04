@@ -68,6 +68,9 @@ class ProductService:
             if not barcode:
                 barcode = None
 
+        from apps.core.models import SystemSetting
+        default_min_stock = Decimal(SystemSetting.get_setting("low_stock_default_threshold", "10.00") or "10.00")
+
         product = Product.objects.create(
             sku=sku,
             name=name.strip(),
@@ -76,7 +79,7 @@ class ProductService:
             unit=unit,
             purchase_price=Decimal(str(purchase_price or "0.00")),
             selling_price=Decimal(str(selling_price or "0.00")),
-            min_stock_level=Decimal(str(min_stock_level or "10.00")),
+            min_stock_level=Decimal(str(min_stock_level)) if min_stock_level is not None else default_min_stock,
             warranty_period_days=warranty_period_days,
             image_url=image_url or "",
             description=description or "",

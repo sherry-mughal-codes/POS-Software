@@ -12,10 +12,16 @@ import {
 export const warrantyService = {
   // Customer Claims API
   searchSales: async (query: string): Promise<WarrantyEligibleSale[]> => {
-    const response = await api.get<WarrantyEligibleSale[]>('/warranty/customer-claims/search-invoice/', {
+    const response = await api.get<any>('/warranty/customer-claims/search-invoice/', {
       params: { query },
     });
-    return response.data;
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   createCustomerClaim: async (payload: CustomerWarrantyClaimPayload): Promise<CustomerWarrantyClaim> => {
@@ -31,16 +37,48 @@ export const warrantyService = {
     start_date?: string;
     end_date?: string;
   }): Promise<CustomerWarrantyClaim[]> => {
-    const response = await api.get<CustomerWarrantyClaim[]>('/warranty/customer-claims/', { params });
-    return response.data;
+    const response = await api.get<any>('/warranty/customer-claims/', { params: { ...params, all: true } });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  },
+
+  getCustomerClaimsPaginated: async (params?: {
+    search?: string;
+    status?: string;
+    supplier_id?: number;
+    customer_id?: number;
+    start_date?: string;
+    end_date?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<{ results: CustomerWarrantyClaim[]; count: number }> => {
+    const response = await api.get<any>('/warranty/customer-claims/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   // Supplier Claims API
   getAvailableSupplierItems: async (supplierId: number): Promise<AvailableSupplierClaimItem[]> => {
-    const response = await api.get<AvailableSupplierClaimItem[]>('/warranty/supplier-claims/available-items/', {
+    const response = await api.get<any>('/warranty/supplier-claims/available-items/', {
       params: { supplier_id: supplierId },
     });
-    return response.data;
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   processSupplierDispatch: async (payload: SupplierWarrantyClaimPayload): Promise<SupplierWarrantyClaim> => {
@@ -60,8 +98,33 @@ export const warrantyService = {
     start_date?: string;
     end_date?: string;
   }): Promise<SupplierWarrantyClaim[]> => {
-    const response = await api.get<SupplierWarrantyClaim[]>('/warranty/supplier-claims/', { params });
-    return response.data;
+    const response = await api.get<any>('/warranty/supplier-claims/', { params: { ...params, all: true } });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  },
+
+  getSupplierClaimsPaginated: async (params?: {
+    search?: string;
+    status?: string;
+    supplier_id?: number;
+    start_date?: string;
+    end_date?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<{ results: SupplierWarrantyClaim[]; count: number }> => {
+    const response = await api.get<any>('/warranty/supplier-claims/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   // Warranty Metrics

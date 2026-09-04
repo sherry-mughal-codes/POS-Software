@@ -40,7 +40,7 @@ export const PurchaseReportTab: React.FC = () => {
   }, [startDate, endDate, selectedSupplierId, statusFilter]);
 
   useEffect(() => {
-    contactService.getSuppliers().then((sList) => setSuppliers(sList || []));
+    contactService.getSuppliers({ all: true }).then((sList) => setSuppliers(Array.isArray(sList) ? sList : (sList?.results || [])));
     fetchReport();
   }, [fetchReport]);
 

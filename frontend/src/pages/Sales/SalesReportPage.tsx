@@ -51,7 +51,7 @@ export const SalesReportPage: React.FC = () => {
   }, [startDate, endDate, selectedCustomerId, selectedPaymentMethod]);
 
   useEffect(() => {
-    contactService.getCustomers().then((cList) => setCustomers(cList || []));
+    contactService.getCustomers({ all: true }).then((cList) => setCustomers(Array.isArray(cList) ? cList : (cList?.results || [])));
   }, []);
 
   useEffect(() => {

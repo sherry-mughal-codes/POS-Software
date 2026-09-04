@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
+  Calendar,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -82,7 +83,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   // SVG Chart Computations
   const trendData = data?.sales_trend || [];
   const maxTrendVal = Math.max(...trendData.map((d) => Math.max(d.gross_sales, d.net_sales)), 1000);
-  const chartHeight = 65;
+  const chartHeight = 190;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -133,35 +134,48 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </div>
 
           {period === 'custom' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              padding: '0.2rem 0.45rem',
+              borderRadius: '0.375rem',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+            }}>
+              <Calendar size={14} style={{ color: '#ffffff', flexShrink: 0 }} />
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 style={{
-                  padding: '0.25rem 0.4rem',
+                  padding: '0.2rem 0.35rem',
                   fontSize: '0.71875rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
                   borderRadius: '0.25rem',
-                  color: 'var(--text-main)',
+                  color: '#ffffff',
+                  colorScheme: 'dark',
+                  outline: 'none',
                 }}
               />
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.71875rem' }}>-</span>
+              <span style={{ color: '#ffffff', fontSize: '0.71875rem', fontWeight: 700 }}>→</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 style={{
-                  padding: '0.25rem 0.4rem',
+                  padding: '0.2rem 0.35rem',
                   fontSize: '0.71875rem',
                   backgroundColor: 'var(--bg-input)',
                   border: '1px solid var(--border-medium)',
                   borderRadius: '0.25rem',
-                  color: 'var(--text-main)',
+                  color: '#ffffff',
+                  colorScheme: 'dark',
+                  outline: 'none',
                 }}
               />
-              <Button variant="primary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }} onClick={fetchDashboard}>
+              <Button variant="primary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.71875rem' }} onClick={fetchDashboard}>
                 Apply
               </Button>
             </div>
@@ -435,12 +449,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         </Card>
       </div>
 
-      {/* 3. Compact Middle Analytical Visuals: Sales Trend & Payment Distribution */}
+      {/* 3. Analytical Visuals: Sales Trend & Payment Distribution */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.875rem', alignItems: 'stretch' }}>
         {/* Sales & Orders Trend Chart */}
         <Card
           title="Sales & Revenue Trend"
-          subtitle={period === 'this_year' ? `Monthly revenue for ${data?.period_label || 'This Year'}` : `Revenue for ${data?.period_label || 'Period'}`}
           icon={<BarChart3 size={16} />}
           action={
             hoveredTrendPoint && (
@@ -523,7 +536,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         {/* Payment Methods Breakdown */}
         <Card
           title="Payment Distribution"
-          subtitle="Customer invoice settlements"
           icon={<PieChart size={16} />}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '0.25rem' }}>
@@ -545,6 +557,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                           ? 'var(--success)'
                           : pm.method_code === 'CARD'
                           ? 'var(--info)'
+                          : pm.method_code === 'CHEQUE'
+                          ? '#a855f7'
                           : pm.method_code === 'CREDIT'
                           ? 'var(--warning)'
                           : 'var(--primary-400)',
@@ -574,12 +588,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         </Card>
       </div>
 
-      {/* 4. Compact Bottom Performance Tables */}
+      {/* 4. Performance Tables */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.875rem' }}>
         {/* Top Products Leaderboard */}
         <Card
           title="Product Performance"
-          subtitle="Best selling inventory lines"
           icon={<Package size={16} />}
           action={
             <div style={{ display: 'flex', gap: '0.2rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '0.15rem', borderRadius: '0.25rem' }}>
@@ -661,16 +674,41 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         {/* Low Stock & Out of Stock Alerts */}
         <Card
           title="Stock Alerts"
-          subtitle="Items below threshold"
           icon={<AlertTriangle size={16} />}
           action={
-            <Button
-              variant="outline"
-              style={{ padding: '0.15rem 0.45rem', fontSize: '0.6875rem' }}
-              onClick={() => onNavigate('inventory')}
-            >
-              Inventory <ArrowRight size={11} style={{ marginLeft: '0.2rem' }} />
-            </Button>
+            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+              {(data?.inventory_health?.low_stock_alerts && data.inventory_health.low_stock_alerts.length > 0) && (
+                <Button
+                  variant="primary"
+                  style={{
+                    padding: '0.2rem 0.55rem',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                  }}
+                  onClick={() => {
+                    const lowStockItems = (data?.inventory_health?.low_stock_alerts || []).map((item) => ({
+                      product_id: item.id,
+                      product_name: item.name,
+                      sku: item.sku,
+                      unit_cost: item.purchase_price || 0,
+                      quantity: 1,
+                    }));
+                    sessionStorage.setItem('apexpos_reorder_items', JSON.stringify(lowStockItems));
+                    onNavigate('purchases');
+                  }}
+                >
+                  Reorder All Low Stock
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                style={{ padding: '0.2rem 0.45rem', fontSize: '0.6875rem' }}
+                onClick={() => onNavigate('inventory')}
+              >
+                Inventory <ArrowRight size={11} style={{ marginLeft: '0.2rem' }} />
+              </Button>
+            </div>
           }
         >
           <div style={{ overflowX: 'auto', maxHeight: '210px' }}>
@@ -680,7 +718,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                   <th style={{ padding: '0.375rem 0.5rem' }}>Item</th>
                   <th style={{ padding: '0.375rem 0.5rem', textAlign: 'center' }}>Status</th>
                   <th style={{ padding: '0.375rem 0.5rem', textAlign: 'right' }}>Stock</th>
-                  <th style={{ padding: '0.375rem 0.5rem', textAlign: 'center' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -698,20 +735,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                     <td style={{ padding: '0.375rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: item.current_stock <= 0 ? 'var(--danger)' : 'var(--warning)' }}>
                       {item.current_stock}
                     </td>
-                    <td style={{ padding: '0.375rem 0.5rem', textAlign: 'center' }}>
-                      <Button
-                        variant="primary"
-                        style={{ padding: '0.15rem 0.35rem', fontSize: '0.625rem' }}
-                        onClick={() => onNavigate('purchases')}
-                      >
-                        Re-Order
-                      </Button>
-                    </td>
                   </tr>
                 ))}
                 {(!data?.inventory_health?.low_stock_alerts || data.inventory_health.low_stock_alerts.length === 0) && (
                   <tr>
-                    <td colSpan={4} style={{ padding: '1.25rem', textAlign: 'center', color: 'var(--success)' }}>
+                    <td colSpan={3} style={{ padding: '1.25rem', textAlign: 'center', color: 'var(--success)' }}>
                       <CheckCircle2 size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.35rem' }} />
                       All stock within safe threshold!
                     </td>
@@ -725,7 +753,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         {/* Cashier Performance Leaderboard */}
         <Card
           title="Cashier Performance"
-          subtitle="Staff revenue breakdown"
           icon={<Users size={16} />}
         >
           <div style={{ overflowX: 'auto', maxHeight: '210px' }}>

@@ -182,6 +182,8 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
     ],
+    "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardResultsSetPagination",
+    "PAGE_SIZE": 50,
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
 }
 

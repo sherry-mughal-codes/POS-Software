@@ -33,6 +33,8 @@ export interface Purchase {
   payment_method?: number | null;
   payment_method_name?: string | null;
   payment_account?: number | null;
+  payment_account_name?: string | null;
+  payment_account_code?: string | null;
   cheque_number?: string | null;
   cheque_date?: string | null;
   cheque_bank?: string | null;

@@ -14,6 +14,8 @@ import {
   TrendingDown,
   RefreshCw,
   RotateCcw,
+  User,
+  Phone,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
@@ -21,6 +23,7 @@ import { Input } from '../../components/common/Input';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { Supplier } from '../../types/contact';
 import { Account } from '../../types/accounting';
 import {
@@ -33,6 +36,7 @@ import {
 import { contactService } from '../../services/contactService';
 import { accountingService } from '../../services/accountingService';
 import { purchaseService } from '../../services/purchaseService';
+import { daySessionService } from '../../services/daySessionService';
 import { SupplierStatementSlipModal } from './SupplierStatementSlipModal';
 import { useToast } from '../../context/ToastContext';
 
@@ -52,14 +56,28 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   const [viewMode, setViewMode] = useState<ViewMode>('accounts');
   const [loading, setLoading] = useState(true);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [supplierTotalCount, setSupplierTotalCount] = useState<number>(0);
   const [statements, setStatements] = useState<Record<number, SupplierStatement>>({});
   const [paymentAccounts, setPaymentAccounts] = useState<Account[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [supplierPage, setSupplierPage] = useState<number>(1);
+  const [supplierPageSize, setSupplierPageSize] = useState<number>(50);
 
   // Vouchers list state
   const [vouchers, setVouchers] = useState<SupplierPayment[]>([]);
+  const [voucherTotalCount, setVoucherTotalCount] = useState<number>(0);
   const [vouchersLoading, setVouchersLoading] = useState(false);
   const [voucherFilterStatus, setVoucherFilterStatus] = useState<string>('ALL');
+  const [voucherPage, setVoucherPage] = useState<number>(1);
+  const [voucherPageSize, setVoucherPageSize] = useState<number>(50);
+
+  useEffect(() => {
+    setSupplierPage(1);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setVoucherPage(1);
+  }, [voucherFilterStatus]);
 
   // Master Payables Report state
   const [reportData, setReportData] = useState<SupplierPayablesReport | null>(null);
@@ -75,11 +93,11 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   const [payMethod, setPayMethod] = useState<SupplierPaymentMethodType>('CASH');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [chequeNumber, setChequeNumber] = useState<string>('');
-  const [chequeDate, setChequeDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [chequeDate, setChequeDate] = useState<string>(new Date().toLocaleDateString('en-CA'));
   const [chequeBank, setChequeBank] = useState<string>('');
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState(new Date().toLocaleDateString('en-CA'));
   const [submitNow, setSubmitNow] = useState(true);
   const [savingPayment, setSavingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -126,12 +144,19 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   const fetchPayablesData = useCallback(async () => {
     setLoading(true);
     try {
-      const [suppList, accs] = await Promise.all([
-        contactService.getSuppliers({ is_active: true }),
+      const [suppData, accs] = await Promise.all([
+        contactService.getSuppliers({
+          page: supplierPage,
+          page_size: supplierPageSize,
+          search: searchQuery || undefined,
+        }),
         accountingService.getAccounts(),
       ]);
 
-      setSuppliers(suppList || []);
+      const suppList = suppData.results || suppData || [];
+      setSuppliers(suppList);
+      setSupplierTotalCount(suppData.count ?? (suppData.results ? suppData.results.length : 0));
+
       const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
       const validAccs = (accs || []).filter(
         (a) => a.account_type === 'ASSET' && isLeaf(a) && (a.code.startsWith('101') || a.code.startsWith('102') || a.parent_code === '1010' || a.parent_code === '1020')
@@ -141,10 +166,10 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
         setSelectedAccountId(validAccs[0].id.toString());
       }
 
-      // Fetch running statements for all suppliers
+      // Fetch running statements for page suppliers
       const stmts: Record<number, SupplierStatement> = {};
       await Promise.all(
-        (suppList || []).map(async (s) => {
+        suppList.map(async (s) => {
           try {
             const st = await purchaseService.getSupplierStatement(s.id);
             stmts[s.id] = st;
@@ -159,24 +184,25 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
     } finally {
       setLoading(false);
     }
-  }, [showError, selectedAccountId]);
+  }, [supplierPage, supplierPageSize, searchQuery, showError, selectedAccountId]);
 
   // Fetch vouchers history
   const fetchVouchers = useCallback(async () => {
     setVouchersLoading(true);
     try {
-      const params: any = {};
-      if (voucherFilterStatus !== 'ALL') {
-        params.status = voucherFilterStatus;
-      }
-      const data = await purchaseService.getSupplierPayments(params);
-      setVouchers(data || []);
+      const data = await purchaseService.getSupplierPayments({
+        page: voucherPage,
+        page_size: voucherPageSize,
+        status: voucherFilterStatus !== 'ALL' ? voucherFilterStatus : undefined,
+      });
+      setVouchers(data.results || []);
+      setVoucherTotalCount(data.count ?? (data.results ? data.results.length : 0));
     } catch {
       showError('Failed to load supplier payment vouchers.', 'Vouchers Error');
     } finally {
       setVouchersLoading(false);
     }
-  }, [voucherFilterStatus, showError]);
+  }, [voucherPage, voucherPageSize, voucherFilterStatus, showError]);
 
   // Fetch master report
   const fetchReport = useCallback(async () => {
@@ -215,11 +241,11 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
     setPayAmount(maxPayable);
     setPayMethod('CASH');
     setChequeNumber('');
-    setChequeDate(new Date().toISOString().split('T')[0]);
+    setChequeDate(new Date().toLocaleDateString('en-CA'));
     setChequeBank('');
     setReference('');
     setNotes('');
-    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setPaymentDate(new Date().toLocaleDateString('en-CA'));
     setSubmitNow(true);
     setPaymentError(null);
 
@@ -229,6 +255,13 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
     }
 
     setIsPaymentModalOpen(true);
+
+    daySessionService.getCurrentSession().then((res) => {
+      if (res?.active && res?.session?.date) {
+        setPaymentDate(res.session.date);
+        setChequeDate(res.session.date);
+      }
+    }).catch(() => {});
   };
 
   // Change payment method handler
@@ -389,16 +422,6 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
     0
   );
 
-  const filteredSuppliers = suppliers.filter((s) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      s.name.toLowerCase().includes(q) ||
-      (s.company_name && s.company_name.toLowerCase().includes(q)) ||
-      s.supplier_id.toLowerCase().includes(q) ||
-      (s.phone && s.phone.includes(q))
-    );
-  });
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
       {/* Standardized Metrics Grid */}
@@ -540,7 +563,7 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
       {/* VIEW 1: SUPPLIER ACCOUNTS DIRECTORY */}
       {viewMode === 'accounts' && (
         <Card
-          title="Supplier Accounts & Payables"
+          title={`Supplier Accounts & Payables (${supplierTotalCount})`}
           icon={<CreditCard size={18} />}
         >
           {loading ? (
@@ -560,92 +583,83 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSuppliers.length === 0 ? (
+                  {suppliers.length === 0 ? (
                     <tr>
                       <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                         No supplier records found matching your search.
                       </td>
                     </tr>
                   ) : (
-                    filteredSuppliers.map((s) => {
+                    suppliers.map((s) => {
                       const stmt = statements[s.id];
-                      const totalPurchased = stmt?.summary?.total_purchases ?? (stmt as any)?.total_purchased ?? 0;
-                      const totalPaid = stmt?.summary?.total_payments ?? (stmt as any)?.total_paid ?? 0;
-                      const upfrontPaid = stmt?.summary?.upfront_paid ?? 0;
-                      const voucherPaid = stmt?.summary?.voucher_payments ?? 0;
-                      const totalReturns = stmt?.summary?.total_returns ?? (stmt as any)?.total_returns ?? 0;
-                      const netPayable = stmt?.summary?.closing_payable ?? (stmt as any)?.net_payable ?? (s.outstanding_payable ?? 0);
+                      const totalPurchased = stmt?.summary?.total_purchases ?? ((s as any).total_purchased ?? 0);
+                      const totalPaid = stmt?.summary?.total_payments ?? ((s as any).total_paid ?? 0);
+                      const totalReturns = stmt?.summary?.total_returns ?? 0;
+                      const netPayable = stmt?.summary?.closing_payable ?? (s.outstanding_payable ?? 0);
 
                       return (
                         <tr
                           key={s.id}
                           style={{ borderBottom: '1px solid var(--border-subtle)' }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
                           <td style={{ padding: '0.4rem 0.6rem' }}>
-                            <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-                              {s.company_name || s.name}
+                            <div style={{ fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <Building size={13} style={{ color: 'var(--primary-400)' }} />
+                              <span>{s.company_name || s.name}</span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.125rem' }}>
-                              <code style={{ fontSize: '0.75rem', color: 'var(--primary-400)' }}>{s.supplier_id}</code>
-                              {s.tax_id && (
-                                <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>• NTN: {s.tax_id}</span>
-                              )}
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                              Code: {s.supplier_id || (s as any).code}
                             </div>
                           </td>
 
-                          <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)' }}>
-                            <div>{s.name}</div>
-                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>{s.phone || 'No phone'}</div>
-                          </td>
-
-                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                            Rs. {formatMoney(totalPurchased)}
-                          </td>
-
-                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                            <div style={{ color: 'var(--success)', fontWeight: 600 }}>
-                              Rs. {formatMoney(totalPaid)}
+                          <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <User size={11} />
+                              <span>{s.name}</span>
                             </div>
-                            {(upfrontPaid > 0 || voucherPaid > 0) && (
-                              <div style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>
-                                {upfrontPaid > 0 ? `Upfront: Rs. ${formatMoney(upfrontPaid)}` : ''}
-                                {voucherPaid > 0 ? `${upfrontPaid > 0 ? ' | ' : ''}Vouchers: Rs. ${formatMoney(voucherPaid)}` : ''}
-                                {totalPaid > totalPurchased ? ` (Rs. ${formatMoney(totalPaid - totalPurchased)} advance)` : ''}
+                            {s.phone && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.1rem' }}>
+                                <Phone size={11} />
+                                <span>{s.phone}</span>
                               </div>
                             )}
                           </td>
 
-                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-main)' }}>
+                            Rs. {formatMoney(totalPurchased)}
+                          </td>
+
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--success)', fontWeight: 600 }}>
+                            Rs. {formatMoney(totalPaid)}
+                          </td>
+
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--warning)', fontWeight: 600 }}>
                             Rs. {formatMoney(totalReturns)}
                           </td>
 
-                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                            {netPayable > 0 ? (
-                              <span style={{ color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.12)', padding: '0.15rem 0.4rem', borderRadius: '0.25rem' }}>
-                                Rs. {formatMoney(netPayable)}
-                              </span>
-                            ) : (
-                              <span style={{ color: 'var(--success)' }}>Rs. 0.00</span>
-                            )}
+                          <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: netPayable > 0 ? 'var(--warning)' : 'var(--text-muted)' }}>
+                            Rs. {formatMoney(netPayable)}
                           </td>
 
                           <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
-                              <Button
-                                variant="primary"
-                                style={{ padding: '0.25rem 0.45rem' }}
-                                icon={<Send size={12} />}
-                                onClick={() => handleOpenPaymentModal(s)}
-                                disabled={netPayable <= 0}
-                                title={netPayable <= 0 ? 'No outstanding payable balance to settle' : 'Disburse Payment Voucher'}
-                              />
-
+                              {netPayable > 0 && (
+                                <Button
+                                  variant="primary"
+                                  icon={<Send size={11} />}
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
+                                  onClick={() => handleOpenPaymentModal(s)}
+                                  title="Disburse Payment to Supplier"
+                                >
+                                  Pay
+                                </Button>
+                              )}
                               <Button
                                 variant="outline"
-                                style={{ padding: '0.25rem 0.45rem' }}
                                 icon={<FileText size={12} />}
+                                style={{ padding: '0.25rem 0.45rem' }}
                                 onClick={() => handleOpenStatementModal(s)}
                                 title="View Complete Statement of Account"
                               />
@@ -659,13 +673,23 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
               </table>
             </div>
           )}
+
+          {!loading && supplierTotalCount > 0 && (
+            <Pagination
+              currentPage={supplierPage}
+              totalItems={supplierTotalCount}
+              pageSize={supplierPageSize}
+              onPageChange={setSupplierPage}
+              onPageSizeChange={setSupplierPageSize}
+            />
+          )}
         </Card>
       )}
 
       {/* VIEW 2: PAYMENT VOUCHERS HISTORY */}
       {viewMode === 'vouchers' && (
         <Card
-          title="Payment Vouchers Log"
+          title={`Payment Vouchers Log (${voucherTotalCount})`}
           icon={<CreditCard size={18} />}
           action={
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -798,6 +822,16 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                 </tbody>
               </table>
             </div>
+          )}
+
+          {!vouchersLoading && voucherTotalCount > 0 && (
+            <Pagination
+              currentPage={voucherPage}
+              totalItems={voucherTotalCount}
+              pageSize={voucherPageSize}
+              onPageChange={setVoucherPage}
+              onPageSizeChange={setVoucherPageSize}
+            />
           )}
         </Card>
       )}

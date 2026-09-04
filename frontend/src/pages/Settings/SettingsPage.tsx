@@ -944,12 +944,14 @@ export const SettingsPage: React.FC = () => {
                 </label>
                 <Input
                   type="number"
-                  value={formData.low_stock_default_threshold || '10'}
+                  value={formData.low_stock_default_threshold ?? '10'}
                   onChange={(e) => handleChange('low_stock_default_threshold', e.target.value)}
                   placeholder="10"
+                  min="0"
+                  step="1"
                 />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Products reaching this balance or lower will trigger low stock alert radar notifications.
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.35rem' }}>
+                  Products reaching this balance or lower trigger low stock alerts. When saved, this threshold automatically applies as the default for all products.
                 </span>
               </div>
             </div>

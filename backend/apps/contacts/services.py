@@ -35,20 +35,24 @@ class CustomerReceivableService:
         # 1. Reset each sale's initial paid and due amounts based on upfront payment (at checkout)
         for s in sales:
             upfront_paid = Decimal("0.00")
-            if s.payment_method in [PaymentMethodType.CASH, PaymentMethodType.CARD]:
+            if s.payment_method in [PaymentMethodType.CASH, PaymentMethodType.CARD, PaymentMethodType.CHEQUE]:
                 upfront_paid = s.grand_total
             elif s.payments.exists():
                 upfront_paid = sum(
                     p.amount for p in s.payments.filter(
-                        payment_method__in=[PaymentMethodType.CASH, PaymentMethodType.CARD]
+                        payment_method__in=[PaymentMethodType.CASH, PaymentMethodType.CARD, PaymentMethodType.CHEQUE]
                     )
                 )
             else:
                 if s.payment_method != PaymentMethodType.CREDIT:
                     upfront_paid = min(s.paid_amount, s.grand_total)
 
-            returns_amt = sum(r.refund_amount for r in s.returns.all())
-            effective_grand_total = max(Decimal("0.00"), s.grand_total - returns_amt)
+            # Only deduct returns from invoice total if the return was an AR credit reduction (Credit Sale)
+            if s.payment_method == PaymentMethodType.CREDIT:
+                returns_amt = sum(r.refund_amount for r in s.returns.all())
+                effective_grand_total = max(Decimal("0.00"), s.grand_total - returns_amt)
+            else:
+                effective_grand_total = s.grand_total
 
             s.paid_amount = min(upfront_paid, effective_grand_total)
             s.due_amount = max(Decimal("0.00"), effective_grand_total - s.paid_amount)
@@ -71,7 +75,7 @@ class CustomerReceivableService:
     def get_customer_outstanding(cls, customer_id: int) -> dict:
         """
         Calculates authoritative outstanding receivable balance for a customer.
-        Formula: (Opening Balance + Total Credit Sales) - Total Returns - Total Payments Received.
+        Uses exact statement closing balance to ensure 100% synchronization across all views.
         """
         customer = Customer.objects.get(pk=customer_id)
         if customer.is_walkin:
@@ -88,34 +92,8 @@ class CustomerReceivableService:
                 "outstanding_balance": Decimal("0.00"),
             }
 
-        sales = list(Sale.objects.filter(customer=customer, status=SaleStatus.COMPLETED))
-        
-        # Calculate total credit value granted
-        total_credit_sales = Decimal("0.00")
-        for s in sales:
-            if s.payment_method == PaymentMethodType.CREDIT:
-                total_credit_sales += s.grand_total
-            elif s.payments.exists():
-                credit_part = sum(p.amount for p in s.payments.filter(payment_method=PaymentMethodType.CREDIT))
-                total_credit_sales += credit_part
-            else:
-                upfront = min(s.paid_amount, s.grand_total)
-                total_credit_sales += max(Decimal("0.00"), s.grand_total - upfront)
-
-        payments_total = CustomerPayment.objects.filter(
-            customer=customer,
-            status=CustomerPaymentStatus.SUBMITTED,
-        ).aggregate(total_paid=models.Sum("amount"))["total_paid"] or Decimal("0.00")
-
-        returns_total = SalesReturn.objects.filter(
-            original_sale__customer=customer,
-            original_sale__status=SaleStatus.COMPLETED,
-        ).aggregate(total_refund=models.Sum("refund_amount"))["total_refund"] or Decimal("0.00")
-
-        base_opening = customer.opening_balance or Decimal("0.00")
-        remaining_opening = max(Decimal("0.00"), base_opening - payments_total)
-        total_sales_due = sum(s.due_amount for s in sales)
-        outstanding = remaining_opening + total_sales_due
+        statement_data = cls.get_customer_statement(customer_id)
+        summary = statement_data["summary"]
 
         return {
             "customer_id": customer.id,
@@ -123,11 +101,11 @@ class CustomerReceivableService:
             "customer_name": customer.name,
             "is_walkin": False,
             "credit_enabled": customer.credit_enabled,
-            "opening_balance": base_opening,
-            "total_credit_sales": total_credit_sales,
-            "total_payments": payments_total,
-            "total_returns": returns_total,
-            "outstanding_balance": outstanding,
+            "opening_balance": Decimal(str(summary["opening_balance"])),
+            "total_credit_sales": Decimal(str(summary["total_sales"])),
+            "total_payments": Decimal(str(summary["total_payments"])),
+            "total_returns": Decimal(str(summary["total_returns"])),
+            "outstanding_balance": Decimal(str(summary["closing_balance"])),
         }
 
     @classmethod
@@ -145,7 +123,22 @@ class CustomerReceivableService:
             raise ValidationError("Cannot record payments for the default Walk-in Customer.")
 
         amount = Decimal(str(data.get("amount", "0")))
-        date = data.get("date") or timezone.now().date()
+        date = data.get("date") or timezone.localdate()
+        if isinstance(date, str):
+            from datetime import datetime
+            try:
+                date = datetime.strptime(date, "%Y-%m-%d").date()
+            except Exception:
+                date = timezone.localdate()
+
+        # Prevent backdating payment before customer's latest unpaid invoice or current server date
+        if customer.sales.filter(due_amount__gt=0).exists():
+            latest_unpaid_date = customer.sales.filter(due_amount__gt=0).aggregate(m=models.Max("date"))["m"]
+            if latest_unpaid_date and date < latest_unpaid_date:
+                date = latest_unpaid_date
+        if date < timezone.localdate():
+            date = timezone.localdate()
+
         payment_method = data.get("payment_method", "CASH")
         payment_account = data.get("payment_account")
         reference = data.get("reference", "").strip()
@@ -412,7 +405,7 @@ class CustomerReceivableService:
                 "credit": float(pay.amount),
             })
 
-        # 3. Sales Returns (Immediate payouts / settlement at counter)
+        # 3. Sales Returns
         returns_qs = SalesReturn.objects.filter(original_sale__customer=customer)
         if start_date:
             returns_qs = returns_qs.filter(date__gte=start_date)
@@ -421,12 +414,17 @@ class CustomerReceivableService:
 
         for ret in returns_qs:
             account_name = ret.payment_account.name if ret.payment_account else "Payment Account"
+            is_ar_deduction = (ret.original_sale.payment_method == PaymentMethodType.CREDIT)
+
             if ret.refund_method == "CHEQUE":
                 type_display = f"Sales Return (Cheque #{ret.cheque_number})" if ret.cheque_number else "Sales Return (Cheque)"
                 desc = f"Refund paid via Cheque #{ret.cheque_number} ({ret.cheque_bank or account_name}) - {ret.reason or 'Sales Return'}" if ret.cheque_number else f"Refund paid via Cheque ({account_name}) - {ret.reason or 'Sales Return'}"
             elif ret.refund_method in ["BANK", "CARD"]:
                 type_display = "Sales Return (Bank / Card)"
                 desc = f"Refund paid via Bank Transfer ({account_name}) - {ret.reason or 'Sales Return'}"
+            elif ret.refund_method == PaymentMethodType.CREDIT or is_ar_deduction:
+                type_display = "Sales Return (Credit Note / AR Deduction)"
+                desc = f"Return credited to receivable ({ret.original_sale.invoice_number}) - {ret.reason or 'Sales Return'}"
             else:
                 type_display = "Sales Return (Cash)"
                 desc = f"Refund paid in Cash ({account_name}) - {ret.reason or 'Sales Return'}"
@@ -438,8 +436,10 @@ class CustomerReceivableService:
                 "type_display": type_display,
                 "reference": ret.return_number,
                 "description": desc,
-                "debit": float(ret.refund_amount),
-                "credit": float(ret.refund_amount),
+                "debit": 0.0,
+                "credit": float(ret.refund_amount) if is_ar_deduction else 0.0,
+                "is_direct_refund": not is_ar_deduction,
+                "refund_amount": float(ret.refund_amount),
             })
 
         # Sort chronologically
@@ -462,9 +462,9 @@ class CustomerReceivableService:
                 total_payments += cr
                 running_balance -= cr
             elif ev["type"] == "RETURN":
-                total_returns += cr
-                # Cash refund was handed to customer directly on the spot, AR ledger balance is unchanged
-                pass
+                if not ev.get("is_direct_refund"):
+                    total_returns += cr
+                    running_balance -= cr
 
             ledger_rows.append({
                 "date": str(ev["date"]),
@@ -474,11 +474,13 @@ class CustomerReceivableService:
                 "description": ev["description"],
                 "debit": float(dr) if ev["type"] == "SALE" else 0.0,
                 "credit": float(cr) if ev["type"] in ["PAYMENT", "RETURN"] else 0.0,
-                "returned_amount": float(cr) if ev["type"] == "RETURN" else 0.0,
-                "running_balance": float(running_balance),
+                "returned_amount": float(ev.get("refund_amount", cr)) if ev["type"] == "RETURN" else 0.0,
+                "running_balance": float(max(Decimal("0.00"), running_balance)),
             })
 
-        closing_balance = max(Decimal("0.00"), base_opening + total_sales - total_payments)
+        closing_balance = max(Decimal("0.00"), running_balance)
+
+        ledger_rows.reverse()
 
         return {
             "customer": {
@@ -501,7 +503,7 @@ class CustomerReceivableService:
                 "total_sales": float(total_sales),
                 "total_payments": float(total_payments),
                 "total_returns": float(total_returns),
-                "total_credit": float(total_payments),
+                "total_credit": float(total_payments + total_returns),
                 "closing_balance": float(closing_balance),
             },
             "rows": ledger_rows,

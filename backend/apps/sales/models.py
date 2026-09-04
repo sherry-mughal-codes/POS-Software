@@ -42,7 +42,7 @@ class Sale(models.Model):
         related_name="sales",
         help_text="Customer record (defaults to Walk-in Customer)",
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     status = models.CharField(
         max_length=20,
         choices=SaleStatus.choices,
@@ -121,7 +121,7 @@ class Sale(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-created_at", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Sale"
         verbose_name_plural = "Sales"
         indexes = [
@@ -263,7 +263,7 @@ class SalesReturn(models.Model):
         related_name="returns",
         help_text="Original sale invoice being returned",
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     refund_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -299,7 +299,7 @@ class SalesReturn(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-created_at", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Sales Return"
         verbose_name_plural = "Sales Returns"
         indexes = [
@@ -347,7 +347,7 @@ class POSDaySession(models.Model):
         db_index=True,
         help_text="Unique daily session serial (e.g. DAY-2026-08-17)",
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     status = models.CharField(
         max_length=20,
         choices=DaySessionStatus.choices,
@@ -423,7 +423,7 @@ class POSDaySession(models.Model):
 
     @classmethod
     def generate_session_number(cls, session_date=None) -> str:
-        s_date = session_date or timezone.now().date()
+        s_date = session_date or timezone.localdate()
         date_str = s_date.strftime("%Y-%m-%d")
         prefix = f"DAY-{date_str}"
         existing = cls.objects.filter(session_number__startswith=prefix).count()

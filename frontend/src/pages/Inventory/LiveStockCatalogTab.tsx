@@ -13,6 +13,7 @@ import {
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
+import { Pagination } from '../../components/common/Pagination';
 import { InventorySummaryItem, StockStatus } from '../../types/inventory';
 import { Category } from '../../types/product';
 
@@ -39,6 +40,8 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -56,6 +59,11 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
       return matchSearch && matchCat && matchStatus;
     });
   }, [items, searchTerm, selectedCategory, selectedStatus]);
+
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, page, pageSize]);
 
   // Metric aggregates
   const totalStockUnits = useMemo(() => items.reduce((acc, i) => acc + i.current_stock, 0), [items]);
@@ -268,7 +276,7 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredItems.map((item) => (
+                paginatedItems.map((item) => (
                   <tr
                     key={item.product_id}
                     style={{ borderBottom: '1px solid var(--border-subtle)' }}
@@ -350,6 +358,22 @@ export const LiveStockCatalogTab: React.FC<LiveStockCatalogTabProps> = ({
             </tbody>
           </table>
         </div>
+
+        {filteredItems.length > 0 && (
+          <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+            <Pagination
+              currentPage={page}
+              totalItems={filteredItems.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              pageSizeOptions={[25, 50, 100, 200]}
+            />
+          </div>
+        )}
       </Card>
     </div>
   );

@@ -53,6 +53,8 @@ class SaleItemSerializer(serializers.ModelSerializer):
 
 class SalePaymentSerializer(serializers.ModelSerializer):
     payment_method_display = serializers.CharField(source="get_payment_method_display", read_only=True)
+    payment_account_name = serializers.CharField(source="payment_account.name", read_only=True, default="")
+    payment_account_code = serializers.CharField(source="payment_account.code", read_only=True, default="")
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
 
     class Meta:
@@ -62,6 +64,8 @@ class SalePaymentSerializer(serializers.ModelSerializer):
             "payment_method",
             "payment_method_display",
             "payment_account",
+            "payment_account_name",
+            "payment_account_code",
             "amount",
             "cheque_number",
             "cheque_date",
@@ -136,8 +140,8 @@ class SaleSerializer(serializers.ModelSerializer):
     customer_is_walkin = serializers.BooleanField(source="customer.is_walkin", read_only=True)
     cashier_name = serializers.SerializerMethodField()
     payment_method_display = serializers.CharField(source="get_payment_method_display", read_only=True)
-    payment_account_name = serializers.CharField(source="payment_account.name", read_only=True, default="")
-    payment_account_code = serializers.CharField(source="payment_account.code", read_only=True, default="")
+    payment_account_name = serializers.SerializerMethodField()
+    payment_account_code = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     payment_status = serializers.SerializerMethodField()
     payment_status_display = serializers.SerializerMethodField()
@@ -191,6 +195,38 @@ class SaleSerializer(serializers.ModelSerializer):
             "payments",
             "returns",
         ]
+
+    def get_payment_account_name(self, obj):
+        if obj.payment_account:
+            return obj.payment_account.name
+        first_payment = obj.payments.filter(payment_account__isnull=False).first()
+        if first_payment and first_payment.payment_account:
+            return first_payment.payment_account.name
+        if obj.payment_method == PaymentMethodType.CASH:
+            from apps.accounting.models import Account
+            acc = Account.objects.filter(code="1010").first()
+            return acc.name if acc else "Main Cash"
+        elif obj.payment_method in [PaymentMethodType.CARD, PaymentMethodType.CHEQUE]:
+            from apps.accounting.models import Account
+            acc = Account.objects.filter(code="1020").first()
+            return acc.name if acc else "Bank Account"
+        return ""
+
+    def get_payment_account_code(self, obj):
+        if obj.payment_account:
+            return obj.payment_account.code
+        first_payment = obj.payments.filter(payment_account__isnull=False).first()
+        if first_payment and first_payment.payment_account:
+            return first_payment.payment_account.code
+        if obj.payment_method == PaymentMethodType.CASH:
+            from apps.accounting.models import Account
+            acc = Account.objects.filter(code="1010").first()
+            return acc.code if acc else "1010"
+        elif obj.payment_method in [PaymentMethodType.CARD, PaymentMethodType.CHEQUE]:
+            from apps.accounting.models import Account
+            acc = Account.objects.filter(code="1020").first()
+            return acc.code if acc else "1020"
+        return ""
 
     def get_payment_status(self, obj) -> str:
         if obj.due_amount <= Decimal("0.00"):

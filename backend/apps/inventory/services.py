@@ -94,6 +94,8 @@ class InventoryService:
         elif current_stock <= min_stock:
             status = "LOW_STOCK"
 
+        timeline.reverse()
+
         return {
             "product_id": product.id,
             "product_name": product.name,

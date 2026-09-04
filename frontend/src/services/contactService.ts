@@ -13,9 +13,15 @@ import {
 
 export const contactService = {
   // Customers
-  async getCustomers(params?: CustomerFilterParams): Promise<Customer[]> {
-    const response = await apiClient.get<Customer[]>('/customers/', { params });
-    return response.data;
+  async getCustomers(params?: CustomerFilterParams): Promise<{ results: Customer[]; count: number }> {
+    const response = await apiClient.get<any>('/customers/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getCustomer(id: number): Promise<Customer> {
@@ -70,9 +76,18 @@ export const contactService = {
     date_from?: string;
     date_to?: string;
     search?: string;
-  }): Promise<CustomerPayment[]> {
-    const response = await apiClient.get<CustomerPayment[]>('/payments/', { params });
-    return response.data;
+    page?: number;
+    page_size?: number;
+    all?: boolean;
+  }): Promise<{ results: CustomerPayment[]; count: number }> {
+    const response = await apiClient.get<any>('/payments/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getCustomerPayment(id: number): Promise<CustomerPayment> {
@@ -113,9 +128,15 @@ export const contactService = {
   },
 
   // Suppliers
-  async getSuppliers(params?: SupplierFilterParams): Promise<Supplier[]> {
-    const response = await apiClient.get<Supplier[]>('/suppliers/', { params });
-    return response.data;
+  async getSuppliers(params?: SupplierFilterParams): Promise<{ results: Supplier[]; count: number }> {
+    const response = await apiClient.get<any>('/suppliers/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getSupplier(id: number): Promise<Supplier> {

@@ -15,9 +15,20 @@ import {
 
 export const employeeService = {
   // Employees CRUD & Status
-  async getEmployees(params?: { search?: string; department?: string; job_title?: string; is_active?: boolean }): Promise<Employee[]> {
+  async getEmployees(params?: { search?: string; department?: string; job_title?: string; is_active?: boolean; all?: boolean; page?: number; page_size?: number }): Promise<Employee[]> {
     const response = await api.get('/employees/records/', { params });
     return response.data?.results || response.data || [];
+  },
+
+  async getEmployeesPaginated(params?: { search?: string; department?: string; job_title?: string; is_active?: boolean; page?: number; page_size?: number }): Promise<{ results: Employee[]; count: number }> {
+    const response = await api.get('/employees/records/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getEmployee(id: number): Promise<Employee> {
@@ -51,9 +62,30 @@ export const employeeService = {
     date_from?: string;
     date_to?: string;
     status?: string;
+    page?: number;
+    page_size?: number;
+    all?: boolean;
   }): Promise<Attendance[]> {
     const response = await api.get('/employees/attendance/', { params });
     return response.data?.results || response.data || [];
+  },
+
+  async getAttendancePaginated(params?: {
+    employee?: number;
+    date_from?: string;
+    date_to?: string;
+    status?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<{ results: Attendance[]; count: number }> {
+    const response = await api.get('/employees/attendance/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async recordAttendance(payload: AttendancePayload): Promise<Attendance> {
@@ -67,9 +99,30 @@ export const employeeService = {
     month?: number;
     year?: number;
     status?: string;
+    page?: number;
+    page_size?: number;
+    all?: boolean;
   }): Promise<SalarySlip[]> {
     const response = await api.get('/employees/slips/', { params });
     return response.data?.results || response.data || [];
+  },
+
+  async getSalarySlipsPaginated(params?: {
+    employee?: number;
+    month?: number;
+    year?: number;
+    status?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<{ results: SalarySlip[]; count: number }> {
+    const response = await api.get('/employees/slips/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getSalarySlip(id: number): Promise<SalarySlip> {
@@ -93,9 +146,20 @@ export const employeeService = {
   },
 
   // Salary Payments
-  async getSalaryPayments(params?: { employee?: number; salary_slip?: number }): Promise<SalaryPayment[]> {
+  async getSalaryPayments(params?: { employee?: number; salary_slip?: number; page?: number; page_size?: number; all?: boolean }): Promise<SalaryPayment[]> {
     const response = await api.get('/employees/payments/', { params });
     return response.data?.results || response.data || [];
+  },
+
+  async getSalaryPaymentsPaginated(params?: { employee?: number; salary_slip?: number; page?: number; page_size?: number }): Promise<{ results: SalaryPayment[]; count: number }> {
+    const response = await api.get('/employees/payments/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async disburseSalaryPayment(payload: SalaryPaymentPayload): Promise<SalaryPayment> {

@@ -13,9 +13,15 @@ import {
 
 export const purchaseService = {
   // Purchases
-  async getPurchases(params?: any): Promise<Purchase[]> {
-    const response = await apiClient.get<Purchase[]>('/purchases/orders/', { params });
-    return response.data;
+  async getPurchases(params?: any): Promise<{ results: Purchase[]; count: number }> {
+    const response = await apiClient.get<any>('/purchases/orders/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getPurchase(id: number): Promise<Purchase> {
@@ -44,9 +50,15 @@ export const purchaseService = {
   },
 
   // Returns
-  async getPurchaseReturns(): Promise<PurchaseReturn[]> {
-    const response = await apiClient.get<PurchaseReturn[]>('/purchases/returns/');
-    return response.data;
+  async getPurchaseReturns(params?: any): Promise<{ results: PurchaseReturn[]; count: number }> {
+    const response = await apiClient.get<any>('/purchases/returns/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async createPurchaseReturn(data: PurchaseReturnCreatePayload): Promise<PurchaseReturn> {
@@ -55,9 +67,15 @@ export const purchaseService = {
   },
 
   // Supplier Payments
-  async getSupplierPayments(params?: any): Promise<SupplierPayment[]> {
-    const response = await apiClient.get<SupplierPayment[]>('/purchases/payments/', { params });
-    return response.data;
+  async getSupplierPayments(params?: any): Promise<{ results: SupplierPayment[]; count: number }> {
+    const response = await apiClient.get<any>('/purchases/payments/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async createSupplierPayment(data: SupplierPaymentCreatePayload): Promise<SupplierPayment> {

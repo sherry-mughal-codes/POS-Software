@@ -72,7 +72,7 @@ class CustomerWarrantyClaim(models.Model):
         help_text="Claimed and replaced quantity",
     )
     claim_date = models.DateField(
-        default=timezone.now,
+        default=timezone.localdate,
         db_index=True,
         help_text="Date the claim was filed",
     )
@@ -119,7 +119,7 @@ class CustomerWarrantyClaim(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ["-id"]
+        ordering = ["-claim_date", "-created_at", "-id"]
         verbose_name = "Customer Warranty Claim"
         verbose_name_plural = "Customer Warranty Claims"
 
@@ -170,7 +170,7 @@ class SupplierWarrantyClaim(models.Model):
         related_name="supplier_warranty_claims",
         help_text="Supplier to whom defective items are sent",
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     status = models.CharField(
         max_length=30,
         choices=SupplierWarrantyClaimStatus.choices,
@@ -218,7 +218,7 @@ class SupplierWarrantyClaim(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ["-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Supplier Warranty Claim"
         verbose_name_plural = "Supplier Warranty Claims"
 

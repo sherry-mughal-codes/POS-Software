@@ -142,7 +142,7 @@ class AccountingService:
         - (Optional Inventory Accounting): Debit COGS, Credit Inventory
         """
         if entry_date is None:
-            entry_date = timezone.now().date()
+            entry_date = timezone.localdate()
 
         total = Decimal(str(total_amount))
         paid = Decimal(str(paid_amount))
@@ -225,7 +225,7 @@ class AccountingService:
         - (Optional): Debit Inventory, Credit COGS
         """
         if entry_date is None:
-            entry_date = timezone.now().date()
+            entry_date = timezone.localdate()
 
         total = Decimal(str(total_amount))
         refunded = Decimal(str(refunded_amount))
@@ -299,7 +299,7 @@ class AccountingService:
         - Credit Accounts Receivable
         """
         if entry_date is None:
-            entry_date = timezone.now().date()
+            entry_date = timezone.localdate()
 
         amt = Decimal(str(amount))
         lines = [
@@ -344,7 +344,7 @@ class AccountingService:
         - Credit Accounts Payable for unpaid supplier balance
         """
         if entry_date is None:
-            entry_date = timezone.now().date()
+            entry_date = timezone.localdate()
 
         total = Decimal(str(total_amount))
         paid = Decimal(str(paid_amount))
@@ -403,7 +403,7 @@ class AccountingService:
         - Credit Cash/Bank
         """
         if entry_date is None:
-            entry_date = timezone.now().date()
+            entry_date = timezone.localdate()
 
         amt = Decimal(str(amount))
         lines = [
@@ -446,7 +446,7 @@ class AccountingService:
         - Credit Cash/Bank Account
         """
         if entry_date is None:
-            entry_date = timezone.now().date()
+            entry_date = timezone.localdate()
 
         amt = Decimal(str(amount))
         lines = [
@@ -532,7 +532,7 @@ class AccountingService:
             return None
 
         if entry_date is None:
-            entry_date = timezone.now().date()
+            entry_date = timezone.localdate()
 
         ar_acc = Account.objects.filter(code="1030").first()
         equity_acc = Account.objects.filter(code="3010").first() or Account.objects.filter(code="3000").first()
@@ -588,7 +588,7 @@ class AccountingService:
             return None
 
         if entry_date is None:
-            entry_date = timezone.now().date()
+            entry_date = timezone.localdate()
 
         ap_acc = Account.objects.filter(code="2010").first()
         equity_acc = Account.objects.filter(code="3010").first() or Account.objects.filter(code="3000").first()
@@ -646,7 +646,7 @@ class AccountingService:
             })
 
         reversal_entry = cls.create_journal_entry(
-            entry_date=timezone.now().date(),
+            entry_date=timezone.localdate(),
             reference_type=ReferenceType.REVERSAL,
             reference_id=original_entry.entry_number,
             lines=lines,
@@ -660,21 +660,42 @@ class AccountingService:
     # Financial Reports & Ledger Queries
     # -------------------------------------------------------------------------
 
-    @staticmethod
-    def get_account_ledger(account_id: int, start_date=None, end_date=None) -> Dict[str, Any]:
+    @classmethod
+    def _get_account_descendant_ids(cls, account: Account) -> List[int]:
+        ids = [account.id]
+        for child in account.children.filter(is_active=True):
+            ids.extend(cls._get_account_descendant_ids(child))
+        return ids
+
+    @classmethod
+    def get_account_ledger(cls, account_id: int, start_date=None, end_date=None) -> Dict[str, Any]:
         """Returns chronological statement of account with running balance."""
         account = Account.objects.get(pk=account_id)
-        qs = JournalItem.objects.filter(
-            account=account,
-            journal_entry__status=JournalEntryStatus.POSTED,
-        ).select_related("journal_entry").order_by("journal_entry__entry_date", "id")
+        account_ids = cls._get_account_descendant_ids(account)
 
+        qs = JournalItem.objects.filter(
+            account_id__in=account_ids,
+            journal_entry__status=JournalEntryStatus.POSTED,
+        ).select_related("journal_entry", "account").order_by("journal_entry__entry_date", "journal_entry__created_at", "id")
+
+        running_balance = Decimal("0.00")
         if start_date:
+            prior_items = JournalItem.objects.filter(
+                account_id__in=account_ids,
+                journal_entry__status=JournalEntryStatus.POSTED,
+                journal_entry__entry_date__lt=start_date,
+            ).aggregate(total_dr=models.Sum("debit"), total_cr=models.Sum("credit"))
+            p_dr = prior_items["total_dr"] or Decimal("0.00")
+            p_cr = prior_items["total_cr"] or Decimal("0.00")
+            if account.normal_balance == "DEBIT":
+                running_balance = p_dr - p_cr
+            else:
+                running_balance = p_cr - p_dr
+
             qs = qs.filter(journal_entry__entry_date__gte=start_date)
         if end_date:
             qs = qs.filter(journal_entry__entry_date__lte=end_date)
 
-        running_balance = Decimal("0.00")
         ledger_rows = []
 
         for item in qs:
@@ -692,10 +713,14 @@ class AccountingService:
                 "reference_type": item.journal_entry.reference_type,
                 "reference_id": item.journal_entry.reference_id,
                 "description": item.description or item.journal_entry.narration,
+                "account_code": item.account.code,
+                "account_name": item.account.name,
                 "debit": float(dr),
                 "credit": float(cr),
                 "running_balance": float(running_balance),
             })
+
+        ledger_rows.reverse()
 
         return {
             "account": {
@@ -753,7 +778,7 @@ class AccountingService:
             })
 
         return {
-            "as_of_date": str(as_of_date or timezone.now().date()),
+            "as_of_date": str(as_of_date or timezone.localdate()),
             "total_debit": float(grand_total_debit),
             "total_credit": float(grand_total_credit),
             "is_balanced": abs(grand_total_debit - grand_total_credit) < Decimal("0.0001"),
@@ -766,7 +791,7 @@ class AccountingService:
         Generates Income Statement (Profit & Loss): Revenue - COGS - Operating Expenses = Net Profit.
         """
         if not end_date:
-            end_date = timezone.now().date()
+            end_date = timezone.localdate()
         if not start_date:
             start_date = date(end_date.year, 1, 1)
 
@@ -821,7 +846,7 @@ class AccountingService:
         Generates Balance Sheet: Assets = Liabilities + Equity (including Net Income).
         """
         if not as_of_date:
-            as_of_date = timezone.now().date()
+            as_of_date = timezone.localdate()
 
         def get_type_rows(acc_type, is_asset=True):
             accounts = Account.objects.filter(account_type=acc_type, is_active=True)

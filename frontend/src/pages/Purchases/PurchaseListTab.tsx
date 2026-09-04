@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ShoppingBag,
   Eye,
@@ -18,6 +18,7 @@ import { Modal } from '../../components/common/Modal';
 import { Purchase, PurchaseItem } from '../../types/purchase';
 import { purchaseService } from '../../services/purchaseService';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { PurchaseOrderSlipModal } from './PurchaseOrderSlipModal';
 import { useToast } from '../../context/ToastContext';
 
@@ -43,15 +44,46 @@ const COMMON_CANCEL_REASONS = [
 ];
 
 export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
-  purchases,
-  loading,
+  purchases: initialPurchases,
+  loading: initialLoading,
   onRefresh,
   onOpenReturn,
   onEditDraft,
 }) => {
   const { showError, showSuccess } = useToast();
+  const [purchases, setPurchases] = useState<Purchase[]>(initialPurchases || []);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(initialLoading);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUBMITTED' | 'DRAFT' | 'CANCELLED'>('ALL');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+
+  const fetchPurchases = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await purchaseService.getPurchases({
+        page: currentPage,
+        page_size: pageSize,
+        search: searchQuery || undefined,
+        status: statusFilter !== 'ALL' ? statusFilter : undefined,
+      });
+      setPurchases(data.results || []);
+      setTotalCount(data.count ?? (data.results ? data.results.length : 0));
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    fetchPurchases();
+  }, [fetchPurchases]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   // Detail Modal
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
@@ -68,7 +100,8 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
     try {
       await purchaseService.submitDraftPurchase(p.id);
       showSuccess(`Purchase order ${p.purchase_number} submitted and restocked successfully!`, 'Purchase Submitted');
-      onRefresh();
+      fetchPurchases();
+      if (onRefresh) onRefresh();
     } catch (err: any) {
       showError(err?.response?.data?.detail || err?.message || 'Failed to submit purchase order.', 'Submission Error');
     }
@@ -82,26 +115,14 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
       showSuccess(`Purchase order ${cancelTarget.purchase_number} cancelled and reversed successfully.`, 'Order Cancelled');
       setCancelTarget(null);
       setCancelReason('');
-      onRefresh();
+      fetchPurchases();
+      if (onRefresh) onRefresh();
     } catch (err: any) {
       showError(err?.response?.data?.detail || err?.message || 'Failed to cancel purchase order.', 'Cancellation Error');
     } finally {
       setCancelling(false);
     }
   };
-
-  const filteredPurchases = purchases.filter((p) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      p.purchase_number.toLowerCase().includes(q) ||
-      (p.supplier_name && p.supplier_name.toLowerCase().includes(q)) ||
-      (p.supplier_company && p.supplier_company.toLowerCase().includes(q));
-
-    let matchesStatus = true;
-    if (statusFilter !== 'ALL') matchesStatus = p.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -148,12 +169,12 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
 
       {/* Purchases Table Card */}
       <Card
-        title="Purchase Orders Log"
+        title={`Purchase Orders Log (${totalCount})`}
         icon={<ShoppingBag size={18} />}
       >
         {loading ? (
           <LoadingSpinner label="Loading purchase orders..." />
-        ) : filteredPurchases.length === 0 ? (
+        ) : purchases.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
             No purchase orders match the filter criteria.
           </div>
@@ -173,7 +194,7 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {filteredPurchases.map((p) => (
+                {purchases.map((p) => (
                   <tr
                     key={p.id}
                     style={{ borderBottom: '1px solid var(--border-subtle)', opacity: p.status === 'CANCELLED' ? 0.6 : 1 }}
@@ -192,9 +213,9 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                       }}>
                         {p.purchase_number}
                       </code>
-                      {(p.returned_amount ?? 0) > 0 && (
+                      {((p.returned_amount && p.returned_amount > 0) || (p.returns_count && p.returns_count > 0)) && (
                         <div style={{ marginTop: '0.25rem' }}>
-                          <Badge variant="warning">Returned (Rs. {formatMoney(p.returned_amount)})</Badge>
+                          <Badge variant="warning">Returned (Rs. {formatMoney(p.returned_amount || 0)})</Badge>
                         </div>
                       )}
                     </td>
@@ -308,6 +329,16 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
               </tbody>
             </table>
           </div>
+        )}
+
+        {!loading && totalCount > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalCount}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         )}
       </Card>
 

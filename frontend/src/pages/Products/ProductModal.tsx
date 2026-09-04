@@ -33,8 +33,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   units,
   onSaved,
 }) => {
-  const { currencySymbol } = useSettings();
+  const { currencySymbol, settings } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const defaultLowStock = (settings as any)?.low_stock_default_threshold || '10';
 
   const [sku, setSku] = useState('');
   const [name, setName] = useState('');
@@ -65,8 +67,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setError(null);
-      setImageFile(null);
-
       if (productToEdit) {
         setSku(productToEdit.sku);
         setName(productToEdit.name);
@@ -76,7 +76,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setPurchasePrice(productToEdit.purchase_price.toString());
         setSellingPrice(productToEdit.selling_price.toString());
         setOpeningStock(productToEdit.current_stock ? productToEdit.current_stock.toString() : '0');
-        setMinStockLevel(productToEdit.min_stock_level ? productToEdit.min_stock_level.toString() : '10');
+        setMinStockLevel(productToEdit.min_stock_level ? productToEdit.min_stock_level.toString() : defaultLowStock);
         if (productToEdit.warranty_period_days) {
           const days = productToEdit.warranty_period_days;
           if (days % 365 === 0 && days >= 365) {
@@ -98,14 +98,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         if (productToEdit.image) {
           setImageMode('UPLOAD');
           setImagePreview(productToEdit.image);
+          setImageFile(null);
           setImageUrl('');
-        } else if (productToEdit.image_url) {
-          setImageMode('URL');
-          setImagePreview(productToEdit.image_url);
-          setImageUrl(productToEdit.image_url);
         } else {
           setImageMode('UPLOAD');
           setImagePreview(null);
+          setImageFile(null);
           setImageUrl('');
         }
 
@@ -119,7 +117,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         setPurchasePrice('0');
         setSellingPrice('0');
         setOpeningStock('0');
-        setMinStockLevel('10');
+        setMinStockLevel(defaultLowStock);
         setWarrantyDuration('');
         setWarrantyUnit('DAYS');
         setDoNotMaintainStock(false);
@@ -137,7 +135,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         });
       }
     }
-  }, [isOpen, productToEdit, categories, units]);
+  }, [isOpen, productToEdit, categories, units, defaultLowStock]);
 
   // Live Gross Margin Calculation
   const pPrice = parseFloat(purchasePrice) || 0;

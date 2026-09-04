@@ -96,18 +96,19 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
       const [invList, catList, custList, sessionRes] = await Promise.all([
         inventoryService.getSummary(),
         productService.getCategories(),
-        contactService.getCustomers({ is_active: true }),
+        contactService.getCustomers({ is_active: true, all: true }),
         daySessionService.getCurrentSession().catch(() => ({ active: false })),
       ]);
-      const activeCustomers = (custList || []).filter((c) => c.is_active || c.is_walkin);
+      const rawCustomers = Array.isArray(custList) ? custList : (custList?.results || []);
+      const activeCustomers = rawCustomers.filter((c: Customer) => c.is_active || c.is_walkin);
       setProducts(invList || []);
       setCategories(catList || []);
       setCustomers(activeCustomers);
       setActiveSession((sessionRes as any)?.active ? (sessionRes as any).session : null);
 
       // Default to walk-in customer
-      const walkin = activeCustomers.find((c) => c.is_walkin) || activeCustomers[0];
-      if (walkin && (selectedCustomerId === 0 || !activeCustomers.some((c) => c.id === selectedCustomerId))) {
+      const walkin = activeCustomers.find((c: Customer) => c.is_walkin) || activeCustomers[0];
+      if (walkin && (selectedCustomerId === 0 || !activeCustomers.some((c: Customer) => c.id === selectedCustomerId))) {
         setSelectedCustomerId(walkin.id);
       }
     } catch {
@@ -316,8 +317,9 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
 
   const handleCustomerCreated = async (newCustomer?: Customer) => {
     try {
-      const custList = await contactService.getCustomers({ is_active: true });
-      const activeCustomers = (custList || []).filter((c) => c.is_active || c.is_walkin);
+      const custList = await contactService.getCustomers({ is_active: true, all: true });
+      const rawCustomers = Array.isArray(custList) ? custList : (custList?.results || []);
+      const activeCustomers = rawCustomers.filter((c: Customer) => c.is_active || c.is_walkin);
       setCustomers(activeCustomers);
       if (newCustomer) {
         setSelectedCustomerId(newCustomer.id);
@@ -516,14 +518,16 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
           style={{
             flex: 1,
             display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) 340px',
+            gridTemplateColumns: 'minmax(460px, 1fr) 340px',
             gap: '0.625rem',
-            overflow: 'hidden',
+            overflowX: 'auto',
+            overflowY: 'hidden',
             minHeight: 0,
+            minWidth: 0,
           }}
         >
           {/* Left Side: Product Catalog Grid */}
-          <div style={{ overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column', minWidth: '460px' }}>
             <POSProductGrid
               products={products}
               categories={categories}

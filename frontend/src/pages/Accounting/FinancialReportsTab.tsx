@@ -16,6 +16,7 @@ import {
   BalanceSheetResponse,
 } from '../../types/accounting';
 import { accountingService } from '../../services/accountingService';
+import { daySessionService } from '../../services/daySessionService';
 
 type ReportType = 'TRIAL_BALANCE' | 'INCOME_STATEMENT' | 'BALANCE_SHEET';
 type PeriodPreset = 'this_month' | 'today' | 'this_week' | 'last_month' | 'this_quarter' | 'this_year' | 'all_time' | 'custom';
@@ -24,38 +25,45 @@ interface FinancialReportsTabProps {
   refreshTrigger?: number;
 }
 
-const computePresetDates = (preset: PeriodPreset): { start: string; end: string } => {
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+const computePresetDates = (preset: PeriodPreset, baseDateStr?: string): { start: string; end: string } => {
+  let now: Date;
+  if (baseDateStr) {
+    const parts = baseDateStr.split('-');
+    now = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  } else {
+    now = new Date();
+  }
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${y}-${m}-${d}`;
 
   if (preset === 'today') {
     return { start: todayStr, end: todayStr };
   }
   if (preset === 'this_week') {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 6);
-    return { start: d.toISOString().split('T')[0], end: todayStr };
+    const prev = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    const py = prev.getFullYear();
+    const pm = String(prev.getMonth() + 1).padStart(2, '0');
+    const pd = String(prev.getDate()).padStart(2, '0');
+    return { start: `${py}-${pm}-${pd}`, end: todayStr };
   }
   if (preset === 'this_month') {
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
     return { start: `${y}-${m}-01`, end: todayStr };
   }
   if (preset === 'last_month') {
     const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
-    return {
-      start: firstDay.toISOString().split('T')[0],
-      end: lastDay.toISOString().split('T')[0],
-    };
+    const fStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-01`;
+    const lStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+    return { start: fStr, end: lStr };
   }
   if (preset === 'this_quarter') {
     const quarter = Math.floor(now.getMonth() / 3);
-    const firstDay = new Date(now.getFullYear(), quarter * 3, 1);
-    return { start: firstDay.toISOString().split('T')[0], end: todayStr };
+    const qm = String(quarter * 3 + 1).padStart(2, '0');
+    return { start: `${y}-${qm}-01`, end: todayStr };
   }
   if (preset === 'this_year') {
-    const y = now.getFullYear();
     return { start: `${y}-01-01`, end: todayStr };
   }
   return { start: '', end: todayStr };
@@ -76,17 +84,32 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
 
   // Filters
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('this_month');
+  const [businessDate, setBusinessDate] = useState<string>('');
   const [startDate, setStartDate] = useState<string>(() => computePresetDates('this_month').start);
   const [endDate, setEndDate] = useState<string>(() => computePresetDates('this_month').end);
   const [asOfDate, setAsOfDate] = useState<string>(() => computePresetDates('this_month').end);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [hideZeroBalances, setHideZeroBalances] = useState<boolean>(true);
 
+  // Sync with active business session date on mount
+  useEffect(() => {
+    daySessionService.getCurrentSession().then((res) => {
+      if (res?.active && res?.session?.date) {
+        const sDate = res.session.date;
+        setBusinessDate(sDate);
+        const { start, end } = computePresetDates(periodPreset, sDate);
+        setStartDate(start);
+        setEndDate(end);
+        setAsOfDate(end);
+      }
+    }).catch(() => {});
+  }, []);
+
   // Handle Preset Change
   const handlePeriodPresetChange = (preset: PeriodPreset) => {
     setPeriodPreset(preset);
     if (preset !== 'custom') {
-      const { start, end } = computePresetDates(preset);
+      const { start, end } = computePresetDates(preset, businessDate || undefined);
       setStartDate(start);
       setEndDate(end);
       setAsOfDate(end);

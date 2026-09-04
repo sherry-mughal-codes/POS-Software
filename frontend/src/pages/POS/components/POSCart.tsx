@@ -39,6 +39,112 @@ const formatMoney = (val: number | string | undefined | null): string => {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+const CartPriceInput: React.FC<{
+  initialValue: number;
+  onUpdate: (val: number) => void;
+}> = ({ initialValue, onUpdate }) => {
+  const [valStr, setValStr] = React.useState<string>(String(initialValue));
+
+  React.useEffect(() => {
+    setValStr(String(initialValue));
+  }, [initialValue]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={valStr}
+      onChange={(e) => {
+        const text = e.target.value;
+        if (text === '' || /^\d*\.?\d*$/.test(text)) {
+          setValStr(text);
+          if (text !== '' && !isNaN(Number(text))) {
+            onUpdate(parseFloat(text) || 0);
+          }
+        }
+      }}
+      onBlur={() => {
+        if (valStr === '' || isNaN(Number(valStr))) {
+          setValStr('0');
+          onUpdate(0);
+        } else {
+          onUpdate(parseFloat(valStr));
+        }
+      }}
+      onFocus={(e) => {
+        e.target.style.borderColor = 'var(--primary-400)';
+        e.target.select();
+      }}
+      style={{
+        width: '4.2rem',
+        padding: '0.1rem 0.25rem',
+        backgroundColor: 'var(--bg-input)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '0.25rem',
+        color: 'var(--text-main)',
+        fontSize: '0.71875rem',
+        fontWeight: 700,
+        fontFamily: 'var(--font-mono)',
+        textAlign: 'right',
+        outline: 'none',
+      }}
+      title="Click to edit unit price"
+    />
+  );
+};
+
+const CartQtyInput: React.FC<{
+  quantity: number;
+  availableStock: number;
+  onUpdate: (qty: number) => void;
+}> = ({ quantity, availableStock, onUpdate }) => {
+  const [qtyStr, setQtyStr] = React.useState<string>(String(quantity));
+
+  React.useEffect(() => {
+    setQtyStr(String(quantity));
+  }, [quantity]);
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={qtyStr}
+      onChange={(e) => {
+        const text = e.target.value;
+        if (text === '' || /^\d+$/.test(text)) {
+          setQtyStr(text);
+          if (text !== '') {
+            const num = parseInt(text, 10);
+            if (num > 0) {
+              onUpdate(Math.min(num, availableStock));
+            }
+          }
+        }
+      }}
+      onBlur={() => {
+        if (qtyStr === '' || parseInt(qtyStr, 10) < 1) {
+          setQtyStr('1');
+          onUpdate(1);
+        } else {
+          const num = parseInt(qtyStr, 10);
+          onUpdate(Math.min(num, availableStock));
+        }
+      }}
+      onFocus={(e) => e.target.select()}
+      style={{
+        width: '1.75rem',
+        textAlign: 'center',
+        backgroundColor: 'transparent',
+        border: 'none',
+        color: 'var(--text-main)',
+        fontWeight: 700,
+        fontSize: '0.71875rem',
+        outline: 'none',
+      }}
+    />
+  );
+};
+
 export const POSCart: React.FC<POSCartProps> = ({
   cart,
   customers,
@@ -386,22 +492,10 @@ export const POSCart: React.FC<POSCartProps> = ({
                       <Minus size={9} />
                     </button>
 
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      min={1}
-                      max={item.available_stock}
-                      onChange={(e) => onUpdateQuantity(item.product_id, parseFloat(e.target.value) || 1)}
-                      style={{
-                        width: '1.75rem',
-                        textAlign: 'center',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-main)',
-                        fontWeight: 700,
-                        fontSize: '0.71875rem',
-                        outline: 'none',
-                      }}
+                    <CartQtyInput
+                      quantity={item.quantity}
+                      availableStock={item.available_stock}
+                      onUpdate={(qty) => onUpdateQuantity(item.product_id, qty)}
                     />
 
                     <button
@@ -426,33 +520,9 @@ export const POSCart: React.FC<POSCartProps> = ({
                   {/* Inline Direct Editable Unit Price */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
                     <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', fontWeight: 600 }}>Rs.</span>
-                    <input
-                      type="number"
-                      step="any"
-                      min="0"
-                      value={item.unit_price}
-                      onChange={(e) => onUpdateUnitPrice(item.product_id, parseFloat(e.target.value) || 0)}
-                      style={{
-                        width: '4.2rem',
-                        padding: '0.1rem 0.25rem',
-                        backgroundColor: 'var(--bg-input)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '0.25rem',
-                        color: 'var(--text-main)',
-                        fontSize: '0.71875rem',
-                        fontWeight: 700,
-                        fontFamily: 'var(--font-mono)',
-                        textAlign: 'right',
-                        outline: 'none',
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = 'var(--primary-400)';
-                        e.target.select();
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = 'var(--border-subtle)';
-                      }}
-                      title="Edit item price directly"
+                    <CartPriceInput
+                      initialValue={item.unit_price}
+                      onUpdate={(newPrice) => onUpdateUnitPrice(item.product_id, newPrice)}
                     />
                   </div>
 

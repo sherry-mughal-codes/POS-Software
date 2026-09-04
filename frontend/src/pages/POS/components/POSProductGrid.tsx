@@ -106,11 +106,13 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
         style={{
           flex: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-          gap: '0.5rem',
-          paddingRight: '0.25rem',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(135px, 1fr))',
+          gap: '0.55rem',
+          paddingRight: '0.35rem',
           alignContent: 'start',
+          minWidth: '440px',
         }}
       >
         {filteredProducts.length === 0 ? (
@@ -153,7 +155,10 @@ export const POSProductGrid: React.FC<POSProductGridProps> = ({
                   position: 'relative',
                   padding: '0.45rem',
                   gap: '0.3rem',
-                  minWidth: 0,
+                  minWidth: '130px',
+                  minHeight: '130px',
+                  boxSizing: 'border-box',
+                  flexShrink: 0,
                 }}
                 onMouseEnter={(e) => {
                   if (!isOutOfStock) {

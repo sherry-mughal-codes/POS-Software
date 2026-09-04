@@ -103,7 +103,7 @@ class Employee(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["full_name"]
+        ordering = ["-created_at", "-id"]
         verbose_name = "Employee"
         verbose_name_plural = "Employees"
 
@@ -126,7 +126,7 @@ class Attendance(models.Model):
         related_name="attendance_records",
         db_index=True,
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     check_in = models.TimeField(null=True, blank=True)
     check_out = models.TimeField(null=True, blank=True)
     status = models.CharField(
@@ -147,7 +147,7 @@ class Attendance(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         unique_together = ("employee", "date")
         verbose_name = "Attendance Record"
         verbose_name_plural = "Attendance Records"
@@ -190,7 +190,7 @@ class SalarySlip(models.Model):
         db_index=True,
         help_text="Formatted period (e.g. 2026-08)",
     )
-    date = models.DateField(default=timezone.now, help_text="Issue/Calculation date")
+    date = models.DateField(default=timezone.localdate, help_text="Issue/Calculation date")
     basic_salary = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -275,7 +275,7 @@ class SalarySlip(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-year", "-month", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         unique_together = ("employee", "month", "year")
         verbose_name = "Salary Slip"
         verbose_name_plural = "Salary Slips"
@@ -306,7 +306,7 @@ class SalaryPayment(models.Model):
         max_length=50,
         unique=True,
         db_index=True,
-        help_text="Unique salary payment voucher (e.g. SPAY-2026-00001)",
+        help_text="Unique salary payment voucher (e.g. SALPAY-2026-00001)",
     )
     salary_slip = models.ForeignKey(
         SalarySlip,
@@ -320,7 +320,7 @@ class SalaryPayment(models.Model):
         related_name="salary_payments",
         db_index=True,
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -409,7 +409,7 @@ class SalaryPayment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Salary Payment"
         verbose_name_plural = "Salary Payments"
 

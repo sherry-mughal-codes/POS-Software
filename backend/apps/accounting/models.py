@@ -160,7 +160,7 @@ class JournalEntry(models.Model):
     Header for atomic double-entry accounting transactions.
     """
     entry_number = models.CharField(max_length=50, unique=True, db_index=True)
-    entry_date = models.DateField(default=timezone.now, db_index=True)
+    entry_date = models.DateField(default=timezone.localdate, db_index=True)
     posting_date = models.DateTimeField(null=True, blank=True)
     reference_type = models.CharField(max_length=30, choices=ReferenceType.choices, default=ReferenceType.MANUAL, db_index=True)
     reference_id = models.CharField(max_length=100, blank=True, null=True, db_index=True, help_text="Original entity ID (e.g. INV-1001)")
@@ -171,7 +171,7 @@ class JournalEntry(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-entry_date", "-id"]
+        ordering = ["-entry_date", "-created_at", "-id"]
         verbose_name = "Journal Entry"
         verbose_name_plural = "Journal Entries"
 

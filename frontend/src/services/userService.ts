@@ -3,8 +3,14 @@ import { User, Role, Permission, AuditLogEntry, CreateUserData, UpdateUserData }
 
 export const userService = {
   async getUsers(): Promise<User[]> {
-    const response = await apiClient.get<User[]>('/users/');
-    return response.data;
+    const response = await apiClient.get<any>('/users/', { params: { all: true } });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   async createUser(data: CreateUserData): Promise<User> {
@@ -23,8 +29,14 @@ export const userService = {
   },
 
   async getRoles(): Promise<Role[]> {
-    const response = await apiClient.get<Role[]>('/roles/');
-    return response.data;
+    const response = await apiClient.get<any>('/roles/', { params: { all: true } });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   async createRole(data: { name: string; permission_ids?: number[] }): Promise<Role> {
@@ -44,12 +56,24 @@ export const userService = {
   },
 
   async getPermissions(): Promise<Permission[]> {
-    const response = await apiClient.get<Permission[]>('/permissions/');
-    return response.data;
+    const response = await apiClient.get<any>('/permissions/');
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   async getAuditLogs(): Promise<AuditLogEntry[]> {
-    const response = await apiClient.get<AuditLogEntry[]>('/audit-logs/');
-    return response.data;
+    const response = await apiClient.get<any>('/audit-logs/', { params: { all: true } });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 };

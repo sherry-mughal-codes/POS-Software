@@ -35,7 +35,7 @@ class Purchase(models.Model):
         related_name="purchases",
         db_index=True,
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     status = models.CharField(
         max_length=20,
         choices=PurchaseStatus.choices,
@@ -89,7 +89,7 @@ class Purchase(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Purchase Order"
         verbose_name_plural = "Purchase Orders"
         indexes = [
@@ -164,7 +164,7 @@ class PurchaseReturn(models.Model):
         on_delete=models.PROTECT,
         related_name="purchase_returns",
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     total_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     refund_method = models.CharField(
         max_length=30,
@@ -193,7 +193,7 @@ class PurchaseReturn(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Purchase Return"
         verbose_name_plural = "Purchase Returns"
 
@@ -245,7 +245,7 @@ class SupplierPayment(models.Model):
         related_name="payments",
         db_index=True,
     )
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     payment_method = models.CharField(
         max_length=20,
@@ -318,7 +318,7 @@ class SupplierPayment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Supplier Payment"
         verbose_name_plural = "Supplier Payments"
 

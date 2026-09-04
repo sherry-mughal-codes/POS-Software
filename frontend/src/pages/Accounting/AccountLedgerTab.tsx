@@ -17,11 +17,8 @@ export const AccountLedgerTab: React.FC<AccountLedgerTabProps> = ({
   initialAccountId,
   refreshTrigger,
 }) => {
-  const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
-  const postingAccounts = accounts.filter((a) => isLeaf(a));
-
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
-    initialAccountId || (postingAccounts.length > 0 ? postingAccounts[0].id : null)
+    initialAccountId || (accounts.length > 0 ? accounts[0].id : null)
   );
   const [ledgerData, setLedgerData] = useState<AccountLedgerResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -70,11 +67,14 @@ export const AccountLedgerTab: React.FC<AccountLedgerTabProps> = ({
               fontSize: '0.78125rem',
             }}
           >
-            {postingAccounts.map((acc) => (
-              <option key={acc.id} value={acc.id}>
-                [{acc.code}] {acc.name} ({acc.account_type})
-              </option>
-            ))}
+            {accounts.map((acc) => {
+              const isGroup = Boolean(acc.is_header || (acc.children_count && acc.children_count > 0));
+              return (
+                <option key={acc.id} value={acc.id}>
+                  [{acc.code}] {acc.name} {isGroup ? '• (Parent Group)' : ''} ({acc.account_type})
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>

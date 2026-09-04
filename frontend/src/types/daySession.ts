@@ -44,6 +44,7 @@ export interface XReportSalesSummary {
   net_sales: number;
   cash_sales: number;
   card_sales: number;
+  cheque_sales?: number;
   credit_sales: number;
 }
 

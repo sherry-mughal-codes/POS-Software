@@ -14,6 +14,7 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
+import { Pagination } from '../../components/common/Pagination';
 import {
   StockAdjustment,
   InventorySummaryItem,
@@ -64,6 +65,13 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  const paginatedAdjustments = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return adjustments.slice(start, start + pageSize);
+  }, [adjustments, page, pageSize]);
 
   // Update selection if targetProduct changes
   React.useEffect(() => {
@@ -212,7 +220,7 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
                   </td>
                 </tr>
               ) : (
-                adjustments.map((adj) => (
+                paginatedAdjustments.map((adj) => (
                   <tr
                     key={adj.id}
                     style={{ borderBottom: '1px solid var(--border-subtle)' }}
@@ -294,6 +302,22 @@ export const StockAdjustmentsTab: React.FC<StockAdjustmentsTabProps> = ({
             </tbody>
           </table>
         </div>
+
+        {adjustments.length > 0 && (
+          <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+            <Pagination
+              currentPage={page}
+              totalItems={adjustments.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              pageSizeOptions={[25, 50, 100, 200]}
+            />
+          </div>
+        )}
       </Card>
 
       {/* Adjustment Details Modal */}

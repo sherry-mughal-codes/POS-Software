@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   BookOpen,
   Search,
   RotateCcw,
-  Clock,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -17,14 +16,15 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
+import { Pagination } from '../../components/common/Pagination';
 import { Account, JournalEntry, JournalPurposeType } from '../../types/accounting';
 import { accountingService } from '../../services/accountingService';
 
 interface JournalEntriesTabProps {
-  entries: JournalEntry[];
+  entries?: JournalEntry[];
   accounts?: Account[];
-  loading: boolean;
-  onRefresh: () => void;
+  loading?: boolean;
+  onRefresh?: () => void;
 }
 
 interface JournalLineFormItem {
@@ -35,11 +35,15 @@ interface JournalLineFormItem {
 }
 
 export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
-  entries,
   accounts = [],
   onRefresh,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
+  const [entriesList, setEntriesList] = useState<JournalEntry[]>([]);
+  const [loadingEntries, setLoadingEntries] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [reversingEntry, setReversingEntry] = useState<JournalEntry | null>(null);
   const [reversalReason, setReversalReason] = useState('');
@@ -255,7 +259,8 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
       });
 
       setIsCreateModalOpen(false);
-      onRefresh();
+      loadEntries();
+      if (onRefresh) onRefresh();
     } catch (err: any) {
       setCreateError(err?.response?.data?.detail || err?.response?.data?.lines || err?.message || 'Failed to create journal entry.');
     } finally {
@@ -263,16 +268,27 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
     }
   };
 
-  const filteredEntries = entries.filter((e) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      e.entry_number.toLowerCase().includes(q) ||
-      e.reference_type.toLowerCase().includes(q) ||
-      (e.reference_id && e.reference_id.toLowerCase().includes(q)) ||
-      (e.narration && e.narration.toLowerCase().includes(q)) ||
-      e.lines.some((l) => l.account_name.toLowerCase().includes(q) || l.account_code.includes(q))
-    );
-  });
+  const loadEntries = useCallback(async () => {
+    setLoadingEntries(true);
+    try {
+      const data = await accountingService.getJournalEntriesPaginated({
+        search: searchQuery || undefined,
+        page,
+        page_size: pageSize,
+      });
+      setEntriesList(data.results || []);
+      setTotalCount(data.count || 0);
+    } catch {
+      setEntriesList([]);
+      setTotalCount(0);
+    } finally {
+      setLoadingEntries(false);
+    }
+  }, [searchQuery, page, pageSize]);
+
+  useEffect(() => {
+    loadEntries();
+  }, [loadEntries]);
 
   const handleOpenReverseModal = (entry: JournalEntry) => {
     setReversingEntry(entry);
@@ -289,7 +305,8 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
     try {
       await accountingService.reverseJournalEntry(reversingEntry.id, reversalReason);
       setReversingEntry(null);
-      onRefresh();
+      loadEntries();
+      onRefresh?.();
     } catch (err: any) {
       setReversalError(err?.message || 'Failed to reverse journal entry.');
     } finally {
@@ -343,13 +360,17 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
         title="Double-Entry Journal Vouchers"
         icon={<BookOpen size={16} />}
       >
-        {filteredEntries.length === 0 ? (
+        {loadingEntries ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+            Loading journal entries...
+          </div>
+        ) : entriesList.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
             No journal entries matching query.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {filteredEntries.map((entry) => {
+            {entriesList.map((entry) => {
               const isExpanded = expandedId === entry.id;
               return (
                 <div
@@ -376,74 +397,64 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <code style={{
-                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.875rem',
                         fontWeight: 700,
                         color: 'var(--primary-400)',
-                        fontSize: '0.875rem',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: '0.375rem',
+                        border: '1px solid rgba(56, 189, 248, 0.2)',
                       }}>
                         {entry.entry_number}
                       </code>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                        <Clock size={13} />
-                        <span>{entry.entry_date}</span>
-                      </div>
-
                       <Badge variant={getReferenceBadgeVariant(entry.reference_type)}>
                         {entry.reference_type}
                       </Badge>
-
-                      {entry.reference_id && (
-                        <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                          Ref: <strong style={{ color: 'var(--text-main)' }}>{entry.reference_id}</strong>
-                        </span>
-                      )}
+                      <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                        {entry.entry_date}
+                      </span>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>Total Debit/Credit</div>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-main)' }}>
-                          Rs. {entry.total_debit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-
-                      <Badge variant={entry.status === 'POSTED' ? 'success' : entry.status === 'CANCELLED' ? 'danger' : 'warning'}>
-                        {entry.status}
-                      </Badge>
-
-                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                        Rs. {entry.total_debit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </span>
+                      {entry.status === 'POSTED' ? (
+                        <Badge variant="success">POSTED</Badge>
+                      ) : (
+                        <Badge variant="danger">REVERSED</Badge>
+                      )}
+                      {isExpanded ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
                     </div>
                   </div>
 
-                  {/* Narration */}
-                  {entry.narration && (
-                    <div style={{ padding: '0 1.25rem 0.5rem 1.25rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                      <em>{entry.narration}</em>
-                    </div>
-                  )}
-
-                  {/* Expanded Lines Table */}
+                  {/* Expanded Lines View */}
                   {isExpanded && (
-                    <div style={{ borderTop: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-elevated)', padding: '1rem 1.25rem' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+                    <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-card)' }}>
+                      {entry.narration && (
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '0.875rem', fontStyle: 'italic' }}>
+                          Narration: {entry.narration}
+                        </div>
+                      )}
+
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
                         <thead>
-                          <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-subtle)' }}>
-                            <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Account Code & Name</th>
-                            <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Type</th>
-                            <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Memo / Description</th>
-                            <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Debit (DR)</th>
-                            <th style={{ padding: '0.5rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Credit (CR)</th>
+                          <tr style={{ borderBottom: '1px solid var(--border-medium)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                            <th style={{ padding: '0.5rem 0.75rem' }}>Account Code</th>
+                            <th style={{ padding: '0.5rem 0.75rem' }}>Account Title</th>
+                            <th style={{ padding: '0.5rem 0.75rem' }}>Line Description</th>
+                            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'right' }}>Debit (PKR)</th>
+                            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'right' }}>Credit (PKR)</th>
                           </tr>
                         </thead>
                         <tbody>
                           {entry.lines.map((line) => (
-                            <tr key={line.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                              <td style={{ padding: '0.625rem 0.75rem' }}>
-                                <strong style={{ color: 'var(--text-main)' }}>[{line.account_code}]</strong> {line.account_name}
+                            <tr key={line.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                              <td style={{ padding: '0.625rem 0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-main)' }}>
+                                {line.account_code}
                               </td>
-                              <td style={{ padding: '0.625rem 0.75rem' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{line.account_type}</span>
+                              <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                                {line.account_name}
                               </td>
                               <td style={{ padding: '0.625rem 0.75rem', color: 'var(--text-muted)' }}>
                                 {line.description || '—'}
@@ -496,6 +507,22 @@ export const JournalEntriesTab: React.FC<JournalEntriesTabProps> = ({
                 </div>
               );
             })}
+
+            {totalCount > 0 && (
+              <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+                <Pagination
+                  currentPage={page}
+                  totalItems={totalCount}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPage(1);
+                  }}
+                  pageSizeOptions={[25, 50, 100, 200]}
+                />
+              </div>
+            )}
           </div>
         )}
       </Card>

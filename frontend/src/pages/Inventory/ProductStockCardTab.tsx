@@ -10,6 +10,7 @@ import {
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { ProductStockCard } from '../../types/inventory';
 import { Product } from '../../types/product';
 import { inventoryService } from '../../services/inventoryService';
@@ -32,6 +33,14 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
   const [selectedProductId, setSelectedProductId] = useState<number | null>(initialProductId || null);
   const [stockCard, setStockCard] = useState<ProductStockCard | null>(null);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  const paginatedTimeline = React.useMemo(() => {
+    if (!stockCard?.timeline) return [];
+    const start = (page - 1) * pageSize;
+    return stockCard.timeline.slice(start, start + pageSize);
+  }, [stockCard?.timeline, page, pageSize]);
 
   useEffect(() => {
     productService.getProducts().then((pList) => {
@@ -215,7 +224,7 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
                       </td>
                     </tr>
                   ) : (
-                    stockCard.timeline.map((row) => (
+                    paginatedTimeline.map((row) => (
                       <tr
                         key={row.id}
                         style={{ borderBottom: '1px solid var(--border-subtle)' }}
@@ -283,6 +292,22 @@ export const ProductStockCardTab: React.FC<ProductStockCardTabProps> = ({ initia
                 </tbody>
               </table>
             </div>
+
+            {stockCard.timeline.length > 0 && (
+              <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+                <Pagination
+                  currentPage={page}
+                  totalItems={stockCard.timeline.length}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPage(1);
+                  }}
+                  pageSizeOptions={[25, 50, 100, 200]}
+                />
+              </div>
+            )}
           </Card>
         </>
       ) : null}

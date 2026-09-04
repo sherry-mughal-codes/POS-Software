@@ -42,12 +42,19 @@ export interface ContactBulkImportResult {
 export interface CustomerFilterParams {
   search?: string;
   credit_enabled?: boolean;
+  credit_allowed?: boolean;
   is_active?: boolean;
+  page?: number;
+  page_size?: number;
+  all?: boolean;
 }
 
 export interface SupplierFilterParams {
   search?: string;
   is_active?: boolean;
+  page?: number;
+  page_size?: number;
+  all?: boolean;
 }
 
 export type PaymentMethodKind = 'CASH' | 'BANK' | 'CARD' | 'CHEQUE';
@@ -112,6 +119,7 @@ export interface CustomerStatementRow {
   description: string;
   debit: number;
   credit: number;
+  returned_amount?: number;
   running_balance: number;
 }
 

@@ -80,9 +80,13 @@ export const SupplierClaimSlipModal: React.FC<SupplierClaimSlipModalProps> = ({
             </div>
             <div style={{ fontSize: is58 ? '1.125rem' : '1.25rem', fontWeight: 900, letterSpacing: '0.05em', color: '#000000' }}>{companyName}</div>
             {companyAddress && <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700, marginTop: '0.125rem' }}>{companyAddress}</div>}
-            <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>
-              {companyPhone && `Tel: ${companyPhone}`}{taxId && ` | NTN: ${taxId}`}
-            </div>
+            {(companyPhone || taxId) && (
+              <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>
+                {companyPhone && `Tel: ${companyPhone}`}
+                {companyPhone && taxId && ' | '}
+                {taxId && `NTN: ${taxId}`}
+              </div>
+            )}
             <div style={{ fontWeight: 900, fontSize: '0.875rem', marginTop: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#000000' }}>
               *** RMA DISPATCH SLIP ***
             </div>

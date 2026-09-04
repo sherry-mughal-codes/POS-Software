@@ -3,7 +3,6 @@ import {
   Package,
   Plus,
   Search,
-  Scan,
   Grid,
   List,
   FolderTree,
@@ -13,7 +12,6 @@ import {
   Trash2,
   AlertTriangle,
   RefreshCw,
-  Sparkles,
   FileSpreadsheet,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
@@ -22,6 +20,7 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { ProductModal } from './ProductModal';
 import { CategoryManagerModal } from './CategoryManagerModal';
 import { UnitManagerModal } from './UnitManagerModal';
@@ -56,6 +55,8 @@ export const ProductCatalogPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [viewMode, setViewMode] = useState<'GRID' | 'TABLE'>('GRID');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   // Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -147,6 +148,11 @@ export const ProductCatalogPage: React.FC = () => {
 
     return matchesSearch && matchesCat && matchesStatus;
   });
+
+  const paginatedProducts = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, page, pageSize]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -294,180 +300,189 @@ export const ProductCatalogPage: React.FC = () => {
         </div>
       ) : viewMode === 'GRID' ? (
         /* ================= GRID VIEW ================= */
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: '0.625rem',
-        }}>
-          {filteredProducts.map((p) => (
-            <div
-              key={p.id}
-              className="glass-card"
-              style={{
-                padding: '0.625rem 0.75rem',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                opacity: p.is_active ? 1 : 0.6,
-                border: p.is_active ? '1px solid var(--border-subtle)' : '1px dashed var(--danger-border)',
-              }}
-            >
-              <div>
-                {/* Image & Header */}
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                  {p.image || p.image_url ? (
-                    <img
-                      src={getProductImageUrl(p.image || p.image_url)}
-                      alt={p.name}
-                      style={{
+        <div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gap: '0.625rem',
+          }}>
+            {paginatedProducts.map((p) => (
+              <div
+                key={p.id}
+                className="glass-card"
+                style={{
+                  padding: '0.625rem 0.75rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  opacity: p.is_active ? 1 : 0.6,
+                  border: p.is_active ? '1px solid var(--border-subtle)' : '1px dashed var(--danger-border)',
+                }}
+              >
+                <div>
+                  {/* Image & Header */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                    {p.image || p.image_url ? (
+                      <img
+                        src={getProductImageUrl(p.image || p.image_url)}
+                        alt={p.name}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '0.375rem',
+                          objectFit: 'cover',
+                          backgroundColor: 'var(--bg-app)',
+                          border: '1px solid var(--border-medium)',
+                          flexShrink: 0,
+                        }}
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div style={{
                         width: '36px',
                         height: '36px',
                         borderRadius: '0.375rem',
-                        objectFit: 'cover',
                         backgroundColor: 'var(--bg-app)',
-                        border: '1px solid var(--border-medium)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-subtle)',
+                        border: '1px solid var(--border-subtle)',
                         flexShrink: 0,
-                      }}
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '0.375rem',
-                      backgroundColor: 'var(--bg-app)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--text-subtle)',
-                      border: '1px solid var(--border-subtle)',
-                      flexShrink: 0,
-                    }}>
-                      <Package size={16} />
-                    </div>
-                  )}
+                      }}>
+                        <Package size={16} />
+                      </div>
+                    )}
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.25rem' }}>
-                      <code style={{
-                        fontFamily: 'var(--font-mono)',
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.25rem' }}>
+                        <code style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '0.6875rem',
+                          fontWeight: 700,
+                          color: 'var(--primary-400)',
+                        }}>
+                          {p.sku}
+                        </code>
+                        <Badge variant={p.is_active ? 'success' : 'danger'}>
+                          {p.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                      <h4 style={{
+                        fontSize: '0.8125rem',
                         fontWeight: 700,
-                        color: 'var(--primary-400)',
-                        fontSize: '0.6875rem',
-                        backgroundColor: 'var(--bg-app)',
-                        padding: '0.1rem 0.25rem',
-                        borderRadius: '0.2rem',
+                        color: 'var(--text-main)',
+                        margin: '0.15rem 0 0 0',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                      }}>
-                        {p.sku}
-                      </code>
-                      <span style={{
-                        fontSize: '0.625rem',
-                        fontWeight: 700,
-                        color: p.is_active ? 'var(--success)' : 'var(--danger)',
-                        backgroundColor: p.is_active ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                        padding: '0.05rem 0.3rem',
-                        borderRadius: '0.2rem',
-                      }}>
-                        {p.is_active ? 'Active' : 'Off'}
-                      </span>
-                    </div>
-
-                    <h4 style={{
-                      fontSize: '0.8125rem',
-                      fontWeight: 700,
-                      marginTop: '0.2rem',
-                      color: 'var(--text-main)',
-                      lineHeight: 1.2,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }} title={p.name}>
-                      {p.name}
-                    </h4>
-                  </div>
-                </div>
-
-                {/* Category & Unit Info */}
-                <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
-                  <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-input)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem', border: '1px solid var(--border-subtle)' }}>
-                    {p.category_name || 'General'}
-                  </span>
-                  <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-input)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem', border: '1px solid var(--border-subtle)' }}>
-                    {p.unit_code || p.unit_name || 'pcs'}
-                  </span>
-                  {p.maintain_stock === false && (
-                    <span style={{ fontSize: '0.625rem', color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem' }}>
-                      Service
-                    </span>
-                  )}
-                </div>
-
-                {/* Barcode */}
-                {p.barcode && (
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Scan size={10} style={{ color: 'var(--primary-400)' }} />
-                    <code style={{ fontSize: '0.65rem' }}>{p.barcode}</code>
-                  </div>
-                )}
-              </div>
-
-              {/* Pricing & Actions */}
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.4rem', marginTop: '0.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.35rem' }}>
-                  <div>
-                    <div style={{ fontSize: '0.625rem', color: 'var(--text-subtle)' }}>Cost: {currencySymbol || 'Rs.'} {formatMoney(p.purchase_price)}</div>
-                    <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
-                      {currencySymbol || 'Rs.'} {formatMoney(p.selling_price)}
+                      }} title={p.name}>
+                        {p.name}
+                      </h4>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.15rem', justifyContent: 'flex-end' }}>
-                      <Sparkles size={10} />
-                      {formatPercent(p.profit_margin_percentage !== undefined ? p.profit_margin_percentage : (p.selling_price > 0 ? ((p.selling_price - p.purchase_price) / p.selling_price) * 100 : 0))}%
-                    </span>
+
+                  {/* Badges */}
+                  <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                    <Badge variant="phase">{p.category_name || 'Uncategorized'}</Badge>
+                    <Badge variant="info">{p.unit_name || 'Unit'}</Badge>
+                    {p.maintain_stock === false && (
+                      <Badge variant="warning">Stock-Free</Badge>
+                    )}
+                  </div>
+
+                  {/* Pricing Matrix */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '0.35rem',
+                    padding: '0.35rem 0.5rem',
+                    backgroundColor: 'var(--bg-elevated)',
+                    borderRadius: '0.375rem',
+                    marginBottom: '0.4rem',
+                    fontSize: '0.6875rem',
+                  }}>
+                    <div>
+                      <span style={{ color: 'var(--text-subtle)', display: 'block', fontSize: '0.625rem' }}>Cost</span>
+                      <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                        {currencySymbol || 'Rs.'} {formatMoney(p.purchase_price)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-subtle)', display: 'block', fontSize: '0.625rem' }}>Sell</span>
+                      <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-main)', fontWeight: 800 }}>
+                        {currencySymbol || 'Rs.'} {formatMoney(p.selling_price)}
+                      </strong>
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.35rem' }}>
-                  <Button
-                    variant="outline"
-                    icon={<Edit2 size={12} />}
-                    title="Edit Product"
-                    style={{ flex: 1, padding: '0.25rem 0.4rem' }}
-                    onClick={() => handleOpenEditModal(p)}
-                  />
-                  <Button
-                    variant="outline"
-                    icon={<Power size={12} />}
-                    title={p.is_active ? 'Deactivate Product' : 'Activate Product'}
-                    style={{
-                      padding: '0.25rem 0.45rem',
-                      color: p.is_active ? 'var(--warning)' : 'var(--success)',
-                      borderColor: p.is_active ? 'var(--warning-border)' : 'var(--success-border)',
-                    }}
-                    onClick={() => handleToggleStatus(p)}
-                  />
-                  <Button
-                    variant="outline"
-                    icon={<Trash2 size={12} />}
-                    title="Delete Product"
-                    style={{
-                      padding: '0.25rem 0.45rem',
-                      color: 'var(--danger)',
-                      borderColor: 'rgba(239, 68, 68, 0.3)',
-                    }}
-                    onClick={() => {
-                      setDeleteError(null);
-                      setProductToDelete(p);
-                    }}
-                  />
+                {/* Stock & Actions */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.35rem' }}>
+                  <div style={{ fontSize: '0.6875rem' }}>
+                    <span style={{ color: 'var(--text-subtle)' }}>Stock: </span>
+                    <strong style={{
+                      fontFamily: 'var(--font-mono)',
+                      color: (p.current_stock ?? 0) <= (p.min_stock_level ?? 0) ? 'var(--danger)' : 'var(--success)'
+                    }}>
+                      {p.current_stock ?? 0}
+                    </strong>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.2rem' }}>
+                    <Button
+                      variant="outline"
+                      icon={<Edit2 size={11} />}
+                      title="Edit Product"
+                      style={{ padding: '0.2rem 0.35rem' }}
+                      onClick={() => handleOpenEditModal(p)}
+                    />
+                    <Button
+                      variant="outline"
+                      icon={<Power size={11} />}
+                      title={p.is_active ? 'Deactivate Product' : 'Activate Product'}
+                      style={{
+                        padding: '0.2rem 0.35rem',
+                        color: p.is_active ? 'var(--warning)' : 'var(--success)',
+                        borderColor: p.is_active ? 'var(--warning-border)' : 'var(--success-border)',
+                      }}
+                      onClick={() => handleToggleStatus(p)}
+                    />
+                    <Button
+                      variant="outline"
+                      icon={<Trash2 size={11} />}
+                      title="Delete Product"
+                      style={{
+                        padding: '0.2rem 0.35rem',
+                        color: 'var(--danger)',
+                        borderColor: 'rgba(239, 68, 68, 0.3)',
+                      }}
+                      onClick={() => {
+                        setDeleteError(null);
+                        setProductToDelete(p);
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {filteredProducts.length > 0 && (
+            <div style={{ marginTop: '0.875rem' }}>
+              <Pagination
+                currentPage={page}
+                totalItems={filteredProducts.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+                pageSizeOptions={[25, 50, 100, 200]}
+              />
             </div>
-          ))}
+          )}
         </div>
       ) : (
         /* ================= TABLE VIEW ================= */
@@ -492,7 +507,7 @@ export const ProductCatalogPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.map((p) => (
+                {paginatedProducts.map((p) => (
                   <tr
                     key={p.id}
                     style={{ borderBottom: '1px solid var(--border-subtle)', opacity: p.is_active ? 1 : 0.55 }}
@@ -576,6 +591,22 @@ export const ProductCatalogPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {filteredProducts.length > 0 && (
+            <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+              <Pagination
+                currentPage={page}
+                totalItems={filteredProducts.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+                pageSizeOptions={[25, 50, 100, 200]}
+              />
+            </div>
+          )}
         </Card>
       )}
 

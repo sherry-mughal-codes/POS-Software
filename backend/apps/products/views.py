@@ -24,6 +24,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all().select_related("parent").prefetch_related("products", "children")
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
@@ -53,6 +54,7 @@ class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all().prefetch_related("products")
     serializer_class = UnitSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:

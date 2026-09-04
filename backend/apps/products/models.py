@@ -134,7 +134,7 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["-created_at", "-id"]
         verbose_name = "Product"
         verbose_name_plural = "Products"
 

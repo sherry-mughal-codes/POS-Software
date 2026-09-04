@@ -95,7 +95,7 @@ class SalesService:
             raise ValidationError(f"Customer with ID {customer_id} does not exist or is inactive.")
 
         if not sale_date:
-            sale_date = timezone.now().date()
+            sale_date = timezone.localdate()
 
         payment_account = None
         if payment_account_id:
@@ -131,7 +131,8 @@ class SalesService:
             # Cost of goods sold snapshot using current Weighted Average Cost
             unit_cogs = prod.cost_price or Decimal("0.00")
             line_cogs = qty * unit_cogs
-            total_cogs += line_cogs
+            if prod.maintain_stock:
+                total_cogs += line_cogs
 
             validated_items.append({
                 "product": prod,
@@ -217,7 +218,7 @@ class SalesService:
             w_days = prod.warranty_period_days
             w_expiry = None
             if w_days and w_days > 0:
-                sale_d = sale.date if isinstance(sale.date, datetime.date) else timezone.now().date()
+                sale_d = sale.date if isinstance(sale.date, datetime.date) else timezone.localdate()
                 w_expiry = sale_d + datetime.timedelta(days=w_days)
 
             SaleItem.objects.create(
@@ -285,11 +286,6 @@ class SalesService:
 
         # 7. Post General Ledger Accounting Entries
         cls._post_sale_accounting(sale, total_cogs, created_by)
-
-        # 8. Reallocate customer payments if registered customer
-        if not customer.is_walkin:
-            from apps.contacts.services import CustomerReceivableService
-            CustomerReceivableService.reallocate_customer_payments(customer)
 
         return sale
 
@@ -459,7 +455,7 @@ class SalesService:
             raise ValidationError(f"Returns can only be processed on completed sales (Status is {sale.status}).")
 
         if return_date is None:
-            return_date = timezone.now().date()
+            return_date = timezone.localdate()
 
         if not items_data:
             raise ValidationError("At least one return item must be selected.")
@@ -487,7 +483,8 @@ class SalesService:
             line_cogs = return_qty * sale_item.unit_cost
 
             total_refund += line_refund
-            total_returned_cogs += line_cogs
+            if sale_item.product.maintain_stock:
+                total_returned_cogs += line_cogs
 
             validated_returns.append({
                 "sale_item": sale_item,
@@ -590,8 +587,9 @@ class SalesService:
         cogs_acc = Account.objects.filter(code="5010").first() or Account.objects.get(code="5010")
 
         orig_sale = sales_return.original_sale
-        # If the original sale was an UNPAID credit sale with remaining due balance, adjust AR
-        if orig_sale.payment_method == PaymentMethodType.CREDIT and orig_sale.due_amount >= total_refund and orig_sale.paid_amount == Decimal("0.00"):
+        # If the original sale was a credit sale with remaining open AR balance, credit AR (reduce receivable)
+        # Drop the "paid_amount == 0" check: reallocation updates paid_amount but may still leave due_amount open
+        if orig_sale.payment_method == PaymentMethodType.CREDIT and orig_sale.due_amount >= total_refund:
             refund_credit_acc = ar_acc
             orig_sale.due_amount = max(Decimal("0.00"), orig_sale.due_amount - total_refund)
             orig_sale.save(update_fields=["due_amount"])
@@ -778,7 +776,7 @@ class DaySessionService:
             raise ValidationError("Opening cash cannot be negative.")
 
         if session_date is None:
-            session_date = timezone.now().date()
+            session_date = timezone.localdate()
 
         session_number = POSDaySession.generate_session_number(session_date)
 
@@ -821,6 +819,7 @@ class DaySessionService:
         total_invoiced = Decimal("0.00")
         cash_sales = Decimal("0.00")
         card_sales = Decimal("0.00")
+        cheque_sales = Decimal("0.00")
         credit_sales = Decimal("0.00")
 
         for s in sales_qs:
@@ -834,6 +833,8 @@ class DaySessionService:
                 cash_sales += s.grand_total
             elif s.payment_method == PaymentMethodType.CARD:
                 card_sales += s.grand_total
+            elif s.payment_method == PaymentMethodType.CHEQUE:
+                cheque_sales += s.grand_total
             elif s.payment_method == PaymentMethodType.CREDIT:
                 credit_sales += s.grand_total
             elif s.payment_method == PaymentMethodType.SPLIT:
@@ -843,6 +844,8 @@ class DaySessionService:
                             cash_sales += p.amount
                         elif p.payment_method == PaymentMethodType.CARD:
                             card_sales += p.amount
+                        elif p.payment_method == PaymentMethodType.CHEQUE:
+                            cheque_sales += p.amount
                         elif p.payment_method == PaymentMethodType.CREDIT:
                             credit_sales += p.amount
                 else:
@@ -979,6 +982,7 @@ class DaySessionService:
                 "net_sales": float(total_net_sales),
                 "cash_sales": float(net_cash_sales),
                 "card_sales": float(net_card_sales),
+                "cheque_sales": float(cheque_sales),
                 "credit_sales": float(credit_sales),
             },
             "returns": {

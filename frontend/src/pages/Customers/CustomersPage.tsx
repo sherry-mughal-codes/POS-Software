@@ -23,12 +23,14 @@ import {
   Upload,
   Image as ImageIcon,
   X,
+  Filter,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { CustomerModal } from './CustomerModal';
 import { CustomerBulkImportModal } from './CustomerBulkImportModal';
 import { CustomerStatementSlipModal } from './CustomerStatementSlipModal';
@@ -43,6 +45,7 @@ import {
 import { Account } from '../../types/accounting';
 import { contactService } from '../../services/contactService';
 import { accountingService } from '../../services/accountingService';
+import { daySessionService } from '../../services/daySessionService';
 import { useToast } from '../../context/ToastContext';
 
 const formatMoney = (val: number | string | undefined | null): string => {
@@ -56,6 +59,7 @@ export const CustomersPage: React.FC = () => {
 
   // Customer List State
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerTotalCount, setCustomerTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,12 +67,25 @@ export const CustomersPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [creditFilter, setCreditFilter] = useState<'ALL' | 'CREDIT_ENABLED' | 'CASH_ONLY'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [customerPage, setCustomerPage] = useState<number>(1);
+  const [customerPageSize, setCustomerPageSize] = useState<number>(50);
 
   // Payments History State
   const [payments, setPayments] = useState<CustomerPayment[]>([]);
+  const [paymentTotalCount, setPaymentTotalCount] = useState<number>(0);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentSearch, setPaymentSearch] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+  const [paymentPage, setPaymentPage] = useState<number>(1);
+  const [paymentPageSize, setPaymentPageSize] = useState<number>(50);
+
+  useEffect(() => {
+    setCustomerPage(1);
+  }, [searchQuery, creditFilter, statusFilter]);
+
+  useEffect(() => {
+    setPaymentPage(1);
+  }, [paymentSearch, paymentStatusFilter]);
 
   // Receivables Report State
   const [receivablesReport, setReceivablesReport] = useState<ReceivablesReport | null>(null);
@@ -92,9 +109,9 @@ export const CustomersPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodKind>('CASH');
   const [paymentAccountId, setPaymentAccountId] = useState<number>(0);
   const [paymentChequeNumber, setPaymentChequeNumber] = useState('');
-  const [paymentChequeDate, setPaymentChequeDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentChequeDate, setPaymentChequeDate] = useState(new Date().toLocaleDateString('en-CA'));
   const [paymentChequeBank, setPaymentChequeBank] = useState('');
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState(new Date().toLocaleDateString('en-CA'));
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentScreenshotFile, setPaymentScreenshotFile] = useState<File | null>(null);
@@ -102,7 +119,7 @@ export const CustomersPage: React.FC = () => {
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  // Statement Modal
+  // Statement Modal State
   const [statementCustomer, setStatementCustomer] = useState<Customer | null>(null);
   const [statementData, setStatementData] = useState<CustomerStatement | null>(null);
   const [statementLoading, setStatementLoading] = useState(false);
@@ -116,7 +133,7 @@ export const CustomersPage: React.FC = () => {
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
 
-  // Filter accounts based on Cash vs Card/Bank
+  // Filter accounts based on payment method
   const getFilteredPaymentAccounts = (method: PaymentMethodKind) => {
     if (method === 'CASH') {
       return paymentAccounts.filter(
@@ -156,28 +173,38 @@ export const CustomersPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await contactService.getCustomers();
-      setCustomers(data || []);
+      const data = await contactService.getCustomers({
+        page: customerPage,
+        page_size: customerPageSize,
+        search: searchQuery || undefined,
+        is_active: statusFilter === 'ACTIVE' ? true : statusFilter === 'INACTIVE' ? false : undefined,
+        credit_allowed: creditFilter === 'CREDIT_ENABLED' ? true : creditFilter === 'CASH_ONLY' ? false : undefined,
+      });
+      setCustomers(data.results || []);
+      setCustomerTotalCount(data.count ?? 0);
     } catch (err: any) {
       setError(err?.message || 'Failed to load customers.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [customerPage, customerPageSize, searchQuery, statusFilter, creditFilter]);
 
   // Fetch Payments
   const fetchPayments = useCallback(async () => {
     setPaymentsLoading(true);
     try {
       const data = await contactService.getCustomerPayments({
+        page: paymentPage,
+        page_size: paymentPageSize,
         search: paymentSearch || undefined,
         status: paymentStatusFilter || undefined,
       });
-      setPayments(data || []);
+      setPayments(data.results || []);
+      setPaymentTotalCount(data.count ?? 0);
     } finally {
       setPaymentsLoading(false);
     }
-  }, [paymentSearch, paymentStatusFilter]);
+  }, [paymentPage, paymentPageSize, paymentSearch, paymentStatusFilter]);
 
   // Fetch Receivables Report
   const fetchReceivablesReport = useCallback(async () => {
@@ -244,15 +271,22 @@ export const CustomersPage: React.FC = () => {
     const cashAccs = getFilteredPaymentAccounts('CASH');
     setPaymentAccountId(cashAccs[0]?.id || paymentAccounts[0]?.id || 0);
     setPaymentChequeNumber('');
-    setPaymentChequeDate(new Date().toISOString().split('T')[0]);
+    setPaymentChequeDate(new Date().toLocaleDateString('en-CA'));
     setPaymentChequeBank('');
-    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setPaymentDate(new Date().toLocaleDateString('en-CA'));
     setPaymentReference('');
     setPaymentNotes('');
     setPaymentScreenshotFile(null);
     setPaymentScreenshotPreview(null);
     setPaymentError(null);
     setIsPaymentModalOpen(true);
+
+    daySessionService.getCurrentSession().then((res) => {
+      if (res?.active && res?.session?.date) {
+        setPaymentDate(res.session.date);
+        setPaymentChequeDate(res.session.date);
+      }
+    }).catch(() => {});
   };
 
   const handlePaymentMethodChange = (newMethod: PaymentMethodKind) => {
@@ -394,27 +428,8 @@ export const CustomersPage: React.FC = () => {
     }
   };
 
-  const filteredCustomers = customers.filter((c) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      (c.name && c.name.toLowerCase().includes(q)) ||
-      (c.customer_id && c.customer_id.toLowerCase().includes(q)) ||
-      (c.phone && c.phone.toLowerCase().includes(q)) ||
-      (c.email && c.email.toLowerCase().includes(q));
-
-    let matchesCredit = true;
-    if (creditFilter === 'CREDIT_ENABLED') matchesCredit = c.credit_enabled;
-    if (creditFilter === 'CASH_ONLY') matchesCredit = !c.credit_enabled;
-
-    let matchesStatus = true;
-    if (statusFilter === 'ACTIVE') matchesStatus = c.is_active;
-    if (statusFilter === 'INACTIVE') matchesStatus = !c.is_active;
-
-    return matchesSearch && matchesCredit && matchesStatus;
-  });
-
   // Metrics
-  const totalCount = customers.length;
+  const totalCount = customerTotalCount || customers.length;
   const creditEligibleCount = customers.filter((c) => c.credit_enabled).length;
   const totalReceivables = customers.reduce((acc, c) => acc + (c.outstanding_balance || 0), 0);
 
@@ -677,8 +692,8 @@ export const CustomersPage: React.FC = () => {
 
           {/* Customer Table Card */}
           <Card
-            title="Registered Customers & Receivable Balances"
-            subtitle={`${filteredCustomers.length} records matching filters`}
+            title={`Registered Customers & Receivable Balances (${customerTotalCount})`}
+            subtitle={`${customerTotalCount} records matching filters`}
             icon={<Users size={20} />}
           >
             {loading ? (
@@ -687,7 +702,7 @@ export const CustomersPage: React.FC = () => {
               <div style={{ padding: '1.5rem', backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', borderRadius: '0.5rem' }}>
                 {error}
               </div>
-            ) : filteredCustomers.length === 0 ? (
+            ) : customers.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                 No customers match the search criteria.
               </div>
@@ -707,7 +722,7 @@ export const CustomersPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCustomers.map((cust) => {
+                    {customers.map((cust) => {
                       const balance = cust.outstanding_balance || 0;
                       return (
                         <tr
@@ -758,32 +773,32 @@ export const CustomersPage: React.FC = () => {
                             )}
                             {cust.email && (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
-                                <Mail size={11} />
+                                <Mail size={11} style={{ color: 'var(--text-subtle)' }} />
                                 <span>{cust.email}</span>
                               </div>
                             )}
                           </td>
 
-                          <td style={{ padding: '0.4rem 0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                          <td style={{ padding: '0.4rem 0.6rem' }}>
                             {cust.address ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                <MapPin size={11} style={{ color: 'var(--text-subtle)', flexShrink: 0 }} />
-                                <span>{cust.address}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                <MapPin size={11} style={{ color: 'var(--text-subtle)' }} />
+                                <span style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cust.address}</span>
                               </div>
                             ) : (
-                              <span style={{ color: 'var(--text-subtle)' }}>—</span>
+                              <span style={{ color: 'var(--text-subtle)', fontSize: '0.6875rem' }}>-</span>
                             )}
                           </td>
 
                           <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
                             {cust.is_walkin ? (
-                              <span style={{ color: 'var(--text-subtle)', fontSize: '0.75rem' }}>Rs. 0.00 (Cash-only)</span>
+                              <span style={{ color: 'var(--text-subtle)', fontSize: '0.75rem' }}>N/A</span>
                             ) : balance > 0 ? (
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--danger)', fontSize: '0.85rem' }}>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--danger)', fontSize: '0.8125rem' }}>
                                   Rs. {formatMoney(balance)}
                                 </span>
-                                <span style={{ fontSize: '0.625rem', color: 'var(--danger)', fontWeight: 600 }}>Due Receivable</span>
+                                <span style={{ fontSize: '0.625rem', color: 'var(--danger)', fontWeight: 600 }}>Due from Customer</span>
                               </div>
                             ) : (
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -861,6 +876,16 @@ export const CustomersPage: React.FC = () => {
                 </table>
               </div>
             )}
+
+            {!loading && customerTotalCount > 0 && (
+              <Pagination
+                currentPage={customerPage}
+                totalItems={customerTotalCount}
+                pageSize={customerPageSize}
+                onPageChange={setCustomerPage}
+                onPageSizeChange={setCustomerPageSize}
+              />
+            )}
           </Card>
         </div>
       )}
@@ -894,7 +919,7 @@ export const CustomersPage: React.FC = () => {
               />
               <input
                 type="text"
-                placeholder="Search voucher # or customer name..."
+                placeholder="Search payment #, customer..."
                 value={paymentSearch}
                 onChange={(e) => setPaymentSearch(e.target.value)}
                 style={{
@@ -932,7 +957,7 @@ export const CustomersPage: React.FC = () => {
 
             <Button
               variant="primary"
-              icon={<Search size={12} />}
+              icon={<Filter size={12} />}
               onClick={fetchPayments}
               style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem', fontWeight: 600 }}
             >
@@ -954,7 +979,7 @@ export const CustomersPage: React.FC = () => {
           </div>
 
           {/* Payments Table */}
-          <Card title={`Customer Payment Receipts (${payments.length})`} subtitle="Double-entry integrated Accounts Receivable settlement vouchers" icon={<Receipt size={18} />}>
+          <Card title={`Customer Payment Receipts (${paymentTotalCount})`} subtitle="Double-entry integrated Accounts Receivable settlement vouchers" icon={<Receipt size={18} />}>
             {paymentsLoading ? (
               <LoadingSpinner label="Loading payment history..." />
             ) : (
@@ -1032,13 +1057,9 @@ export const CustomersPage: React.FC = () => {
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '0.25rem',
-                                  padding: '0.2rem 0.5rem',
-                                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
                                   color: 'var(--primary-400)',
-                                  borderRadius: '0.25rem',
-                                  fontSize: '0.72rem',
-                                  fontWeight: 600,
-                                  textDecoration: 'none',
+                                  fontSize: '0.75rem',
+                                  textDecoration: 'underline',
                                 }}
                               >
                                 <ImageIcon size={13} /> View Slip
@@ -1075,6 +1096,16 @@ export const CustomersPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            )}
+
+            {!paymentsLoading && paymentTotalCount > 0 && (
+              <Pagination
+                currentPage={paymentPage}
+                totalItems={paymentTotalCount}
+                pageSize={paymentPageSize}
+                onPageChange={setPaymentPage}
+                onPageSizeChange={setPaymentPageSize}
+              />
             )}
           </Card>
         </div>
@@ -1791,15 +1822,19 @@ export const CustomersPage: React.FC = () => {
                           <td style={{ padding: '0.5rem 0.625rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: row.debit > 0 ? 'var(--text-main)' : 'var(--text-subtle)' }}>
                             {row.debit > 0 ? `Rs. ${formatMoney(row.debit)}` : '-'}
                           </td>
-                          <td style={{ padding: '0.5rem 0.625rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: row.credit > 0 ? (row.type === 'RETURN' ? 'var(--info)' : 'var(--success)') : 'var(--text-subtle)' }}>
+                          <td style={{ padding: '0.5rem 0.625rem', textAlign: 'right', fontFamily: 'var(--font-mono)', color: (row.credit > 0 || (row.type === 'RETURN' && (row.returned_amount || 0) > 0)) ? (row.type === 'RETURN' ? 'var(--info)' : 'var(--success)') : 'var(--text-subtle)' }}>
                             {row.credit > 0 ? (
                               row.type === 'RETURN' ? (
-                                <span title="Cash refund paid to customer at counter">
-                                  Rs. {formatMoney(row.credit)} <span style={{ fontSize: '0.6875rem', fontWeight: 600 }}>(Refund)</span>
+                                <span title="Sales return credit applied to receivable">
+                                  Rs. {formatMoney(row.credit)} <span style={{ fontSize: '0.6875rem', fontWeight: 600 }}>(Return)</span>
                                 </span>
                               ) : (
                                 `Rs. ${formatMoney(row.credit)}`
                               )
+                            ) : (row.type === 'RETURN' && (row.returned_amount || 0) > 0) ? (
+                              <span title="Cash refund paid to customer at counter">
+                                Rs. {formatMoney(row.returned_amount || 0)} <span style={{ fontSize: '0.6875rem', fontWeight: 600 }}>(Refund)</span>
+                              </span>
                             ) : '-'}
                           </td>
                           <td style={{ padding: '0.5rem 0.625rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: row.running_balance > 0 ? 'var(--danger)' : 'var(--success)' }}>

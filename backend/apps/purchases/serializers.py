@@ -51,6 +51,8 @@ class PurchaseSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source="supplier.name", read_only=True)
     supplier_company = serializers.CharField(source="supplier.company_name", read_only=True)
     payment_method_name = serializers.CharField(source="payment_method.name", read_only=True)
+    payment_account_name = serializers.CharField(source="payment_account.name", read_only=True)
+    payment_account_code = serializers.CharField(source="payment_account.code", read_only=True)
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
     subtotal = serializers.DecimalField(max_digits=14, decimal_places=2, coerce_to_string=False)
     discount_amount = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
@@ -90,6 +92,8 @@ class PurchaseSerializer(serializers.ModelSerializer):
             "payment_method",
             "payment_method_name",
             "payment_account",
+            "payment_account_name",
+            "payment_account_code",
             "cheque_number",
             "cheque_date",
             "cheque_bank",

@@ -17,8 +17,8 @@ interface LineItemRow {
   productName: string;
   sku: string;
   unitCode: string;
-  quantity: number;
-  purchaseRate: number;
+  quantity: number | string;
+  purchaseRate: number | string;
   taxRate: number;
 }
 
@@ -61,8 +61,8 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
   const [supplierInvoiceFile, setSupplierInvoiceFile] = useState<string | null>(null);
   const [supplierInvoiceFileName, setSupplierInvoiceFileName] = useState<string>('');
   const [lineItems, setLineItems] = useState<LineItemRow[]>([]);
-  const [discountAmount, setDiscountAmount] = useState<number>(0);
-  const [paidAmount, setPaidAmount] = useState<number>(0);
+  const [discountAmount, setDiscountAmount] = useState<number | string>(0);
+  const [paidAmount, setPaidAmount] = useState<number | string>(0);
   const [isPaidAmountAuto, setIsPaidAmountAuto] = useState<boolean>(
     !editingPurchase || Number(editingPurchase.paid_amount) === Number(editingPurchase.grand_total)
   );
@@ -103,12 +103,13 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
 
   useEffect(() => {
     Promise.all([
-      contactService.getSuppliers({ is_active: true }),
+      contactService.getSuppliers({ is_active: true, all: true }),
       productService.getProducts({ is_active: true }),
       accountingService.getPaymentMethods(),
       accountingService.getAccounts(),
     ]).then(([supps, prods, pms, accs]) => {
-      setSuppliers(supps || []);
+      const rawSuppliers = Array.isArray(supps) ? supps : (supps?.results || []);
+      setSuppliers(rawSuppliers);
       setProducts(prods || []);
       setPaymentMethods(pms || []);
       const isLeaf = (a: Account) => a.is_leaf ?? (!a.is_header && (!a.children_count || a.children_count === 0));
@@ -116,7 +117,36 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
         (a: Account) => a.account_type === 'ASSET' && isLeaf(a) && (a.code.startsWith('101') || a.code.startsWith('102') || a.parent_code === '1010' || a.parent_code === '1020')
       );
       setAccounts(leafCashBankAccounts);
+
       if (!editingPurchase) {
+        // Check for reorder items from dashboard
+        const reorderRaw = sessionStorage.getItem('apexpos_reorder_items');
+        if (reorderRaw) {
+          try {
+            const reorderItems = JSON.parse(reorderRaw);
+            if (Array.isArray(reorderItems) && reorderItems.length > 0) {
+              const prepopulated: LineItemRow[] = reorderItems.map((item: any) => {
+                const matchingProduct = (prods || []).find((p: Product) => p.id === item.product_id || p.sku === item.sku);
+                return {
+                  productId: item.product_id || matchingProduct?.id || 0,
+                  productName: item.product_name || matchingProduct?.name || 'Product',
+                  sku: item.sku || matchingProduct?.sku || '',
+                  unitCode: matchingProduct?.unit_code || 'pcs',
+                  quantity: item.quantity || 1,
+                  purchaseRate: matchingProduct ? Number(matchingProduct.purchase_price || 0) : (Number(item.unit_cost) || 0),
+                  taxRate: 0,
+                };
+              });
+              setLineItems(prepopulated);
+              showSuccess(`Pre-populated ${prepopulated.length} low stock products for reordering.`, 'Reorder Products Loaded');
+            }
+          } catch {
+            // ignore
+          } finally {
+            sessionStorage.removeItem('apexpos_reorder_items');
+          }
+        }
+
         // Leave selectedSupplierId blank by default so user can search & pick
         const cashPm = (pms || []).find((p) => (p.code || '').toUpperCase() === 'CASH') || (pms || [])[0];
         if (cashPm) {
@@ -130,30 +160,36 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
     }).catch((err) => {
       showError(err?.message || 'Failed to load suppliers and products.', 'Loading Error');
     });
-  }, [editingPurchase]);
+  }, [editingPurchase, showError, showSuccess]);
 
-  // Pre-fill fields when editing a draft purchase order
+  // Handle edit mode hydration
   useEffect(() => {
     if (editingPurchase) {
       setSelectedSupplierId(editingPurchase.supplier.toString());
       setPurchaseDate(editingPurchase.date);
       setSupplierInvoiceNumber(editingPurchase.supplier_invoice_number || '');
-      setSupplierInvoiceFile(editingPurchase.supplier_invoice_file || null);
+      setSupplierInvoiceFileName(editingPurchase.supplier_invoice_file ? 'Existing Invoice Attachment' : '');
       setDiscountAmount(Number(editingPurchase.discount_amount) || 0);
       setPaidAmount(Number(editingPurchase.paid_amount) || 0);
-      setChequeNumber(editingPurchase.cheque_number || '');
-      setChequeDate(editingPurchase.cheque_date || new Date().toISOString().split('T')[0]);
-      setChequeBank(editingPurchase.cheque_bank || '');
+      setIsPaidAmountAuto(false);
       setNotes(editingPurchase.notes || '');
-      if (editingPurchase.supplier_name) {
-        setSupplierSearchText(editingPurchase.supplier_name);
-      }
+
       if (editingPurchase.payment_method) {
         setSelectedPaymentMethodId(editingPurchase.payment_method.toString());
       }
       if (editingPurchase.payment_account) {
         setSelectedAccountId(editingPurchase.payment_account.toString());
       }
+      if (editingPurchase.cheque_number) {
+        setChequeNumber(editingPurchase.cheque_number);
+      }
+      if (editingPurchase.cheque_date) {
+        setChequeDate(editingPurchase.cheque_date);
+      }
+      if (editingPurchase.cheque_bank) {
+        setChequeBank(editingPurchase.cheque_bank);
+      }
+
       if (editingPurchase.items && editingPurchase.items.length > 0) {
         setLineItems(
           editingPurchase.items.map((item) => ({
@@ -257,7 +293,8 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
     const existingIdx = lineItems.findIndex((item) => item.productId === prod.id);
     if (existingIdx >= 0) {
       const updated = [...lineItems];
-      updated[existingIdx].quantity += 1;
+      const curQty = Number(updated[existingIdx].quantity) || 0;
+      updated[existingIdx].quantity = curQty + 1;
       setLineItems(updated);
     } else {
       setLineItems([
@@ -310,9 +347,11 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
   };
 
   // Calculations (Tax / Shipping removed per request)
-  const subtotal = lineItems.reduce((sum, item) => sum + item.quantity * item.purchaseRate, 0);
-  const grandTotal = Math.max(0, subtotal - discountAmount);
-  const remainingPayable = Math.max(0, grandTotal - paidAmount);
+  const numDiscount = Number(discountAmount) || 0;
+  const numPaid = Number(paidAmount) || 0;
+  const subtotal = lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.purchaseRate) || 0), 0);
+  const grandTotal = Math.max(0, subtotal - numDiscount);
+  const remainingPayable = Math.max(0, grandTotal - numPaid);
 
   // Real-time automatic synchronization of paidAmount with grandTotal
   useEffect(() => {
@@ -341,10 +380,23 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
       return;
     }
 
+    const effectivePaid = Number(paidAmount) || 0;
+    const effectiveDiscount = Number(discountAmount) || 0;
+
     const selectedPM = paymentMethods.find((pm) => pm.id.toString() === selectedPaymentMethodId);
     const isCheque = (selectedPM?.code || '').toUpperCase() === 'CHEQUE';
-    if (isCheque && paidAmount > 0 && !chequeNumber.trim()) {
+    if (isCheque && effectivePaid > 0 && !chequeNumber.trim()) {
       showError('Please enter the Cheque Number.', 'Cheque Number Required');
+      return;
+    }
+
+    if (effectivePaid > grandTotal) {
+      showError(`Paid amount (Rs. ${formatMoney(effectivePaid)}) cannot exceed Grand Total (Rs. ${formatMoney(grandTotal)}).`, 'Overpayment Error');
+      return;
+    }
+
+    if (effectivePaid > 0 && !selectedAccountId) {
+      showError('Please select a payment account for the upfront payment.', 'Missing Payment Account');
       return;
     }
 
@@ -353,9 +405,9 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
     const payload = {
       supplier: parseInt(selectedSupplierId),
       date: purchaseDate,
-      discount_amount: discountAmount,
+      discount_amount: effectiveDiscount,
       tax_amount: 0,
-      paid_amount: paidAmount,
+      paid_amount: effectivePaid,
       payment_method: selectedPaymentMethodId ? parseInt(selectedPaymentMethodId) : null,
       payment_account: selectedAccountId ? parseInt(selectedAccountId) : undefined,
       cheque_number: isCheque ? chequeNumber.trim() || undefined : undefined,
@@ -367,8 +419,8 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
       submit_immediately: submitImmediately,
       items: lineItems.map((item) => ({
         product: item.productId,
-        quantity: item.quantity,
-        purchase_rate: item.purchaseRate,
+        quantity: Number(item.quantity) || 1,
+        purchase_rate: Number(item.purchaseRate) || 0,
         tax_rate: 0,
       })),
     };
@@ -866,10 +918,14 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
                     <td style={{ padding: '0.4rem 0.6rem' }}>
                       <input
                         type="number"
-                        min="1"
+                        min="0"
                         step="any"
-                        value={item.quantity}
-                        onChange={(e) => handleUpdateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                        value={item.quantity === 0 ? '' : item.quantity}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleUpdateLine(idx, 'quantity', val === '' ? '' : (parseFloat(val) || 0));
+                        }}
                         style={{
                           width: '100%',
                           backgroundColor: 'var(--bg-input)',
@@ -887,8 +943,12 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
                         type="number"
                         min="0"
                         step="0.01"
-                        value={item.purchaseRate}
-                        onChange={(e) => handleUpdateLine(idx, 'purchaseRate', parseFloat(e.target.value) || 0)}
+                        value={item.purchaseRate === 0 ? '' : item.purchaseRate}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleUpdateLine(idx, 'purchaseRate', val === '' ? '' : (parseFloat(val) || 0));
+                        }}
                         style={{
                           width: '100%',
                           backgroundColor: 'var(--bg-input)',
@@ -902,7 +962,7 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
                       />
                     </td>
                     <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-main)' }}>
-                      Rs. {formatMoney(item.quantity * item.purchaseRate)}
+                      Rs. {formatMoney((Number(item.quantity) || 0) * (Number(item.purchaseRate) || 0))}
                     </td>
                     <td style={{ padding: '0.4rem 0.6rem', textAlign: 'center' }}>
                       <button
@@ -1076,10 +1136,11 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
                   min="0"
                   max={grandTotal}
                   step="0.01"
-                  value={paidAmount}
+                  value={paidAmount === 0 && !isPaidAmountAuto ? '' : paidAmount}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setPaidAmount(val);
+                    const val = e.target.value;
+                    setPaidAmount(val === '' ? '' : (parseFloat(val) || 0));
                     setIsPaidAmountAuto(false);
                   }}
                   style={{
@@ -1110,8 +1171,12 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
                 type="number"
                 min="0"
                 step="0.01"
-                value={discountAmount}
-                onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+                value={discountAmount === 0 ? '' : discountAmount}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDiscountAmount(val === '' ? '' : (parseFloat(val) || 0));
+                }}
                 placeholder="0.00"
                 style={{
                   width: '100%',
@@ -1135,10 +1200,10 @@ export const CreatePurchaseTab: React.FC<CreatePurchaseTabProps> = ({
               <span>Line Items Subtotal:</span>
               <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(subtotal)}</span>
             </div>
-            {discountAmount > 0 && (
+            {numDiscount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--success)' }}>
                 <span>Discount:</span>
-                <span style={{ fontFamily: 'var(--font-mono)' }}>- Rs. {formatMoney(discountAmount)}</span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>- Rs. {formatMoney(numDiscount)}</span>
               </div>
             )}
 

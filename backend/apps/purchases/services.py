@@ -533,7 +533,25 @@ class PurchaseService:
             )
 
         if payment_date is None:
-            payment_date = timezone.now().date()
+            payment_date = timezone.localdate()
+        if isinstance(payment_date, str):
+            from datetime import datetime
+            try:
+                payment_date = datetime.strptime(payment_date, "%Y-%m-%d").date()
+            except Exception:
+                payment_date = timezone.localdate()
+
+        # Prevent backdating payment before supplier's latest purchase or current server date
+        unpaid_purchases = supplier.purchases.filter(
+            status=PurchaseStatus.SUBMITTED,
+            paid_amount__lt=models.F("grand_total")
+        )
+        if unpaid_purchases.exists():
+            latest_unpaid_date = unpaid_purchases.aggregate(m=models.Max("date"))["m"]
+            if latest_unpaid_date and payment_date < latest_unpaid_date:
+                payment_date = latest_unpaid_date
+        if payment_date < timezone.localdate():
+            payment_date = timezone.localdate()
 
         payment_number = SupplierPayment.generate_payment_number(payment_date)
 
@@ -855,6 +873,8 @@ class PurchaseService:
 
         closing_payable = max(Decimal("0.00"), running_balance)
         total_settled_paid = period_upfront_paid + period_voucher_payments
+
+        rows.reverse()
 
         return {
             "supplier_id": supplier.id,

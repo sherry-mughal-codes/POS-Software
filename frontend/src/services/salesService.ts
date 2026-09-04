@@ -9,15 +9,24 @@ import {
 
 export const salesService = {
   async getSales(params?: {
+    page?: number;
+    page_size?: number;
     customer?: number;
     status?: string;
     payment_method?: string;
     search?: string;
     date_from?: string;
     date_to?: string;
-  }): Promise<Sale[]> {
-    const response = await api.get<Sale[]>('/sales/', { params });
-    return response.data;
+    all?: boolean;
+  }): Promise<{ results: Sale[]; count: number }> {
+    const response = await api.get<any>('/sales/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getSaleById(id: number): Promise<Sale> {

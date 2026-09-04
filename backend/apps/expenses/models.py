@@ -20,7 +20,7 @@ class Expense(models.Model):
     Operational Expense transaction referencing Chart of Accounts and Payment Accounts.
     """
     expense_number = models.CharField(max_length=50, unique=True, db_index=True)
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     expense_account = models.ForeignKey(
         Account,
         on_delete=models.PROTECT,
@@ -79,7 +79,7 @@ class Expense(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Expense"
         verbose_name_plural = "Expenses"
         indexes = [
@@ -106,7 +106,7 @@ class AccountTransfer(models.Model):
     Internal cash/bank transfer moving funds between accounts without affecting expenses.
     """
     transfer_number = models.CharField(max_length=50, unique=True, db_index=True)
-    date = models.DateField(default=timezone.now, db_index=True)
+    date = models.DateField(default=timezone.localdate, db_index=True)
     from_account = models.ForeignKey(
         Account,
         on_delete=models.PROTECT,
@@ -151,7 +151,7 @@ class AccountTransfer(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-date", "-id"]
+        ordering = ["-date", "-created_at", "-id"]
         verbose_name = "Account Transfer"
         verbose_name_plural = "Account Transfers"
 

@@ -24,6 +24,7 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import {
   Employee,
   Attendance,
@@ -70,24 +71,33 @@ export const EmployeesDashboardPage: React.FC = () => {
 
   // 1. Employees Master State
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeTotalCount, setEmployeeTotalCount] = useState<number>(0);
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [employeePage, setEmployeePage] = useState<number>(1);
+  const [employeePageSize, setEmployeePageSize] = useState<number>(50);
 
   // 2. Attendance State
   const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
+  const [attendanceTotalCount, setAttendanceTotalCount] = useState<number>(0);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState('');
   const [attendanceEmployeeFilter, setAttendanceEmployeeFilter] = useState<string | number>('');
+  const [attendancePage, setAttendancePage] = useState<number>(1);
+  const [attendancePageSize, setAttendancePageSize] = useState<number>(50);
 
   // 3. Payroll State
   const [salarySlips, setSalarySlips] = useState<SalarySlip[]>([]);
+  const [payrollTotalCount, setPayrollTotalCount] = useState<number>(0);
   const [payrollLoading, setPayrollLoading] = useState(false);
   const [payrollMonth, setPayrollMonth] = useState<number>(new Date().getMonth() + 1);
   const [payrollYear, setPayrollYear] = useState<number>(new Date().getFullYear());
   const [payrollStatusFilter, setPayrollStatusFilter] = useState('');
+  const [payrollPage, setPayrollPage] = useState<number>(1);
+  const [payrollPageSize, setPayrollPageSize] = useState<number>(50);
 
   // 4. Reports State
   const [payrollReport, setPayrollReport] = useState<PayrollReport | null>(null);
@@ -205,43 +215,56 @@ export const EmployeesDashboardPage: React.FC = () => {
   const fetchEmployees = useCallback(async () => {
     setEmployeesLoading(true);
     try {
-      const data = await employeeService.getEmployees();
-      setEmployees(data || []);
+      const data = await employeeService.getEmployeesPaginated({
+        page: employeePage,
+        page_size: employeePageSize,
+        search: employeeSearch || undefined,
+        department: deptFilter || undefined,
+        is_active: activeStatusFilter === 'ACTIVE' ? true : activeStatusFilter === 'INACTIVE' ? false : undefined,
+      });
+      setEmployees(data.results || []);
+      setEmployeeTotalCount(data.count ?? 0);
     } finally {
       setEmployeesLoading(false);
     }
-  }, []);
+  }, [employeePage, employeePageSize, employeeSearch, deptFilter, activeStatusFilter]);
 
   // Fetch Attendance
   const fetchAttendance = useCallback(async () => {
     setAttendanceLoading(true);
     try {
-      const data = await employeeService.getAttendance({
+      const data = await employeeService.getAttendancePaginated({
+        page: attendancePage,
+        page_size: attendancePageSize,
         date_from: attendanceDate || undefined,
         date_to: attendanceDate || undefined,
         employee: attendanceEmployeeFilter ? Number(attendanceEmployeeFilter) : undefined,
         status: attendanceStatusFilter || undefined,
       });
-      setAttendanceRecords(data || []);
+      setAttendanceRecords(data.results || []);
+      setAttendanceTotalCount(data.count ?? 0);
     } finally {
       setAttendanceLoading(false);
     }
-  }, [attendanceDate, attendanceEmployeeFilter, attendanceStatusFilter]);
+  }, [attendancePage, attendancePageSize, attendanceDate, attendanceEmployeeFilter, attendanceStatusFilter]);
 
   // Fetch Salary Slips
   const fetchSalarySlips = useCallback(async () => {
     setPayrollLoading(true);
     try {
-      const data = await employeeService.getSalarySlips({
+      const data = await employeeService.getSalarySlipsPaginated({
+        page: payrollPage,
+        page_size: payrollPageSize,
         month: payrollMonth || undefined,
         year: payrollYear || undefined,
         status: payrollStatusFilter || undefined,
       });
-      setSalarySlips(data || []);
+      setSalarySlips(data.results || []);
+      setPayrollTotalCount(data.count ?? 0);
     } finally {
       setPayrollLoading(false);
     }
-  }, [payrollMonth, payrollYear, payrollStatusFilter]);
+  }, [payrollPage, payrollPageSize, payrollMonth, payrollYear, payrollStatusFilter]);
 
   // Fetch Report
   const fetchReport = useCallback(async () => {
@@ -537,25 +560,6 @@ export const EmployeesDashboardPage: React.FC = () => {
     }
   };
 
-  // Filtered Employees
-  const filteredEmployees = employees.filter((e) => {
-    const q = employeeSearch.toLowerCase();
-    const matchesSearch =
-      e.full_name.toLowerCase().includes(q) ||
-      e.employee_id.toLowerCase().includes(q) ||
-      (e.phone && e.phone.toLowerCase().includes(q)) ||
-      (e.job_title && e.job_title.toLowerCase().includes(q));
-
-    let matchesDept = true;
-    if (deptFilter) matchesDept = e.department === deptFilter;
-
-    let matchesStatus = true;
-    if (activeStatusFilter === 'ACTIVE') matchesStatus = e.is_active;
-    if (activeStatusFilter === 'INACTIVE') matchesStatus = !e.is_active;
-
-    return matchesSearch && matchesDept && matchesStatus;
-  });
-
   const departments = Array.from(new Set(employees.map((e) => e.department).filter(Boolean)));
 
   const handleRefreshAll = () => {
@@ -781,7 +785,7 @@ export const EmployeesDashboardPage: React.FC = () => {
           </Card>
 
           {/* Employees Table */}
-          <Card title={`Registered Staff Profiles (${filteredEmployees.length})`} icon={<Briefcase size={16} />}>
+          <Card title={`Registered Staff Profiles (${employeeTotalCount})`} icon={<Briefcase size={16} />}>
             {employeesLoading ? (
               <LoadingSpinner label="Loading staff profiles..." />
             ) : (
@@ -800,14 +804,14 @@ export const EmployeesDashboardPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEmployees.length === 0 ? (
+                    {employees.length === 0 ? (
                       <tr>
                         <td colSpan={8} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                           No employees found. Click "Register Employee" to add one.
                         </td>
                       </tr>
                     ) : (
-                      filteredEmployees.map((emp) => (
+                      employees.map((emp) => (
                         <tr
                           key={emp.id}
                           style={{ borderBottom: '1px solid var(--border-subtle)' }}
@@ -880,6 +884,16 @@ export const EmployeesDashboardPage: React.FC = () => {
                 </table>
               </div>
             )}
+
+            {!employeesLoading && employeeTotalCount > 0 && (
+              <Pagination
+                currentPage={employeePage}
+                totalItems={employeeTotalCount}
+                pageSize={employeePageSize}
+                onPageChange={setEmployeePage}
+                onPageSizeChange={setEmployeePageSize}
+              />
+            )}
           </Card>
         </div>
       )}
@@ -945,7 +959,7 @@ export const EmployeesDashboardPage: React.FC = () => {
           </Card>
 
           {/* Attendance Table */}
-          <Card title={`Attendance Logs for ${attendanceDate} (${attendanceRecords.length})`} icon={<Clock size={16} />}>
+          <Card title={`Attendance Logs for ${attendanceDate} (${attendanceTotalCount})`} icon={<Clock size={16} />}>
             {attendanceLoading ? (
               <LoadingSpinner label="Loading attendance records..." />
             ) : (
@@ -1022,6 +1036,16 @@ export const EmployeesDashboardPage: React.FC = () => {
                 </table>
               </div>
             )}
+
+            {!attendanceLoading && attendanceTotalCount > 0 && (
+              <Pagination
+                currentPage={attendancePage}
+                totalItems={attendanceTotalCount}
+                pageSize={attendancePageSize}
+                onPageChange={setAttendancePage}
+                onPageSizeChange={setAttendancePageSize}
+              />
+            )}
           </Card>
         </div>
       )}
@@ -1083,7 +1107,7 @@ export const EmployeesDashboardPage: React.FC = () => {
           </Card>
 
           {/* Salary Slips Table */}
-          <Card title={`Salary Slips for ${MONTHS.find((m) => m.value === payrollMonth)?.label} ${payrollYear} (${salarySlips.length})`} icon={<Receipt size={16} />}>
+          <Card title={`Salary Slips for ${MONTHS.find((m) => m.value === payrollMonth)?.label} ${payrollYear} (${payrollTotalCount})`} icon={<Receipt size={16} />}>
             {payrollLoading ? (
               <LoadingSpinner label="Loading salary slips..." />
             ) : (
@@ -1208,6 +1232,16 @@ export const EmployeesDashboardPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            )}
+
+            {!payrollLoading && payrollTotalCount > 0 && (
+              <Pagination
+                currentPage={payrollPage}
+                totalItems={payrollTotalCount}
+                pageSize={payrollPageSize}
+                onPageChange={setPayrollPage}
+                onPageSizeChange={setPayrollPageSize}
+              />
             )}
           </Card>
         </div>

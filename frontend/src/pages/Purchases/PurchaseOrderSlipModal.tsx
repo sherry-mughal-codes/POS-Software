@@ -143,9 +143,13 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
               {companyName}
             </h3>
             {companyAddress && <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>{companyAddress}</div>}
-            <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>
-              {companyPhone && `Tel: ${companyPhone}`} {taxId && ` | NTN: ${taxId}`}
-            </div>
+            {(companyPhone || taxId) && (
+              <div style={{ fontSize: '0.8125rem', color: '#000000', fontWeight: 700 }}>
+                {companyPhone && `Tel: ${companyPhone}`}
+                {companyPhone && taxId && ' | '}
+                {taxId && `NTN: ${taxId}`}
+              </div>
+            )}
             <div style={{
               fontSize: '0.9375rem',
               fontWeight: 900,
@@ -235,6 +239,16 @@ export const PurchaseOrderSlipModal: React.FC<PurchaseOrderSlipModalProps> = ({
             <div style={{ marginTop: '0.2rem' }}>
               <span>Payment Mode: <strong style={{ fontWeight: 800 }}>{purchase.payment_method_name || 'Cash / Credit'}</strong></span>
             </div>
+            {purchase.payment_account_name && (
+              <div style={{ marginTop: '0.2rem' }}>
+                <span>Paid From Account: <strong style={{ fontWeight: 800 }}>{purchase.payment_account_name}</strong></span>
+              </div>
+            )}
+            {purchase.cheque_number && (
+              <div style={{ marginTop: '0.2rem' }}>
+                <span>Cheque #: <strong style={{ fontWeight: 800 }}>{purchase.cheque_number}</strong>{purchase.cheque_bank ? ` (${purchase.cheque_bank})` : ''}</span>
+              </div>
+            )}
           </div>
 
           {/* Items Table */}

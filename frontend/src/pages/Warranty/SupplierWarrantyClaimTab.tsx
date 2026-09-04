@@ -19,6 +19,7 @@ import { contactService } from '../../services/contactService';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { Card } from '../../components/common/Card';
+import { Pagination } from '../../components/common/Pagination';
 import { SupplierClaimSlipModal } from './SupplierClaimSlipModal';
 import { useToast } from '../../context/ToastContext';
 
@@ -55,6 +56,9 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
   const [isLoadingClaims, setIsLoadingClaims] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
   const [historyStatusFilter, setHistoryStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Receive Replacement Modal State
   const [completingClaimId, setCompletingClaimId] = useState<number | null>(null);
@@ -62,8 +66,31 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
 
   useEffect(() => {
     loadSuppliers();
-    loadSupplierClaims();
   }, []);
+
+  const loadSupplierClaims = React.useCallback(async () => {
+    setIsLoadingClaims(true);
+    try {
+      const data = await warrantyService.getSupplierClaimsPaginated({
+        search: historySearch.trim() || undefined,
+        status: historyStatusFilter || undefined,
+        page,
+        page_size: pageSize,
+      });
+      setSupplierClaims(data.results || []);
+      setTotalCount(data.count || 0);
+    } catch (err) {
+      console.error('Failed to load supplier claims:', err);
+      setSupplierClaims([]);
+      setTotalCount(0);
+    } finally {
+      setIsLoadingClaims(false);
+    }
+  }, [historySearch, historyStatusFilter, page, pageSize]);
+
+  useEffect(() => {
+    loadSupplierClaims();
+  }, [loadSupplierClaims]);
 
   useEffect(() => {
     if (selectedSupplierId) {
@@ -77,8 +104,8 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
 
   const loadSuppliers = async () => {
     try {
-      const data = await contactService.getSuppliers({ is_active: true });
-      setSuppliers(data);
+      const data = await contactService.getSuppliers({ is_active: true, all: true });
+      setSuppliers(Array.isArray(data) ? data : (data?.results || []));
     } catch (error) {
       console.error('Failed to load suppliers:', error);
     }
@@ -105,17 +132,6 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
   };
 
 
-  const loadSupplierClaims = async () => {
-    setIsLoadingClaims(true);
-    try {
-      const data = await warrantyService.getSupplierClaims();
-      setSupplierClaims(data);
-    } catch (err) {
-      console.error('Failed to load supplier claims:', err);
-    } finally {
-      setIsLoadingClaims(false);
-    }
-  };
 
   const handleCompleteReceipt = async (claimId: number) => {
     setIsCompletingReceipt(true);
@@ -460,6 +476,22 @@ export const SupplierWarrantyClaimTab: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {totalCount > 0 && (
+          <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+            <Pagination
+              currentPage={page}
+              totalItems={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              pageSizeOptions={[25, 50, 100, 200]}
+            />
+          </div>
+        )}
       </Card>
 
       {/* 3. DISPATCH CONFIRMATION MODAL */}

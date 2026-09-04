@@ -31,6 +31,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all().select_related("parent").prefetch_related("children")
     serializer_class = AccountSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -128,7 +129,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         if amount <= Decimal("0.00"):
             return Response({"detail": "Opening balance amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
 
-        date_val = request.data.get("date") or timezone.now().date()
+        date_val = request.data.get("date") or timezone.localdate()
         narration = request.data.get("narration") or f"Opening balance setup for [{account.code}] {account.name}"
 
         equity_acc = Account.objects.get(code="3010")
@@ -193,6 +194,18 @@ class JournalEntryViewSet(viewsets.ModelViewSet):
             qs = qs.filter(entry_date__gte=start_date)
         if end_date:
             qs = qs.filter(entry_date__lte=end_date)
+
+        search = self.request.query_params.get("search")
+        if search:
+            search = search.strip()
+            qs = qs.filter(
+                models.Q(entry_number__icontains=search)
+                | models.Q(reference_id__icontains=search)
+                | models.Q(narration__icontains=search)
+                | models.Q(lines__account__name__icontains=search)
+                | models.Q(lines__account__code__icontains=search)
+            ).distinct()
+
         return qs
 
     def create(self, request, *args, **kwargs):

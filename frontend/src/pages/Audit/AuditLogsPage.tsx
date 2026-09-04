@@ -4,6 +4,7 @@ import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { userService } from '../../services/userService';
 import { AuditLogEntry } from '../../types/auth';
 
@@ -11,6 +12,13 @@ export const AuditLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  const paginatedLogs = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return logs.slice(start, start + pageSize);
+  }, [logs, page, pageSize]);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -104,7 +112,7 @@ export const AuditLogsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {logs.map((log) => (
+                {paginatedLogs.map((log) => (
                   <tr
                     key={log.id}
                     style={{ borderBottom: '1px solid var(--border-subtle)' }}
@@ -159,6 +167,22 @@ export const AuditLogsPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {logs.length > 0 && (
+          <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+            <Pagination
+              currentPage={page}
+              totalItems={logs.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              pageSizeOptions={[25, 50, 100, 200]}
+            />
           </div>
         )}
       </Card>

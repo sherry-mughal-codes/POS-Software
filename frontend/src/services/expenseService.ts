@@ -16,9 +16,33 @@ export const expenseService = {
     date_from?: string;
     date_to?: string;
     search?: string;
+    page?: number;
+    page_size?: number;
+    all?: boolean;
   }): Promise<Expense[]> {
     const response = await api.get('/expenses/records/', { params });
     return response.data?.results || response.data || [];
+  },
+
+  async getExpensesPaginated(params?: {
+    status?: string;
+    expense_account?: number;
+    payment_account?: number;
+    date_from?: string;
+    date_to?: string;
+    search?: string;
+    page?: number;
+    page_size?: number;
+    all?: boolean;
+  }): Promise<{ results: Expense[]; count: number }> {
+    const response = await api.get('/expenses/records/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getExpense(id: number): Promise<Expense> {

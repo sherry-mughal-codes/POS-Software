@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Permission check helper
   const isItemPermitted = (item: NavItem): boolean => {
-    if (user?.is_superuser && (!user.roles || user.roles.length === 0)) return true;
+    if (user?.is_superuser) return true;
 
     if (item.requiredRole && !hasRole(item.requiredRole)) {
       return false;

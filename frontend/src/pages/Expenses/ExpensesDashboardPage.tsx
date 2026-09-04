@@ -14,17 +14,20 @@ import {
   Edit2,
   Wallet,
   CreditCard,
+  Printer,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { Expense, ComprehensiveExpenseReport } from '../../types/expense';
 import { Account } from '../../types/accounting';
 import { expenseService } from '../../services/expenseService';
 import { accountingService } from '../../services/accountingService';
 import { useToast } from '../../context/ToastContext';
+import { ExpenseSlipModal } from './ExpenseSlipModal';
 
 const formatMoney = (val: number | string | undefined | null): string => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
@@ -48,6 +51,10 @@ export const ExpensesDashboardPage: React.FC = () => {
   const [expensePaymentFilter, setExpensePaymentFilter] = useState('');
   const [expenseDateFrom, setExpenseDateFrom] = useState('');
   const [expenseDateTo, setExpenseDateTo] = useState('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [selectedSlipExpense, setSelectedSlipExpense] = useState<Expense | null>(null);
 
   // Reports Tab State
   const [reportData, setReportData] = useState<ComprehensiveExpenseReport | null>(null);
@@ -135,7 +142,9 @@ export const ExpensesDashboardPage: React.FC = () => {
   const fetchExpenses = useCallback(async () => {
     setExpensesLoading(true);
     try {
-      const data = await expenseService.getExpenses({
+      const data = await expenseService.getExpensesPaginated({
+        page: currentPage,
+        page_size: pageSize,
         search: expenseSearch || undefined,
         status: expenseStatusFilter || undefined,
         expense_account: expenseAccountFilter ? parseInt(expenseAccountFilter) : undefined,
@@ -143,11 +152,12 @@ export const ExpensesDashboardPage: React.FC = () => {
         date_from: expenseDateFrom || undefined,
         date_to: expenseDateTo || undefined,
       });
-      setExpenses(data || []);
+      setExpenses(data.results || []);
+      setTotalCount(data.count ?? 0);
     } finally {
       setExpensesLoading(false);
     }
-  }, [expenseSearch, expenseStatusFilter, expenseAccountFilter, expensePaymentFilter, expenseDateFrom, expenseDateTo]);
+  }, [currentPage, pageSize, expenseSearch, expenseStatusFilter, expenseAccountFilter, expensePaymentFilter, expenseDateFrom, expenseDateTo]);
 
   // Fetch Report
   const fetchReport = useCallback(async () => {
@@ -167,6 +177,10 @@ export const ExpensesDashboardPage: React.FC = () => {
     if (activeTab === 'expenses') fetchExpenses();
     else if (activeTab === 'reports') fetchReport();
   }, [activeTab, fetchExpenses, fetchReport]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [expenseSearch, expenseStatusFilter, expenseAccountFilter, expensePaymentFilter, expenseDateFrom, expenseDateTo]);
 
   // Handlers for Expense Form
   const handleOpenCreateExpense = () => {
@@ -498,7 +512,7 @@ export const ExpensesDashboardPage: React.FC = () => {
           </Card>
 
           {/* Expenses Table */}
-          <Card title={`Operational Expense Records (${expenses.length})`} icon={<Receipt size={16} />}>
+          <Card title={`Operational Expense Records (${totalCount})`} icon={<Receipt size={16} />}>
             {expensesLoading ? (
               <LoadingSpinner label="Loading expenses..." />
             ) : (
@@ -580,6 +594,14 @@ export const ExpensesDashboardPage: React.FC = () => {
 
                           <td style={{ padding: '0.45rem 0.6rem', textAlign: 'center' }}>
                             <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+                              <Button
+                                variant="outline"
+                                icon={<Printer size={13} />}
+                                onClick={() => setSelectedSlipExpense(exp)}
+                                style={{ padding: '0.25rem 0.45rem' }}
+                                title="Print Expense Payment Voucher"
+                              />
+
                               {exp.status === 'DRAFT' && (
                                 <>
                                   <Button
@@ -616,6 +638,16 @@ export const ExpensesDashboardPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            )}
+
+            {!expensesLoading && totalCount > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalCount}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+              />
             )}
           </Card>
         </div>
@@ -1006,6 +1038,13 @@ export const ExpensesDashboardPage: React.FC = () => {
             </div>
           </form>
         </Modal>
+      )}
+
+      {selectedSlipExpense && (
+        <ExpenseSlipModal
+          expense={selectedSlipExpense}
+          onClose={() => setSelectedSlipExpense(null)}
+        />
       )}
     </div>
   );

@@ -12,6 +12,7 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { StockMovement } from '../../types/inventory';
 import { Product } from '../../types/product';
 import { inventoryService } from '../../services/inventoryService';
@@ -36,6 +37,8 @@ export const StockMovementLedgerTab: React.FC<StockMovementLedgerTabProps> = ({ 
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const fetchMovements = useCallback(async () => {
     setLoading(true);
@@ -70,6 +73,11 @@ export const StockMovementLedgerTab: React.FC<StockMovementLedgerTabProps> = ({ 
       (m.notes && m.notes.toLowerCase().includes(term))
     );
   });
+
+  const paginatedMovements = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredMovements.slice(start, start + pageSize);
+  }, [filteredMovements, page, pageSize]);
 
   const renderMovementTypeBadge = (type: string, name: string) => {
     switch (type) {
@@ -216,7 +224,7 @@ export const StockMovementLedgerTab: React.FC<StockMovementLedgerTabProps> = ({ 
                     </td>
                   </tr>
                 ) : (
-                  filteredMovements.map((m) => (
+                  paginatedMovements.map((m) => (
                     <tr
                       key={m.id}
                       style={{ borderBottom: '1px solid var(--border-subtle)' }}
@@ -288,6 +296,21 @@ export const StockMovementLedgerTab: React.FC<StockMovementLedgerTabProps> = ({ 
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+        {filteredMovements.length > 0 && (
+          <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+            <Pagination
+              currentPage={page}
+              totalItems={filteredMovements.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              pageSizeOptions={[25, 50, 100, 200]}
+            />
           </div>
         )}
       </Card>

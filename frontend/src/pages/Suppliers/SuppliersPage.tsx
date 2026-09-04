@@ -17,6 +17,7 @@ import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { SupplierModal } from './SupplierModal';
 import { SupplierBulkImportModal } from './SupplierBulkImportModal';
 import { Supplier } from '../../types/contact';
@@ -26,32 +27,45 @@ import { useToast } from '../../context/ToastContext';
 export const SuppliersPage: React.FC = () => {
   const { showError, showSuccess } = useToast();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-
-  // Modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await contactService.getSuppliers();
-      setSuppliers(data || []);
+      const data = await contactService.getSuppliers({
+        page: currentPage,
+        page_size: pageSize,
+        search: searchQuery || undefined,
+        is_active: statusFilter === 'ACTIVE' ? true : statusFilter === 'INACTIVE' ? false : undefined,
+      });
+      setSuppliers(data.results || []);
+      setTotalCount(data.count ?? (data.results ? data.results.length : 0));
     } catch (err: any) {
       showError(err?.message || 'Failed to load suppliers.', 'Failed to Load Suppliers');
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [currentPage, pageSize, searchQuery, statusFilter, showError]);
 
   useEffect(() => {
     fetchSuppliers();
   }, [fetchSuppliers]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  // Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
 
   const handleToggleStatus = async (supp: Supplier) => {
     try {
@@ -73,25 +87,7 @@ export const SuppliersPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const filteredSuppliers = suppliers.filter((s) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      (s.name && s.name.toLowerCase().includes(q)) ||
-      (s.company_name && s.company_name.toLowerCase().includes(q)) ||
-      (s.supplier_id && s.supplier_id.toLowerCase().includes(q)) ||
-      (s.phone && s.phone.toLowerCase().includes(q)) ||
-      (s.tax_id && s.tax_id.toLowerCase().includes(q)) ||
-      (s.email && s.email.toLowerCase().includes(q));
-
-    let matchesStatus = true;
-    if (statusFilter === 'ACTIVE') matchesStatus = s.is_active;
-    if (statusFilter === 'INACTIVE') matchesStatus = !s.is_active;
-
-    return matchesSearch && matchesStatus;
-  });
-
   // Metrics
-  const totalCount = suppliers.length;
   const activeCount = suppliers.filter((s) => s.is_active).length;
   const taxRegisteredCount = suppliers.filter((s) => s.tax_id).length;
 
@@ -220,12 +216,12 @@ export const SuppliersPage: React.FC = () => {
 
       {/* Supplier Table Card */}
       <Card
-        title="Distributors & Suppliers Directory"
+        title={`Distributors & Suppliers Directory (${totalCount})`}
         icon={<Truck size={18} />}
       >
         {loading ? (
           <LoadingSpinner label="Loading supplier master records..." />
-        ) : filteredSuppliers.length === 0 ? (
+        ) : suppliers.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
             No suppliers match the search criteria.
           </div>
@@ -245,7 +241,7 @@ export const SuppliersPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredSuppliers.map((supp) => (
+                {suppliers.map((supp) => (
                   <tr
                     key={supp.id}
                     style={{ borderBottom: '1px solid var(--border-subtle)', opacity: supp.is_active ? 1 : 0.55 }}
@@ -362,6 +358,16 @@ export const SuppliersPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+        )}
+
+        {!loading && totalCount > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalCount}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         )}
       </Card>
 

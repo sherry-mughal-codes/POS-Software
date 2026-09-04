@@ -41,7 +41,7 @@ class DashboardService:
         Normalizes any date preset or custom range into exact timezone-aware datetime boundaries:
         (start_datetime 00:00:00, end_datetime 23:59:59, label).
         """
-        today = timezone.now().date()
+        today = timezone.localdate()
         period = (period or "this_month").lower()
 
         if period == "today":
@@ -122,7 +122,7 @@ class DashboardService:
         # -------------------------------------------------------------
         # 1. SALES & REVENUE AGGREGATION
         # -------------------------------------------------------------
-        sales_base = Sale.objects.filter(status=SaleStatus.COMPLETED, created_at__range=(start_dt, end_dt))
+        sales_base = Sale.objects.filter(status=SaleStatus.COMPLETED, date__range=(start_d, end_d))
         if cashier_id:
             sales_base = sales_base.filter(created_by_id=cashier_id)
 
@@ -145,7 +145,7 @@ class DashboardService:
         # -------------------------------------------------------------
         # 2. SALES RETURNS AGGREGATION
         # -------------------------------------------------------------
-        returns_base = SalesReturn.objects.filter(created_at__range=(start_dt, end_dt))
+        returns_base = SalesReturn.objects.filter(date__range=(start_d, end_d))
         if cashier_id:
             returns_base = returns_base.filter(created_by_id=cashier_id)
 
@@ -162,9 +162,8 @@ class DashboardService:
         # -------------------------------------------------------------
         # 3. TODAY'S SALES BENCHMARK
         # -------------------------------------------------------------
-        today_start = timezone.make_aware(datetime.combine(timezone.now().date(), time.min))
-        today_end = timezone.make_aware(datetime.combine(timezone.now().date(), time.max))
-        today_sales_qs = Sale.objects.filter(status=SaleStatus.COMPLETED, created_at__range=(today_start, today_end))
+        local_today = timezone.localdate()
+        today_sales_qs = Sale.objects.filter(status=SaleStatus.COMPLETED, date=local_today)
         if cashier_id:
             today_sales_qs = today_sales_qs.filter(created_by_id=cashier_id)
         today_sales_val = today_sales_qs.aggregate(
@@ -181,7 +180,7 @@ class DashboardService:
 
         items_base = SaleItem.objects.filter(
             sale__status=SaleStatus.COMPLETED,
-            sale__created_at__range=(start_dt, end_dt)
+            sale__date__range=(start_d, end_d)
         )
         expenses_qs = Expense.objects.filter(
             status=ExpenseStatus.SUBMITTED,
@@ -385,7 +384,7 @@ class DashboardService:
             # Single query monthly aggregation
             m_sales = {
                 row["m"].strftime("%Y-%m"): (row["gross"], row["orders"])
-                for row in sales_base.annotate(m=TruncMonth("created_at"))
+                for row in sales_base.annotate(m=TruncMonth("date"))
                 .values("m")
                 .annotate(
                     gross=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField()),
@@ -395,7 +394,7 @@ class DashboardService:
             }
             m_returns = {
                 row["m"].strftime("%Y-%m"): row["refund"]
-                for row in returns_base.annotate(m=TruncMonth("created_at"))
+                for row in returns_base.annotate(m=TruncMonth("date"))
                 .values("m")
                 .annotate(
                     refund=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
@@ -430,23 +429,21 @@ class DashboardService:
         else:
             # Single query daily aggregation
             d_sales = {
-                row["d"].strftime("%Y-%m-%d"): (row["gross"], row["orders"])
-                for row in sales_base.annotate(d=TruncDate("created_at"))
-                .values("d")
+                row["date"].strftime("%Y-%m-%d"): (row["gross"], row["orders"])
+                for row in sales_base.values("date")
                 .annotate(
                     gross=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField()),
                     orders=Count("id")
                 )
-                if row.get("d")
+                if row.get("date")
             }
             d_returns = {
-                row["d"].strftime("%Y-%m-%d"): row["refund"]
-                for row in returns_base.annotate(d=TruncDate("created_at"))
-                .values("d")
+                row["date"].strftime("%Y-%m-%d"): row["refund"]
+                for row in returns_base.values("date")
                 .annotate(
                     refund=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
                 )
-                if row.get("d")
+                if row.get("date")
             }
 
             for i in range(days_diff):
@@ -519,9 +516,10 @@ class DashboardService:
 
         cash_amount = split_by_method.get(PaymentMethodType.CASH, Decimal("0.00")) + non_split_by_method.get(PaymentMethodType.CASH, Decimal("0.00"))
         card_amount = split_by_method.get(PaymentMethodType.CARD, Decimal("0.00")) + non_split_by_method.get(PaymentMethodType.CARD, Decimal("0.00"))
+        cheque_amount = split_by_method.get(PaymentMethodType.CHEQUE, Decimal("0.00")) + non_split_by_method.get(PaymentMethodType.CHEQUE, Decimal("0.00"))
         credit_amount = split_by_method.get(PaymentMethodType.CREDIT, Decimal("0.00")) + non_split_by_method.get(PaymentMethodType.CREDIT, Decimal("0.00"))
 
-        total_settled = cash_amount + card_amount + credit_amount
+        total_settled = cash_amount + card_amount + cheque_amount + credit_amount
 
         pay_distribution = [
             {
@@ -537,6 +535,12 @@ class DashboardService:
                 "percentage": round((float(card_amount) / float(total_settled) * 100), 1) if total_settled > Decimal("0.00") else 0.0,
             },
             {
+                "method_code": PaymentMethodType.CHEQUE,
+                "method_name": "Cheque",
+                "amount": float(cheque_amount),
+                "percentage": round((float(cheque_amount) / float(total_settled) * 100), 1) if total_settled > Decimal("0.00") else 0.0,
+            },
+            {
                 "method_code": PaymentMethodType.CREDIT,
                 "method_name": "Customer Credit / AR",
                 "amount": float(credit_amount),
@@ -549,27 +553,30 @@ class DashboardService:
         # -------------------------------------------------------------
         cashier_stats = []
         if is_admin_or_manager:
-            cashiers_qs = User.objects.filter(is_active=True).filter(
-                Q(sales_recorded__isnull=False) | Q(is_staff=True)
-            ).distinct()
+            sales_by_cashier = sales_base.values("created_by").annotate(
+                order_count=Count("id"),
+                gross_sales=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField())
+            )
+            user_ids = [row["created_by"] for row in sales_by_cashier if row["created_by"] is not None]
+            users_map = {u.id: u for u in User.objects.filter(id__in=user_ids)}
 
-            for c in cashiers_qs:
-                c_sales = Sale.objects.filter(
-                    created_by=c,
-                    status=SaleStatus.COMPLETED,
-                    created_at__range=(start_dt, end_dt)
-                )
-                c_count = c_sales.count()
-                if c_count == 0:
-                    continue
+            for row in sales_by_cashier:
+                c_id = row["created_by"]
+                c_count = row["order_count"]
+                c_gross = row["gross_sales"]
 
-                c_gross = c_sales.aggregate(
-                    t=Coalesce(Sum("grand_total"), Value(Decimal("0.00")), output_field=DecimalField())
-                )["t"] or Decimal("0.00")
+                if c_id and c_id in users_map:
+                    user_obj = users_map[c_id]
+                    c_name = user_obj.get_full_name() or user_obj.username
+                    u_name = user_obj.username
+                else:
+                    c_name = "Admin / System"
+                    u_name = "system"
 
+                rets_filter = Q(created_by_id=c_id) if c_id else Q(created_by__isnull=True)
                 c_rets = SalesReturn.objects.filter(
-                    created_by=c,
-                    created_at__range=(start_dt, end_dt)
+                    rets_filter,
+                    date__range=(start_d, end_d)
                 ).aggregate(
                     t=Coalesce(Sum("refund_amount"), Value(Decimal("0.00")), output_field=DecimalField())
                 )["t"] or Decimal("0.00")
@@ -578,9 +585,9 @@ class DashboardService:
                 avg_ticket = round(float(c_net) / c_count, 2) if c_count > 0 else 0.0
 
                 cashier_stats.append({
-                    "cashier_id": c.id,
-                    "cashier_name": c.get_full_name() or c.username,
-                    "username": c.username,
+                    "cashier_id": c_id or 0,
+                    "cashier_name": c_name,
+                    "username": u_name,
                     "orders_count": c_count,
                     "gross_sales": float(c_gross),
                     "returns": float(c_rets),

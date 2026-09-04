@@ -212,6 +212,7 @@ class RoleViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all().prefetch_related("permissions", "user_set")
     serializer_class = RoleSerializer
     permission_classes = [IsAdminOrManager]
+    pagination_class = None
 
     def perform_create(self, serializer):
         role = serializer.save()

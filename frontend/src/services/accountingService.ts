@@ -18,8 +18,14 @@ export const accountingService = {
     leaf_only?: boolean;
     parent_code?: string;
   }): Promise<Account[]> {
-    const response = await apiClient.get<Account[]>('/accounting/accounts/', { params });
-    return response.data;
+    const response = await apiClient.get<any>('/accounting/accounts/', { params: { ...params, all: true } });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   async createAccount(data: Partial<Account>): Promise<Account> {
@@ -61,8 +67,34 @@ export const accountingService = {
     start_date?: string;
     end_date?: string;
   }): Promise<JournalEntry[]> {
-    const response = await apiClient.get<JournalEntry[]>('/accounting/journal-entries/', { params });
-    return response.data;
+    const response = await apiClient.get<any>('/accounting/journal-entries/', { params: { ...params, all: true } });
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  },
+
+  async getJournalEntriesPaginated(params?: {
+    reference_type?: string;
+    reference_id?: string;
+    status?: string;
+    start_date?: string;
+    end_date?: string;
+    search?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<{ results: JournalEntry[]; count: number }> {
+    const response = await apiClient.get<any>('/accounting/journal-entries/', { params });
+    if (response.data && Array.isArray(response.data.results)) {
+      return { results: response.data.results, count: response.data.count ?? response.data.results.length };
+    }
+    if (Array.isArray(response.data)) {
+      return { results: response.data, count: response.data.length };
+    }
+    return { results: [], count: 0 };
   },
 
   async getJournalEntry(id: number): Promise<JournalEntry> {
@@ -81,8 +113,14 @@ export const accountingService = {
   },
 
   async getPaymentMethods(): Promise<PaymentMethod[]> {
-    const response = await apiClient.get<PaymentMethod[]>('/accounting/payment-methods/');
-    return response.data;
+    const response = await apiClient.get<any>('/accounting/payment-methods/');
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   async getTrialBalance(asOfDate?: string): Promise<TrialBalanceResponse> {

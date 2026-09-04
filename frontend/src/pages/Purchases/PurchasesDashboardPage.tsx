@@ -20,10 +20,21 @@ import { purchaseService } from '../../services/purchaseService';
 type TabKey = 'orders' | 'create' | 'returns' | 'payables' | 'reports';
 
 export const PurchasesDashboardPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>('orders');
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('apexpos_reorder_items')) {
+      return 'create';
+    }
+    return 'orders';
+  });
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [returns, setReturns] = useState<PurchaseReturn[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('apexpos_reorder_items')) {
+      setActiveTab('create');
+    }
+  }, []);
 
   // Return modal trigger state
   const [returnTargetPurchase, setReturnTargetPurchase] = useState<Purchase | null>(null);
@@ -38,8 +49,8 @@ export const PurchasesDashboardPage: React.FC = () => {
         purchaseService.getPurchases(),
         purchaseService.getPurchaseReturns(),
       ]);
-      setPurchases(pList || []);
-      setReturns(rList || []);
+      setPurchases(Array.isArray(pList) ? pList : (pList?.results || []));
+      setReturns(Array.isArray(rList) ? rList : (rList?.results || []));
     } catch {
       // ignore
     } finally {

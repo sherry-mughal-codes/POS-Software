@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search,
   ShieldCheck,
@@ -23,6 +23,7 @@ import { Badge } from '../../components/common/Badge';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
 import { CustomerClaimSlipModal } from './CustomerClaimSlipModal';
+import { Pagination } from '../../components/common/Pagination';
 import { useToast } from '../../context/ToastContext';
 
 
@@ -59,11 +60,13 @@ export const CustomerWarrantyClaimTab: React.FC = () => {
   const [isLoadingClaims, setIsLoadingClaims] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
   const [historyStatusFilter, setHistoryStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Load Initial Data
   useEffect(() => {
     loadSuppliersAndProducts();
-    loadCustomerClaims();
   }, []);
 
   // Real-time search with debounce (400ms)
@@ -84,27 +87,39 @@ export const CustomerWarrantyClaimTab: React.FC = () => {
   const loadSuppliersAndProducts = async () => {
     try {
       const [suppData, prodData] = await Promise.all([
-        contactService.getSuppliers({ is_active: true }),
+        contactService.getSuppliers({ is_active: true, all: true }),
         productService.getProducts({ is_active: true }),
       ]);
-      setSuppliers(suppData);
+      setSuppliers(Array.isArray(suppData) ? suppData : (suppData?.results || []));
       setAllProducts(prodData);
     } catch (error) {
       console.error('Error fetching master data:', error);
     }
   };
 
-  const loadCustomerClaims = async () => {
+  const loadCustomerClaims = useCallback(async () => {
     setIsLoadingClaims(true);
     try {
-      const data = await warrantyService.getCustomerClaims();
-      setCustomerClaims(data);
+      const data = await warrantyService.getCustomerClaimsPaginated({
+        search: historySearch.trim() || undefined,
+        status: historyStatusFilter || undefined,
+        page,
+        page_size: pageSize,
+      });
+      setCustomerClaims(data.results || []);
+      setTotalCount(data.count || 0);
     } catch (err) {
       console.error('Failed to load customer claims:', err);
+      setCustomerClaims([]);
+      setTotalCount(0);
     } finally {
       setIsLoadingClaims(false);
     }
-  };
+  }, [historySearch, historyStatusFilter, page, pageSize]);
+
+  useEffect(() => {
+    loadCustomerClaims();
+  }, [loadCustomerClaims]);
 
   const handleSearchSales = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -462,6 +477,22 @@ export const CustomerWarrantyClaimTab: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {totalCount > 0 && (
+          <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+            <Pagination
+              currentPage={page}
+              totalItems={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              pageSizeOptions={[25, 50, 100, 200]}
+            />
+          </div>
+        )}
       </Card>
 
       {/* 3. PROCESS CLAIM MODAL */}

@@ -402,6 +402,7 @@ export const DaySessionsPage: React.FC = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.25rem', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
                     <span>Cash: Rs. {formatMoney(liveXReport.sales.cash_sales)}</span>
                     <span>Card: Rs. {formatMoney(liveXReport.sales.card_sales)}</span>
+                    <span>Cheque: Rs. {formatMoney(liveXReport.sales.cheque_sales || 0)}</span>
                     {liveXReport.sales.credit_sales > 0 && (
                       <span>Credit: Rs. {formatMoney(liveXReport.sales.credit_sales)}</span>
                     )}
@@ -979,6 +980,13 @@ export const DaySessionsPage: React.FC = () => {
                   </tr>
 
                   <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Cheque Sales (Non-Drawer)</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                      Rs. {formatMoney(liveXReport.sales.cheque_sales || 0)}
+                    </td>
+                  </tr>
+
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
                     <td style={{ padding: '0.5rem 0.75rem' }}>Credit Sales / Receivables (Non-Drawer)</td>
                     <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
                       Rs. {formatMoney(liveXReport.sales.credit_sales)}
@@ -1089,6 +1097,14 @@ export const DaySessionsPage: React.FC = () => {
                   <tr style={{ borderBottom: '1px solid #000000' }}>
                     <td style={{ padding: '0.5rem 0.75rem' }}>Cash Sales Received</td>
                     <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>+ Rs. {formatMoney(viewingZReport.sales.cash_sales)}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Card Sales (Non-Drawer)</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>Rs. {formatMoney(viewingZReport.sales.card_sales)}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #000000' }}>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>Cheque Sales (Non-Drawer)</td>
+                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>Rs. {formatMoney(viewingZReport.sales.cheque_sales || 0)}</td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid #000000' }}>
                     <td style={{ padding: '0.5rem 0.75rem' }}>Customer Payments in Cash</td>
