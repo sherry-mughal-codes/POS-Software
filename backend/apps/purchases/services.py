@@ -516,6 +516,7 @@ class PurchaseService:
         payment_date: Optional[date] = None,
         reference: str = "",
         notes: str = "",
+        screenshot=None,
         submit_now: bool = True,
         created_by=None,
     ) -> SupplierPayment:
@@ -567,6 +568,7 @@ class PurchaseService:
             cheque_bank=cheque_bank,
             reference=reference,
             notes=notes,
+            screenshot=screenshot,
             status=SupplierPaymentStatus.DRAFT,
             created_by=created_by,
         )

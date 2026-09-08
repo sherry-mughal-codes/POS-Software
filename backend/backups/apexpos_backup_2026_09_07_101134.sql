@@ -1,0 +1,6974 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict SbjqE1CaioG53v1oXym6aqPg2hf0OwFF8am0muiArvh4bRPiNkt3L3wj5udwsbD
+
+-- Dumped from database version 16.15
+-- Dumped by pg_dump version 17.11 (Debian 17.11-0+deb13u1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaimitem DROP CONSTRAINT IF EXISTS warranty_supplierwar_supplier_warranty_cl_761c1b04_fk_warranty_;
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_supplierwar_supplier_id_1042c9b7_fk_contacts_;
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaimitem DROP CONSTRAINT IF EXISTS warranty_supplierwar_product_id_4141c327_fk_products_;
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_supplierwar_dispatch_journal_ent_10336607_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaimitem DROP CONSTRAINT IF EXISTS warranty_supplierwar_customer_warranty_cl_df285c7d_fk_warranty_;
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_supplierwar_created_by_id_e4fa4da9_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_supplierwar_completion_journal_e_aed763f4_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwar_supplier_id_bf92761f_fk_contacts_;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwar_sale_item_id_536213df_fk_sales_sal;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwar_replacement_product__fce6839a_fk_products_;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwar_original_sale_id_8231fd6c_fk_sales_sal;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwar_journal_entry_id_a0d4558f_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwar_customer_id_524e9b83_fk_contacts_;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwar_created_by_id_45082844_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwar_claimed_product_id_59ddec68_fk_products_;
+ALTER TABLE IF EXISTS ONLY public.users_userprofile DROP CONSTRAINT IF EXISTS users_userprofile_user_id_87251ef1_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.sales_salesreturnitem DROP CONSTRAINT IF EXISTS sales_salesreturnite_sale_item_id_912a7754_fk_sales_sal;
+ALTER TABLE IF EXISTS ONLY public.sales_salesreturnitem DROP CONSTRAINT IF EXISTS sales_salesreturnite_return_order_id_3f9958d5_fk_sales_sal;
+ALTER TABLE IF EXISTS ONLY public.sales_salesreturnitem DROP CONSTRAINT IF EXISTS sales_salesreturnite_product_id_60d282e5_fk_products_;
+ALTER TABLE IF EXISTS ONLY public.sales_salesreturn DROP CONSTRAINT IF EXISTS sales_salesreturn_payment_account_id_86884170_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.sales_salesreturn DROP CONSTRAINT IF EXISTS sales_salesreturn_original_sale_id_b258ea14_fk_sales_sale_id;
+ALTER TABLE IF EXISTS ONLY public.sales_salesreturn DROP CONSTRAINT IF EXISTS sales_salesreturn_created_by_id_7486ff06_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.sales_salepayment DROP CONSTRAINT IF EXISTS sales_salepayment_sale_id_894e0b7b_fk_sales_sale_id;
+ALTER TABLE IF EXISTS ONLY public.sales_salepayment DROP CONSTRAINT IF EXISTS sales_salepayment_payment_account_id_a77337aa_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.sales_saleitem DROP CONSTRAINT IF EXISTS sales_saleitem_sale_id_56e67045_fk_sales_sale_id;
+ALTER TABLE IF EXISTS ONLY public.sales_saleitem DROP CONSTRAINT IF EXISTS sales_saleitem_product_id_aeb6c9cd_fk_products_product_id;
+ALTER TABLE IF EXISTS ONLY public.sales_sale DROP CONSTRAINT IF EXISTS sales_sale_payment_account_id_dd8bdab3_fk_accounting_account_id;
+ALTER TABLE IF EXISTS ONLY public.sales_sale DROP CONSTRAINT IF EXISTS sales_sale_customer_id_2d66a408_fk_contacts_customer_id;
+ALTER TABLE IF EXISTS ONLY public.sales_sale DROP CONSTRAINT IF EXISTS sales_sale_created_by_id_f6773268_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.sales_posdaysession DROP CONSTRAINT IF EXISTS sales_posdaysession_opened_by_id_22d37375_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.sales_posdaysession DROP CONSTRAINT IF EXISTS sales_posdaysession_closed_by_id_84b07669_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.purchases_supplierpayment DROP CONSTRAINT IF EXISTS purchases_supplierpa_supplier_id_99d1b7b3_fk_contacts_;
+ALTER TABLE IF EXISTS ONLY public.purchases_supplierpayment DROP CONSTRAINT IF EXISTS purchases_supplierpa_submitted_by_id_b810c088_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.purchases_supplierpayment DROP CONSTRAINT IF EXISTS purchases_supplierpa_reversal_journal_ent_718f4ab5_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.purchases_supplierpayment DROP CONSTRAINT IF EXISTS purchases_supplierpa_payment_account_id_93927a6d_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.purchases_supplierpayment DROP CONSTRAINT IF EXISTS purchases_supplierpa_journal_entry_id_aa177e38_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.purchases_supplierpayment DROP CONSTRAINT IF EXISTS purchases_supplierpa_created_by_id_332d2ff2_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.purchases_supplierpayment DROP CONSTRAINT IF EXISTS purchases_supplierpa_cancelled_by_id_47c2db5a_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturn DROP CONSTRAINT IF EXISTS purchases_purchasereturn_created_by_id_817d1134_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturn DROP CONSTRAINT IF EXISTS purchases_purchasere_supplier_id_bbf28984_fk_contacts_;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturnitem DROP CONSTRAINT IF EXISTS purchases_purchasere_purchase_return_id_ef30a8e4_fk_purchases;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturnitem DROP CONSTRAINT IF EXISTS purchases_purchasere_purchase_item_id_087566e6_fk_purchases;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturnitem DROP CONSTRAINT IF EXISTS purchases_purchasere_product_id_6ea230ae_fk_products_;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturn DROP CONSTRAINT IF EXISTS purchases_purchasere_payment_account_id_d12c9a1d_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturn DROP CONSTRAINT IF EXISTS purchases_purchasere_original_purchase_id_2f356e7b_fk_purchases;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchaseitem DROP CONSTRAINT IF EXISTS purchases_purchaseit_purchase_id_a7f96c61_fk_purchases;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchaseitem DROP CONSTRAINT IF EXISTS purchases_purchaseit_product_id_61959486_fk_products_;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchase DROP CONSTRAINT IF EXISTS purchases_purchase_supplier_id_2d052a2a_fk_contacts_supplier_id;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchase DROP CONSTRAINT IF EXISTS purchases_purchase_payment_method_id_5987dfb3_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchase DROP CONSTRAINT IF EXISTS purchases_purchase_payment_account_id_0e5d40a1_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchase DROP CONSTRAINT IF EXISTS purchases_purchase_created_by_id_699c5882_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.products_product DROP CONSTRAINT IF EXISTS products_product_unit_id_07baa821_fk_products_unit_id;
+ALTER TABLE IF EXISTS ONLY public.products_product DROP CONSTRAINT IF EXISTS products_product_category_id_9b594869_fk_products_category_id;
+ALTER TABLE IF EXISTS ONLY public.products_category DROP CONSTRAINT IF EXISTS products_category_parent_id_3388f6c9_fk_products_category_id;
+ALTER TABLE IF EXISTS ONLY public.inventory_stockmovement DROP CONSTRAINT IF EXISTS inventory_stockmovement_created_by_id_9a39cb99_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.inventory_stockmovement DROP CONSTRAINT IF EXISTS inventory_stockmovem_product_id_4eccfd0a_fk_products_;
+ALTER TABLE IF EXISTS ONLY public.inventory_stockadjustmentitem DROP CONSTRAINT IF EXISTS inventory_stockadjus_product_id_a8b8e13c_fk_products_;
+ALTER TABLE IF EXISTS ONLY public.inventory_stockadjustment DROP CONSTRAINT IF EXISTS inventory_stockadjus_created_by_id_d3ef1412_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.inventory_stockadjustmentitem DROP CONSTRAINT IF EXISTS inventory_stockadjus_adjustment_id_af989cc3_fk_inventory;
+ALTER TABLE IF EXISTS ONLY public.expenses_expense DROP CONSTRAINT IF EXISTS expenses_expense_submitted_by_id_f7efca12_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.expenses_expense DROP CONSTRAINT IF EXISTS expenses_expense_reversal_journal_ent_9323ba1d_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.expenses_expense DROP CONSTRAINT IF EXISTS expenses_expense_payment_account_id_9abbe10b_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.expenses_expense DROP CONSTRAINT IF EXISTS expenses_expense_journal_entry_id_3e2f6a91_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.expenses_expense DROP CONSTRAINT IF EXISTS expenses_expense_expense_account_id_2edd00c7_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.expenses_expense DROP CONSTRAINT IF EXISTS expenses_expense_created_by_id_a2610358_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.expenses_expense DROP CONSTRAINT IF EXISTS expenses_expense_cancelled_by_id_11adec92_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.expenses_accounttransfer DROP CONSTRAINT IF EXISTS expenses_accounttransfer_created_by_id_adde15f7_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.expenses_accounttransfer DROP CONSTRAINT IF EXISTS expenses_accounttran_to_account_id_4da25e3e_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.expenses_accounttransfer DROP CONSTRAINT IF EXISTS expenses_accounttran_reversal_journal_ent_da0b9416_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.expenses_accounttransfer DROP CONSTRAINT IF EXISTS expenses_accounttran_journal_entry_id_21423ec2_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.expenses_accounttransfer DROP CONSTRAINT IF EXISTS expenses_accounttran_from_account_id_c2c12741_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.expenses_accounttransfer DROP CONSTRAINT IF EXISTS expenses_accounttran_cancelled_by_id_b490e552_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.employees_salaryslip DROP CONSTRAINT IF EXISTS employees_salaryslip_submitted_by_id_8e964513_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.employees_salaryslip DROP CONSTRAINT IF EXISTS employees_salaryslip_reversal_journal_ent_36e0df8d_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.employees_salaryslip DROP CONSTRAINT IF EXISTS employees_salaryslip_journal_entry_id_d29d73b5_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.employees_salaryslip DROP CONSTRAINT IF EXISTS employees_salaryslip_employee_id_203bb26b_fk_employees;
+ALTER TABLE IF EXISTS ONLY public.employees_salaryslip DROP CONSTRAINT IF EXISTS employees_salaryslip_created_by_id_1029706c_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.employees_salaryslip DROP CONSTRAINT IF EXISTS employees_salaryslip_cancelled_by_id_06c885f5_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.employees_salarypayment DROP CONSTRAINT IF EXISTS employees_salarypayment_created_by_id_77eb79e7_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.employees_salarypayment DROP CONSTRAINT IF EXISTS employees_salarypaym_salary_slip_id_ed4cf1cc_fk_employees;
+ALTER TABLE IF EXISTS ONLY public.employees_salarypayment DROP CONSTRAINT IF EXISTS employees_salarypaym_reversal_journal_ent_008163c5_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.employees_salarypayment DROP CONSTRAINT IF EXISTS employees_salarypaym_payment_account_id_4fe7d5c1_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.employees_salarypayment DROP CONSTRAINT IF EXISTS employees_salarypaym_journal_entry_id_d6e1d980_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.employees_salarypayment DROP CONSTRAINT IF EXISTS employees_salarypaym_employee_id_93322f6f_fk_employees;
+ALTER TABLE IF EXISTS ONLY public.employees_salarypayment DROP CONSTRAINT IF EXISTS employees_salarypaym_cancelled_by_id_ecd2b0a7_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.employees_employee DROP CONSTRAINT IF EXISTS employees_employee_user_id_27bed289_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.employees_employee DROP CONSTRAINT IF EXISTS employees_employee_created_by_id_bfa47e39_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.employees_attendance DROP CONSTRAINT IF EXISTS employees_attendance_employee_id_450daa06_fk_employees;
+ALTER TABLE IF EXISTS ONLY public.employees_attendance DROP CONSTRAINT IF EXISTS employees_attendance_created_by_id_bdeecf5e_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.django_admin_log DROP CONSTRAINT IF EXISTS django_admin_log_user_id_c564eba6_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.django_admin_log DROP CONSTRAINT IF EXISTS django_admin_log_content_type_id_c4bce8eb_fk_django_co;
+ALTER TABLE IF EXISTS ONLY public.core_backuplog DROP CONSTRAINT IF EXISTS core_backuplog_created_by_id_8679fb3e_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.core_auditlog DROP CONSTRAINT IF EXISTS core_auditlog_user_id_3797aaab_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.contacts_customerpayment DROP CONSTRAINT IF EXISTS contacts_customerpayment_created_by_id_773f1081_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.contacts_customerpayment DROP CONSTRAINT IF EXISTS contacts_customerpay_submitted_by_id_906dddb4_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.contacts_customerpayment DROP CONSTRAINT IF EXISTS contacts_customerpay_reversal_journal_ent_08458c02_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.contacts_customerpayment DROP CONSTRAINT IF EXISTS contacts_customerpay_payment_account_id_6bedef76_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.contacts_customerpayment DROP CONSTRAINT IF EXISTS contacts_customerpay_journal_entry_id_ec923eca_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.contacts_customerpayment DROP CONSTRAINT IF EXISTS contacts_customerpay_customer_id_0c1d8598_fk_contacts_;
+ALTER TABLE IF EXISTS ONLY public.contacts_customerpayment DROP CONSTRAINT IF EXISTS contacts_customerpay_cancelled_by_id_ed349dc9_fk_auth_user;
+ALTER TABLE IF EXISTS ONLY public.auth_user_user_permissions DROP CONSTRAINT IF EXISTS auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.auth_user_user_permissions DROP CONSTRAINT IF EXISTS auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm;
+ALTER TABLE IF EXISTS ONLY public.auth_user_groups DROP CONSTRAINT IF EXISTS auth_user_groups_user_id_6a12ed8b_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.auth_user_groups DROP CONSTRAINT IF EXISTS auth_user_groups_group_id_97559544_fk_auth_group_id;
+ALTER TABLE IF EXISTS ONLY public.auth_permission DROP CONSTRAINT IF EXISTS auth_permission_content_type_id_2f476e4b_fk_django_co;
+ALTER TABLE IF EXISTS ONLY public.auth_group_permissions DROP CONSTRAINT IF EXISTS auth_group_permissions_group_id_b120cbf9_fk_auth_group_id;
+ALTER TABLE IF EXISTS ONLY public.auth_group_permissions DROP CONSTRAINT IF EXISTS auth_group_permissio_permission_id_84c5c92e_fk_auth_perm;
+ALTER TABLE IF EXISTS ONLY public.accounting_paymentmethod DROP CONSTRAINT IF EXISTS accounting_paymentme_linked_account_id_3b558d55_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.accounting_journalitem DROP CONSTRAINT IF EXISTS accounting_journalit_journal_entry_id_c2d8859a_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.accounting_journalitem DROP CONSTRAINT IF EXISTS accounting_journalit_account_id_059cd84b_fk_accountin;
+ALTER TABLE IF EXISTS ONLY public.accounting_journalentry DROP CONSTRAINT IF EXISTS accounting_journalentry_created_by_id_60f500e8_fk_auth_user_id;
+ALTER TABLE IF EXISTS ONLY public.accounting_account DROP CONSTRAINT IF EXISTS accounting_account_parent_id_b1e41435_fk_accounting_account_id;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyclaimitem_product_id_4141c327;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyclaim_supplier_id_1042c9b7;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyclaim_status_bbcd09e4_like;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyclaim_status_bbcd09e4;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyclaim_date_1cd7c6e3;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyclaim_created_by_id_e4fa4da9;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyclaim_claim_number_debaf13f_like;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyc_supplier_warranty_claim_id_761c1b04;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyc_dispatch_journal_entry_id_10336607;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyc_customer_warranty_claim_id_df285c7d;
+DROP INDEX IF EXISTS public.warranty_supplierwarrantyc_completion_journal_entry_i_aed763f4;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_supplier_id_bf92761f;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_status_a6bd2e49_like;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_status_a6bd2e49;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_sale_item_id_536213df;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_replacement_product_id_fce6839a;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_original_sale_id_8231fd6c;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_journal_entry_id_a0d4558f;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_customer_id_524e9b83;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_created_by_id_45082844;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_claimed_product_id_59ddec68;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_claim_number_f029b18a_like;
+DROP INDEX IF EXISTS public.warranty_customerwarrantyclaim_claim_date_3b87979e;
+DROP INDEX IF EXISTS public.sales_salesreturnitem_sale_item_id_912a7754;
+DROP INDEX IF EXISTS public.sales_salesreturnitem_return_order_id_3f9958d5;
+DROP INDEX IF EXISTS public.sales_salesreturnitem_product_id_60d282e5;
+DROP INDEX IF EXISTS public.sales_salesreturn_return_number_0b38ffbc_like;
+DROP INDEX IF EXISTS public.sales_salesreturn_payment_account_id_86884170;
+DROP INDEX IF EXISTS public.sales_salesreturn_original_sale_id_b258ea14;
+DROP INDEX IF EXISTS public.sales_salesreturn_date_256a11a5;
+DROP INDEX IF EXISTS public.sales_salesreturn_created_by_id_7486ff06;
+DROP INDEX IF EXISTS public.sales_sales_created_c494d4_idx;
+DROP INDEX IF EXISTS public.sales_sales_created_9eb346_idx;
+DROP INDEX IF EXISTS public.sales_salepayment_sale_id_894e0b7b;
+DROP INDEX IF EXISTS public.sales_salepayment_payment_account_id_a77337aa;
+DROP INDEX IF EXISTS public.sales_saleitem_sale_id_56e67045;
+DROP INDEX IF EXISTS public.sales_saleitem_product_id_aeb6c9cd;
+DROP INDEX IF EXISTS public.sales_sale_status_7ba038f2_like;
+DROP INDEX IF EXISTS public.sales_sale_status_7ba038f2;
+DROP INDEX IF EXISTS public.sales_sale_status_67159a_idx;
+DROP INDEX IF EXISTS public.sales_sale_payment_method_c8f23402_like;
+DROP INDEX IF EXISTS public.sales_sale_payment_method_c8f23402;
+DROP INDEX IF EXISTS public.sales_sale_payment_account_id_dd8bdab3;
+DROP INDEX IF EXISTS public.sales_sale_invoice_number_a14f1a3f_like;
+DROP INDEX IF EXISTS public.sales_sale_date_4fe7bb6d;
+DROP INDEX IF EXISTS public.sales_sale_date_0a90cc_idx;
+DROP INDEX IF EXISTS public.sales_sale_customer_id_2d66a408;
+DROP INDEX IF EXISTS public.sales_sale_created_e7d1a7_idx;
+DROP INDEX IF EXISTS public.sales_sale_created_by_id_f6773268;
+DROP INDEX IF EXISTS public.sales_sale_created_at_bf202e70;
+DROP INDEX IF EXISTS public.sales_sale_created_118b60_idx;
+DROP INDEX IF EXISTS public.sales_posdaysession_status_59670ead_like;
+DROP INDEX IF EXISTS public.sales_posdaysession_status_59670ead;
+DROP INDEX IF EXISTS public.sales_posdaysession_session_number_3d310ed6_like;
+DROP INDEX IF EXISTS public.sales_posdaysession_opened_by_id_22d37375;
+DROP INDEX IF EXISTS public.sales_posdaysession_opened_at_cc4e153a;
+DROP INDEX IF EXISTS public.sales_posdaysession_date_8555d456;
+DROP INDEX IF EXISTS public.sales_posdaysession_closed_by_id_84b07669;
+DROP INDEX IF EXISTS public.sales_posdaysession_closed_at_ff507866;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_supplier_id_99d1b7b3;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_submitted_by_id_b810c088;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_status_a861d84a_like;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_status_a861d84a;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_reversal_journal_entry_id_718f4ab5;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_payment_number_b7bd7142_like;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_payment_method_id_f126c410;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_payment_account_id_93927a6d;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_journal_entry_id_aa177e38;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_date_5ea0b849;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_created_by_id_332d2ff2;
+DROP INDEX IF EXISTS public.purchases_supplierpayment_cancelled_by_id_47c2db5a;
+DROP INDEX IF EXISTS public.purchases_purchasereturnitem_purchase_return_id_ef30a8e4;
+DROP INDEX IF EXISTS public.purchases_purchasereturnitem_purchase_item_id_087566e6;
+DROP INDEX IF EXISTS public.purchases_purchasereturnitem_product_id_6ea230ae;
+DROP INDEX IF EXISTS public.purchases_purchasereturn_supplier_id_bbf28984;
+DROP INDEX IF EXISTS public.purchases_purchasereturn_return_number_583bb287_like;
+DROP INDEX IF EXISTS public.purchases_purchasereturn_payment_account_id_d12c9a1d;
+DROP INDEX IF EXISTS public.purchases_purchasereturn_original_purchase_id_2f356e7b;
+DROP INDEX IF EXISTS public.purchases_purchasereturn_date_b0725e7d;
+DROP INDEX IF EXISTS public.purchases_purchasereturn_created_by_id_817d1134;
+DROP INDEX IF EXISTS public.purchases_purchaseitem_purchase_id_a7f96c61;
+DROP INDEX IF EXISTS public.purchases_purchaseitem_product_id_61959486;
+DROP INDEX IF EXISTS public.purchases_purchase_supplier_invoice_number_ea7bc02b_like;
+DROP INDEX IF EXISTS public.purchases_purchase_supplier_invoice_number_ea7bc02b;
+DROP INDEX IF EXISTS public.purchases_purchase_supplier_id_2d052a2a;
+DROP INDEX IF EXISTS public.purchases_purchase_status_60cafd59_like;
+DROP INDEX IF EXISTS public.purchases_purchase_status_60cafd59;
+DROP INDEX IF EXISTS public.purchases_purchase_purchase_number_81119e96_like;
+DROP INDEX IF EXISTS public.purchases_purchase_payment_method_id_5987dfb3;
+DROP INDEX IF EXISTS public.purchases_purchase_payment_account_id_0e5d40a1;
+DROP INDEX IF EXISTS public.purchases_purchase_date_205bc63b;
+DROP INDEX IF EXISTS public.purchases_purchase_created_by_id_699c5882;
+DROP INDEX IF EXISTS public.purchases_p_supplie_4fc46d_idx;
+DROP INDEX IF EXISTS public.purchases_p_date_e78ace_idx;
+DROP INDEX IF EXISTS public.products_unit_short_code_8532cc87_like;
+DROP INDEX IF EXISTS public.products_unit_name_044d32ba_like;
+DROP INDEX IF EXISTS public.products_product_unit_id_07baa821;
+DROP INDEX IF EXISTS public.products_product_sku_3c51a516_like;
+DROP INDEX IF EXISTS public.products_product_name_fa23bcd2_like;
+DROP INDEX IF EXISTS public.products_product_name_fa23bcd2;
+DROP INDEX IF EXISTS public.products_product_maintain_stock_941fd671;
+DROP INDEX IF EXISTS public.products_product_is_active_2e95eb0a;
+DROP INDEX IF EXISTS public.products_product_category_id_9b594869;
+DROP INDEX IF EXISTS public.products_product_barcode_0b42bc05_like;
+DROP INDEX IF EXISTS public.products_category_parent_id_3388f6c9;
+DROP INDEX IF EXISTS public.products_category_is_active_adb3f10a;
+DROP INDEX IF EXISTS public.products_category_code_320f842a_like;
+DROP INDEX IF EXISTS public.inventory_stockmovement_reference_type_22edfd73_like;
+DROP INDEX IF EXISTS public.inventory_stockmovement_reference_type_22edfd73;
+DROP INDEX IF EXISTS public.inventory_stockmovement_reference_id_9ae220ca_like;
+DROP INDEX IF EXISTS public.inventory_stockmovement_reference_id_9ae220ca;
+DROP INDEX IF EXISTS public.inventory_stockmovement_product_id_4eccfd0a;
+DROP INDEX IF EXISTS public.inventory_stockmovement_movement_type_befd98d1_like;
+DROP INDEX IF EXISTS public.inventory_stockmovement_movement_type_befd98d1;
+DROP INDEX IF EXISTS public.inventory_stockmovement_created_by_id_9a39cb99;
+DROP INDEX IF EXISTS public.inventory_stockmovement_created_at_05b478ed;
+DROP INDEX IF EXISTS public.inventory_stockadjustmentitem_product_id_a8b8e13c;
+DROP INDEX IF EXISTS public.inventory_stockadjustmentitem_adjustment_id_af989cc3;
+DROP INDEX IF EXISTS public.inventory_stockadjustment_reason_184b7b81_like;
+DROP INDEX IF EXISTS public.inventory_stockadjustment_reason_184b7b81;
+DROP INDEX IF EXISTS public.inventory_stockadjustment_date_cf6b67b4;
+DROP INDEX IF EXISTS public.inventory_stockadjustment_created_by_id_d3ef1412;
+DROP INDEX IF EXISTS public.inventory_stockadjustment_adjustment_type_e81145a0_like;
+DROP INDEX IF EXISTS public.inventory_stockadjustment_adjustment_type_e81145a0;
+DROP INDEX IF EXISTS public.inventory_stockadjustment_adjustment_number_df92e4d2_like;
+DROP INDEX IF EXISTS public.inventory_s_product_5919a9_idx;
+DROP INDEX IF EXISTS public.inventory_s_movemen_ed5291_idx;
+DROP INDEX IF EXISTS public.expenses_expense_submitted_by_id_f7efca12;
+DROP INDEX IF EXISTS public.expenses_expense_status_c4261402_like;
+DROP INDEX IF EXISTS public.expenses_expense_status_c4261402;
+DROP INDEX IF EXISTS public.expenses_expense_reversal_journal_entry_id_9323ba1d;
+DROP INDEX IF EXISTS public.expenses_expense_payment_method_3da846a5_like;
+DROP INDEX IF EXISTS public.expenses_expense_payment_method_3da846a5;
+DROP INDEX IF EXISTS public.expenses_expense_payment_account_id_9abbe10b;
+DROP INDEX IF EXISTS public.expenses_expense_journal_entry_id_3e2f6a91;
+DROP INDEX IF EXISTS public.expenses_expense_expense_number_5d4eb579_like;
+DROP INDEX IF EXISTS public.expenses_expense_expense_account_id_2edd00c7;
+DROP INDEX IF EXISTS public.expenses_expense_date_0683cda7;
+DROP INDEX IF EXISTS public.expenses_expense_created_by_id_a2610358;
+DROP INDEX IF EXISTS public.expenses_expense_cancelled_by_id_11adec92;
+DROP INDEX IF EXISTS public.expenses_ex_status_ff7e7b_idx;
+DROP INDEX IF EXISTS public.expenses_ex_date_d0c7f0_idx;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_transfer_number_dd52b3c4_like;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_to_account_id_4da25e3e;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_status_bda48edf_like;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_status_bda48edf;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_reversal_journal_entry_id_da0b9416;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_journal_entry_id_21423ec2;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_from_account_id_c2c12741;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_date_7fc97647;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_created_by_id_adde15f7;
+DROP INDEX IF EXISTS public.expenses_accounttransfer_cancelled_by_id_b490e552;
+DROP INDEX IF EXISTS public.employees_salaryslip_submitted_by_id_8e964513;
+DROP INDEX IF EXISTS public.employees_salaryslip_status_5b202553_like;
+DROP INDEX IF EXISTS public.employees_salaryslip_status_5b202553;
+DROP INDEX IF EXISTS public.employees_salaryslip_slip_number_d211951c_like;
+DROP INDEX IF EXISTS public.employees_salaryslip_reversal_journal_entry_id_36e0df8d;
+DROP INDEX IF EXISTS public.employees_salaryslip_payroll_period_64f690f3_like;
+DROP INDEX IF EXISTS public.employees_salaryslip_payroll_period_64f690f3;
+DROP INDEX IF EXISTS public.employees_salaryslip_journal_entry_id_d29d73b5;
+DROP INDEX IF EXISTS public.employees_salaryslip_employee_id_203bb26b;
+DROP INDEX IF EXISTS public.employees_salaryslip_created_by_id_1029706c;
+DROP INDEX IF EXISTS public.employees_salaryslip_cancelled_by_id_06c885f5;
+DROP INDEX IF EXISTS public.employees_salarypayment_status_baef2ccd_like;
+DROP INDEX IF EXISTS public.employees_salarypayment_status_baef2ccd;
+DROP INDEX IF EXISTS public.employees_salarypayment_salary_slip_id_ed4cf1cc;
+DROP INDEX IF EXISTS public.employees_salarypayment_reversal_journal_entry_id_008163c5;
+DROP INDEX IF EXISTS public.employees_salarypayment_payment_number_10b2d2c6_like;
+DROP INDEX IF EXISTS public.employees_salarypayment_payment_account_id_4fe7d5c1;
+DROP INDEX IF EXISTS public.employees_salarypayment_journal_entry_id_d6e1d980;
+DROP INDEX IF EXISTS public.employees_salarypayment_employee_id_93322f6f;
+DROP INDEX IF EXISTS public.employees_salarypayment_date_4951ec7e;
+DROP INDEX IF EXISTS public.employees_salarypayment_created_by_id_77eb79e7;
+DROP INDEX IF EXISTS public.employees_salarypayment_cancelled_by_id_ecd2b0a7;
+DROP INDEX IF EXISTS public.employees_employee_phone_cdfc871b_like;
+DROP INDEX IF EXISTS public.employees_employee_phone_cdfc871b;
+DROP INDEX IF EXISTS public.employees_employee_job_title_c6826f8c_like;
+DROP INDEX IF EXISTS public.employees_employee_job_title_c6826f8c;
+DROP INDEX IF EXISTS public.employees_employee_is_active_bc4a1119;
+DROP INDEX IF EXISTS public.employees_employee_full_name_27a5251d_like;
+DROP INDEX IF EXISTS public.employees_employee_full_name_27a5251d;
+DROP INDEX IF EXISTS public.employees_employee_employee_id_e152a244_like;
+DROP INDEX IF EXISTS public.employees_employee_department_979247e0_like;
+DROP INDEX IF EXISTS public.employees_employee_department_979247e0;
+DROP INDEX IF EXISTS public.employees_employee_date_of_joining_1c90c2f7;
+DROP INDEX IF EXISTS public.employees_employee_created_by_id_bfa47e39;
+DROP INDEX IF EXISTS public.employees_attendance_status_192578fb_like;
+DROP INDEX IF EXISTS public.employees_attendance_status_192578fb;
+DROP INDEX IF EXISTS public.employees_attendance_employee_id_450daa06;
+DROP INDEX IF EXISTS public.employees_attendance_date_87f71277;
+DROP INDEX IF EXISTS public.employees_attendance_created_by_id_bdeecf5e;
+DROP INDEX IF EXISTS public.django_session_session_key_c0390e0f_like;
+DROP INDEX IF EXISTS public.django_session_expire_date_a5c62663;
+DROP INDEX IF EXISTS public.django_admin_log_user_id_c564eba6;
+DROP INDEX IF EXISTS public.django_admin_log_content_type_id_c4bce8eb;
+DROP INDEX IF EXISTS public.core_systemsetting_key_59c82693_like;
+DROP INDEX IF EXISTS public.core_systemsetting_group_a87b64e6_like;
+DROP INDEX IF EXISTS public.core_systemsetting_group_a87b64e6;
+DROP INDEX IF EXISTS public.core_backuplog_filename_96a9e5c8_like;
+DROP INDEX IF EXISTS public.core_backuplog_filename_96a9e5c8;
+DROP INDEX IF EXISTS public.core_backuplog_created_by_id_8679fb3e;
+DROP INDEX IF EXISTS public.core_backuplog_created_at_4b093af7;
+DROP INDEX IF EXISTS public.core_auditlog_user_id_3797aaab;
+DROP INDEX IF EXISTS public.core_auditlog_timestamp_c6ef4463;
+DROP INDEX IF EXISTS public.contacts_supplier_supplier_id_b51ba53d_like;
+DROP INDEX IF EXISTS public.contacts_supplier_phone_2139f1b5_like;
+DROP INDEX IF EXISTS public.contacts_supplier_phone_2139f1b5;
+DROP INDEX IF EXISTS public.contacts_supplier_name_fc612019_like;
+DROP INDEX IF EXISTS public.contacts_supplier_name_fc612019;
+DROP INDEX IF EXISTS public.contacts_supplier_is_active_89998698;
+DROP INDEX IF EXISTS public.contacts_supplier_company_name_3fe5a392_like;
+DROP INDEX IF EXISTS public.contacts_supplier_company_name_3fe5a392;
+DROP INDEX IF EXISTS public.contacts_customerpayment_submitted_by_id_906dddb4;
+DROP INDEX IF EXISTS public.contacts_customerpayment_status_a63c2174_like;
+DROP INDEX IF EXISTS public.contacts_customerpayment_status_a63c2174;
+DROP INDEX IF EXISTS public.contacts_customerpayment_reversal_journal_entry_id_08458c02;
+DROP INDEX IF EXISTS public.contacts_customerpayment_payment_number_f8a20968_like;
+DROP INDEX IF EXISTS public.contacts_customerpayment_payment_method_2ab0f888_like;
+DROP INDEX IF EXISTS public.contacts_customerpayment_payment_method_2ab0f888;
+DROP INDEX IF EXISTS public.contacts_customerpayment_payment_account_id_6bedef76;
+DROP INDEX IF EXISTS public.contacts_customerpayment_journal_entry_id_ec923eca;
+DROP INDEX IF EXISTS public.contacts_customerpayment_date_6a8d9b17;
+DROP INDEX IF EXISTS public.contacts_customerpayment_customer_id_0c1d8598;
+DROP INDEX IF EXISTS public.contacts_customerpayment_created_by_id_773f1081;
+DROP INDEX IF EXISTS public.contacts_customerpayment_cancelled_by_id_ed349dc9;
+DROP INDEX IF EXISTS public.contacts_customer_phone_15c0d8fe_like;
+DROP INDEX IF EXISTS public.contacts_customer_phone_15c0d8fe;
+DROP INDEX IF EXISTS public.contacts_customer_name_05aee97f_like;
+DROP INDEX IF EXISTS public.contacts_customer_name_05aee97f;
+DROP INDEX IF EXISTS public.contacts_customer_is_active_9aeddf47;
+DROP INDEX IF EXISTS public.contacts_customer_customer_id_9a69d68a_like;
+DROP INDEX IF EXISTS public.auth_user_username_6821ab7c_like;
+DROP INDEX IF EXISTS public.auth_user_user_permissions_user_id_a95ead1b;
+DROP INDEX IF EXISTS public.auth_user_user_permissions_permission_id_1fbb5f2c;
+DROP INDEX IF EXISTS public.auth_user_groups_user_id_6a12ed8b;
+DROP INDEX IF EXISTS public.auth_user_groups_group_id_97559544;
+DROP INDEX IF EXISTS public.auth_permission_content_type_id_2f476e4b;
+DROP INDEX IF EXISTS public.auth_group_permissions_permission_id_84c5c92e;
+DROP INDEX IF EXISTS public.auth_group_permissions_group_id_b120cbf9;
+DROP INDEX IF EXISTS public.auth_group_name_a6ea08ec_like;
+DROP INDEX IF EXISTS public.accounting_paymentmethod_linked_account_id_3b558d55;
+DROP INDEX IF EXISTS public.accounting_paymentmethod_code_51738148_like;
+DROP INDEX IF EXISTS public.accounting_journalitem_journal_entry_id_c2d8859a;
+DROP INDEX IF EXISTS public.accounting_journalitem_account_id_059cd84b;
+DROP INDEX IF EXISTS public.accounting_journalentry_status_20c767ba_like;
+DROP INDEX IF EXISTS public.accounting_journalentry_status_20c767ba;
+DROP INDEX IF EXISTS public.accounting_journalentry_reference_type_0f55804a_like;
+DROP INDEX IF EXISTS public.accounting_journalentry_reference_type_0f55804a;
+DROP INDEX IF EXISTS public.accounting_journalentry_reference_id_c231f1da_like;
+DROP INDEX IF EXISTS public.accounting_journalentry_reference_id_c231f1da;
+DROP INDEX IF EXISTS public.accounting_journalentry_entry_number_a4d81ea6_like;
+DROP INDEX IF EXISTS public.accounting_journalentry_entry_date_39ee2a6d;
+DROP INDEX IF EXISTS public.accounting_journalentry_created_by_id_60f500e8;
+DROP INDEX IF EXISTS public.accounting_account_parent_id_b1e41435;
+DROP INDEX IF EXISTS public.accounting_account_is_active_fc2ff830;
+DROP INDEX IF EXISTS public.accounting_account_code_3531831c_like;
+DROP INDEX IF EXISTS public.accounting_account_account_type_9264f0d7_like;
+DROP INDEX IF EXISTS public.accounting_account_account_type_9264f0d7;
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaimitem DROP CONSTRAINT IF EXISTS warranty_supplierwarrantyclaimitem_pkey;
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_supplierwarrantyclaim_pkey;
+ALTER TABLE IF EXISTS ONLY public.warranty_supplierwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_supplierwarrantyclaim_claim_number_key;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwarrantyclaim_pkey;
+ALTER TABLE IF EXISTS ONLY public.warranty_customerwarrantyclaim DROP CONSTRAINT IF EXISTS warranty_customerwarrantyclaim_claim_number_key;
+ALTER TABLE IF EXISTS ONLY public.users_userprofile DROP CONSTRAINT IF EXISTS users_userprofile_user_id_key;
+ALTER TABLE IF EXISTS ONLY public.users_userprofile DROP CONSTRAINT IF EXISTS users_userprofile_pkey;
+ALTER TABLE IF EXISTS ONLY public.sales_salesreturnitem DROP CONSTRAINT IF EXISTS sales_salesreturnitem_pkey;
+ALTER TABLE IF EXISTS ONLY public.sales_salesreturn DROP CONSTRAINT IF EXISTS sales_salesreturn_return_number_key;
+ALTER TABLE IF EXISTS ONLY public.sales_salesreturn DROP CONSTRAINT IF EXISTS sales_salesreturn_pkey;
+ALTER TABLE IF EXISTS ONLY public.sales_salepayment DROP CONSTRAINT IF EXISTS sales_salepayment_pkey;
+ALTER TABLE IF EXISTS ONLY public.sales_saleitem DROP CONSTRAINT IF EXISTS sales_saleitem_pkey;
+ALTER TABLE IF EXISTS ONLY public.sales_sale DROP CONSTRAINT IF EXISTS sales_sale_pkey;
+ALTER TABLE IF EXISTS ONLY public.sales_sale DROP CONSTRAINT IF EXISTS sales_sale_invoice_number_key;
+ALTER TABLE IF EXISTS ONLY public.sales_posdaysession DROP CONSTRAINT IF EXISTS sales_posdaysession_session_number_key;
+ALTER TABLE IF EXISTS ONLY public.sales_posdaysession DROP CONSTRAINT IF EXISTS sales_posdaysession_pkey;
+ALTER TABLE IF EXISTS ONLY public.purchases_supplierpayment DROP CONSTRAINT IF EXISTS purchases_supplierpayment_pkey;
+ALTER TABLE IF EXISTS ONLY public.purchases_supplierpayment DROP CONSTRAINT IF EXISTS purchases_supplierpayment_payment_number_key;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturnitem DROP CONSTRAINT IF EXISTS purchases_purchasereturnitem_pkey;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturn DROP CONSTRAINT IF EXISTS purchases_purchasereturn_return_number_key;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchasereturn DROP CONSTRAINT IF EXISTS purchases_purchasereturn_pkey;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchaseitem DROP CONSTRAINT IF EXISTS purchases_purchaseitem_pkey;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchase DROP CONSTRAINT IF EXISTS purchases_purchase_purchase_number_key;
+ALTER TABLE IF EXISTS ONLY public.purchases_purchase DROP CONSTRAINT IF EXISTS purchases_purchase_pkey;
+ALTER TABLE IF EXISTS ONLY public.products_unit DROP CONSTRAINT IF EXISTS products_unit_short_code_key;
+ALTER TABLE IF EXISTS ONLY public.products_unit DROP CONSTRAINT IF EXISTS products_unit_pkey;
+ALTER TABLE IF EXISTS ONLY public.products_unit DROP CONSTRAINT IF EXISTS products_unit_name_key;
+ALTER TABLE IF EXISTS ONLY public.products_product DROP CONSTRAINT IF EXISTS products_product_sku_key;
+ALTER TABLE IF EXISTS ONLY public.products_product DROP CONSTRAINT IF EXISTS products_product_pkey;
+ALTER TABLE IF EXISTS ONLY public.products_product DROP CONSTRAINT IF EXISTS products_product_barcode_key;
+ALTER TABLE IF EXISTS ONLY public.products_category DROP CONSTRAINT IF EXISTS products_category_pkey;
+ALTER TABLE IF EXISTS ONLY public.products_category DROP CONSTRAINT IF EXISTS products_category_code_key;
+ALTER TABLE IF EXISTS ONLY public.inventory_stockmovement DROP CONSTRAINT IF EXISTS inventory_stockmovement_pkey;
+ALTER TABLE IF EXISTS ONLY public.inventory_stockadjustmentitem DROP CONSTRAINT IF EXISTS inventory_stockadjustmentitem_pkey;
+ALTER TABLE IF EXISTS ONLY public.inventory_stockadjustment DROP CONSTRAINT IF EXISTS inventory_stockadjustment_pkey;
+ALTER TABLE IF EXISTS ONLY public.inventory_stockadjustment DROP CONSTRAINT IF EXISTS inventory_stockadjustment_adjustment_number_key;
+ALTER TABLE IF EXISTS ONLY public.expenses_expense DROP CONSTRAINT IF EXISTS expenses_expense_pkey;
+ALTER TABLE IF EXISTS ONLY public.expenses_expense DROP CONSTRAINT IF EXISTS expenses_expense_expense_number_key;
+ALTER TABLE IF EXISTS ONLY public.expenses_accounttransfer DROP CONSTRAINT IF EXISTS expenses_accounttransfer_transfer_number_key;
+ALTER TABLE IF EXISTS ONLY public.expenses_accounttransfer DROP CONSTRAINT IF EXISTS expenses_accounttransfer_pkey;
+ALTER TABLE IF EXISTS ONLY public.employees_salaryslip DROP CONSTRAINT IF EXISTS employees_salaryslip_slip_number_key;
+ALTER TABLE IF EXISTS ONLY public.employees_salaryslip DROP CONSTRAINT IF EXISTS employees_salaryslip_pkey;
+ALTER TABLE IF EXISTS ONLY public.employees_salaryslip DROP CONSTRAINT IF EXISTS employees_salaryslip_employee_id_month_year_35e7deb5_uniq;
+ALTER TABLE IF EXISTS ONLY public.employees_salarypayment DROP CONSTRAINT IF EXISTS employees_salarypayment_pkey;
+ALTER TABLE IF EXISTS ONLY public.employees_salarypayment DROP CONSTRAINT IF EXISTS employees_salarypayment_payment_number_key;
+ALTER TABLE IF EXISTS ONLY public.employees_employee DROP CONSTRAINT IF EXISTS employees_employee_user_id_key;
+ALTER TABLE IF EXISTS ONLY public.employees_employee DROP CONSTRAINT IF EXISTS employees_employee_pkey;
+ALTER TABLE IF EXISTS ONLY public.employees_employee DROP CONSTRAINT IF EXISTS employees_employee_employee_id_key;
+ALTER TABLE IF EXISTS ONLY public.employees_attendance DROP CONSTRAINT IF EXISTS employees_attendance_pkey;
+ALTER TABLE IF EXISTS ONLY public.employees_attendance DROP CONSTRAINT IF EXISTS employees_attendance_employee_id_date_8cf32e52_uniq;
+ALTER TABLE IF EXISTS ONLY public.django_session DROP CONSTRAINT IF EXISTS django_session_pkey;
+ALTER TABLE IF EXISTS ONLY public.django_migrations DROP CONSTRAINT IF EXISTS django_migrations_pkey;
+ALTER TABLE IF EXISTS ONLY public.django_content_type DROP CONSTRAINT IF EXISTS django_content_type_pkey;
+ALTER TABLE IF EXISTS ONLY public.django_content_type DROP CONSTRAINT IF EXISTS django_content_type_app_label_model_76bd3d3b_uniq;
+ALTER TABLE IF EXISTS ONLY public.django_admin_log DROP CONSTRAINT IF EXISTS django_admin_log_pkey;
+ALTER TABLE IF EXISTS ONLY public.core_systemsetting DROP CONSTRAINT IF EXISTS core_systemsetting_pkey;
+ALTER TABLE IF EXISTS ONLY public.core_systemsetting DROP CONSTRAINT IF EXISTS core_systemsetting_key_key;
+ALTER TABLE IF EXISTS ONLY public.core_backuplog DROP CONSTRAINT IF EXISTS core_backuplog_pkey;
+ALTER TABLE IF EXISTS ONLY public.core_auditlog DROP CONSTRAINT IF EXISTS core_auditlog_pkey;
+ALTER TABLE IF EXISTS ONLY public.contacts_supplier DROP CONSTRAINT IF EXISTS contacts_supplier_supplier_id_key;
+ALTER TABLE IF EXISTS ONLY public.contacts_supplier DROP CONSTRAINT IF EXISTS contacts_supplier_pkey;
+ALTER TABLE IF EXISTS ONLY public.contacts_customerpayment DROP CONSTRAINT IF EXISTS contacts_customerpayment_pkey;
+ALTER TABLE IF EXISTS ONLY public.contacts_customerpayment DROP CONSTRAINT IF EXISTS contacts_customerpayment_payment_number_key;
+ALTER TABLE IF EXISTS ONLY public.contacts_customer DROP CONSTRAINT IF EXISTS contacts_customer_pkey;
+ALTER TABLE IF EXISTS ONLY public.contacts_customer DROP CONSTRAINT IF EXISTS contacts_customer_customer_id_key;
+ALTER TABLE IF EXISTS ONLY public.auth_user DROP CONSTRAINT IF EXISTS auth_user_username_key;
+ALTER TABLE IF EXISTS ONLY public.auth_user_user_permissions DROP CONSTRAINT IF EXISTS auth_user_user_permissions_user_id_permission_id_14a6b632_uniq;
+ALTER TABLE IF EXISTS ONLY public.auth_user_user_permissions DROP CONSTRAINT IF EXISTS auth_user_user_permissions_pkey;
+ALTER TABLE IF EXISTS ONLY public.auth_user DROP CONSTRAINT IF EXISTS auth_user_pkey;
+ALTER TABLE IF EXISTS ONLY public.auth_user_groups DROP CONSTRAINT IF EXISTS auth_user_groups_user_id_group_id_94350c0c_uniq;
+ALTER TABLE IF EXISTS ONLY public.auth_user_groups DROP CONSTRAINT IF EXISTS auth_user_groups_pkey;
+ALTER TABLE IF EXISTS ONLY public.auth_permission DROP CONSTRAINT IF EXISTS auth_permission_pkey;
+ALTER TABLE IF EXISTS ONLY public.auth_permission DROP CONSTRAINT IF EXISTS auth_permission_content_type_id_codename_01ab375a_uniq;
+ALTER TABLE IF EXISTS ONLY public.auth_group DROP CONSTRAINT IF EXISTS auth_group_pkey;
+ALTER TABLE IF EXISTS ONLY public.auth_group_permissions DROP CONSTRAINT IF EXISTS auth_group_permissions_pkey;
+ALTER TABLE IF EXISTS ONLY public.auth_group_permissions DROP CONSTRAINT IF EXISTS auth_group_permissions_group_id_permission_id_0cd325b0_uniq;
+ALTER TABLE IF EXISTS ONLY public.auth_group DROP CONSTRAINT IF EXISTS auth_group_name_key;
+ALTER TABLE IF EXISTS ONLY public.accounting_paymentmethod DROP CONSTRAINT IF EXISTS accounting_paymentmethod_pkey;
+ALTER TABLE IF EXISTS ONLY public.accounting_paymentmethod DROP CONSTRAINT IF EXISTS accounting_paymentmethod_code_key;
+ALTER TABLE IF EXISTS ONLY public.accounting_journalitem DROP CONSTRAINT IF EXISTS accounting_journalitem_pkey;
+ALTER TABLE IF EXISTS ONLY public.accounting_journalentry DROP CONSTRAINT IF EXISTS accounting_journalentry_pkey;
+ALTER TABLE IF EXISTS ONLY public.accounting_journalentry DROP CONSTRAINT IF EXISTS accounting_journalentry_entry_number_key;
+ALTER TABLE IF EXISTS ONLY public.accounting_account DROP CONSTRAINT IF EXISTS accounting_account_pkey;
+ALTER TABLE IF EXISTS ONLY public.accounting_account DROP CONSTRAINT IF EXISTS accounting_account_code_key;
+DROP TABLE IF EXISTS public.warranty_supplierwarrantyclaimitem;
+DROP TABLE IF EXISTS public.warranty_supplierwarrantyclaim;
+DROP TABLE IF EXISTS public.warranty_customerwarrantyclaim;
+DROP TABLE IF EXISTS public.users_userprofile;
+DROP TABLE IF EXISTS public.sales_salesreturnitem;
+DROP TABLE IF EXISTS public.sales_salesreturn;
+DROP TABLE IF EXISTS public.sales_salepayment;
+DROP TABLE IF EXISTS public.sales_saleitem;
+DROP TABLE IF EXISTS public.sales_sale;
+DROP TABLE IF EXISTS public.sales_posdaysession;
+DROP TABLE IF EXISTS public.purchases_supplierpayment;
+DROP TABLE IF EXISTS public.purchases_purchasereturnitem;
+DROP TABLE IF EXISTS public.purchases_purchasereturn;
+DROP TABLE IF EXISTS public.purchases_purchaseitem;
+DROP TABLE IF EXISTS public.purchases_purchase;
+DROP TABLE IF EXISTS public.products_unit;
+DROP TABLE IF EXISTS public.products_product;
+DROP TABLE IF EXISTS public.products_category;
+DROP TABLE IF EXISTS public.inventory_stockmovement;
+DROP TABLE IF EXISTS public.inventory_stockadjustmentitem;
+DROP TABLE IF EXISTS public.inventory_stockadjustment;
+DROP TABLE IF EXISTS public.expenses_expense;
+DROP TABLE IF EXISTS public.expenses_accounttransfer;
+DROP TABLE IF EXISTS public.employees_salaryslip;
+DROP TABLE IF EXISTS public.employees_salarypayment;
+DROP TABLE IF EXISTS public.employees_employee;
+DROP TABLE IF EXISTS public.employees_attendance;
+DROP TABLE IF EXISTS public.django_session;
+DROP TABLE IF EXISTS public.django_migrations;
+DROP TABLE IF EXISTS public.django_content_type;
+DROP TABLE IF EXISTS public.django_admin_log;
+DROP TABLE IF EXISTS public.core_systemsetting;
+DROP TABLE IF EXISTS public.core_backuplog;
+DROP TABLE IF EXISTS public.core_auditlog;
+DROP TABLE IF EXISTS public.contacts_supplier;
+DROP TABLE IF EXISTS public.contacts_customerpayment;
+DROP TABLE IF EXISTS public.contacts_customer;
+DROP TABLE IF EXISTS public.auth_user_user_permissions;
+DROP TABLE IF EXISTS public.auth_user_groups;
+DROP TABLE IF EXISTS public.auth_user;
+DROP TABLE IF EXISTS public.auth_permission;
+DROP TABLE IF EXISTS public.auth_group_permissions;
+DROP TABLE IF EXISTS public.auth_group;
+DROP TABLE IF EXISTS public.accounting_paymentmethod;
+DROP TABLE IF EXISTS public.accounting_journalitem;
+DROP TABLE IF EXISTS public.accounting_journalentry;
+DROP TABLE IF EXISTS public.accounting_account;
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: accounting_account; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.accounting_account (
+    id bigint NOT NULL,
+    code character varying(20) NOT NULL,
+    name character varying(150) NOT NULL,
+    account_type character varying(20) NOT NULL,
+    is_active boolean NOT NULL,
+    is_system boolean NOT NULL,
+    description text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    parent_id bigint
+);
+
+
+ALTER TABLE public.accounting_account OWNER TO pos_user;
+
+--
+-- Name: accounting_account_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.accounting_account ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.accounting_account_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: accounting_journalentry; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.accounting_journalentry (
+    id bigint NOT NULL,
+    entry_number character varying(50) NOT NULL,
+    entry_date date NOT NULL,
+    posting_date timestamp with time zone,
+    reference_type character varying(30) NOT NULL,
+    reference_id character varying(100),
+    status character varying(20) NOT NULL,
+    narration text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    created_by_id integer
+);
+
+
+ALTER TABLE public.accounting_journalentry OWNER TO pos_user;
+
+--
+-- Name: accounting_journalentry_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.accounting_journalentry ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.accounting_journalentry_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: accounting_journalitem; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.accounting_journalitem (
+    id bigint NOT NULL,
+    debit numeric(15,2) NOT NULL,
+    credit numeric(15,2) NOT NULL,
+    description character varying(255),
+    account_id bigint NOT NULL,
+    journal_entry_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.accounting_journalitem OWNER TO pos_user;
+
+--
+-- Name: accounting_journalitem_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.accounting_journalitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.accounting_journalitem_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: accounting_paymentmethod; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.accounting_paymentmethod (
+    id bigint NOT NULL,
+    name character varying(100) NOT NULL,
+    code character varying(30) NOT NULL,
+    is_active boolean NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    linked_account_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.accounting_paymentmethod OWNER TO pos_user;
+
+--
+-- Name: accounting_paymentmethod_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.accounting_paymentmethod ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.accounting_paymentmethod_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: auth_group; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.auth_group (
+    id integer NOT NULL,
+    name character varying(150) NOT NULL
+);
+
+
+ALTER TABLE public.auth_group OWNER TO pos_user;
+
+--
+-- Name: auth_group_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.auth_group ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.auth_group_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: auth_group_permissions; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.auth_group_permissions (
+    id bigint NOT NULL,
+    group_id integer NOT NULL,
+    permission_id integer NOT NULL
+);
+
+
+ALTER TABLE public.auth_group_permissions OWNER TO pos_user;
+
+--
+-- Name: auth_group_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.auth_group_permissions ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.auth_group_permissions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: auth_permission; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.auth_permission (
+    id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    content_type_id integer NOT NULL,
+    codename character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.auth_permission OWNER TO pos_user;
+
+--
+-- Name: auth_permission_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.auth_permission ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.auth_permission_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: auth_user; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.auth_user (
+    id integer NOT NULL,
+    password character varying(128) NOT NULL,
+    last_login timestamp with time zone,
+    is_superuser boolean NOT NULL,
+    username character varying(150) NOT NULL,
+    first_name character varying(150) NOT NULL,
+    last_name character varying(150) NOT NULL,
+    email character varying(254) NOT NULL,
+    is_staff boolean NOT NULL,
+    is_active boolean NOT NULL,
+    date_joined timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.auth_user OWNER TO pos_user;
+
+--
+-- Name: auth_user_groups; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.auth_user_groups (
+    id bigint NOT NULL,
+    user_id integer NOT NULL,
+    group_id integer NOT NULL
+);
+
+
+ALTER TABLE public.auth_user_groups OWNER TO pos_user;
+
+--
+-- Name: auth_user_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.auth_user_groups ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.auth_user_groups_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: auth_user_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.auth_user ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.auth_user_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: auth_user_user_permissions; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.auth_user_user_permissions (
+    id bigint NOT NULL,
+    user_id integer NOT NULL,
+    permission_id integer NOT NULL
+);
+
+
+ALTER TABLE public.auth_user_user_permissions OWNER TO pos_user;
+
+--
+-- Name: auth_user_user_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.auth_user_user_permissions ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.auth_user_user_permissions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: contacts_customer; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.contacts_customer (
+    id bigint NOT NULL,
+    customer_id character varying(50) NOT NULL,
+    name character varying(150) NOT NULL,
+    phone character varying(30),
+    email character varying(120),
+    address text,
+    is_walkin boolean NOT NULL,
+    credit_enabled boolean NOT NULL,
+    is_active boolean NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    opening_balance numeric(14,2) NOT NULL
+);
+
+
+ALTER TABLE public.contacts_customer OWNER TO pos_user;
+
+--
+-- Name: contacts_customer_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.contacts_customer ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.contacts_customer_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: contacts_customerpayment; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.contacts_customerpayment (
+    id bigint NOT NULL,
+    payment_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    amount numeric(14,2) NOT NULL,
+    payment_method character varying(20) NOT NULL,
+    reference character varying(100),
+    notes text,
+    status character varying(20) NOT NULL,
+    submitted_at timestamp with time zone,
+    cancelled_at timestamp with time zone,
+    cancellation_reason text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    cancelled_by_id integer,
+    created_by_id integer,
+    customer_id bigint NOT NULL,
+    journal_entry_id bigint,
+    payment_account_id bigint NOT NULL,
+    reversal_journal_entry_id bigint,
+    submitted_by_id integer,
+    screenshot character varying(100),
+    cheque_bank character varying(100),
+    cheque_date date,
+    cheque_number character varying(50)
+);
+
+
+ALTER TABLE public.contacts_customerpayment OWNER TO pos_user;
+
+--
+-- Name: contacts_customerpayment_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.contacts_customerpayment ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.contacts_customerpayment_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: contacts_supplier; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.contacts_supplier (
+    id bigint NOT NULL,
+    supplier_id character varying(50) NOT NULL,
+    name character varying(150) NOT NULL,
+    company_name character varying(150),
+    phone character varying(30),
+    email character varying(120),
+    address text,
+    tax_id character varying(50),
+    is_active boolean NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    opening_balance numeric(14,2) NOT NULL
+);
+
+
+ALTER TABLE public.contacts_supplier OWNER TO pos_user;
+
+--
+-- Name: contacts_supplier_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.contacts_supplier ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.contacts_supplier_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: core_auditlog; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.core_auditlog (
+    id bigint NOT NULL,
+    username character varying(150) NOT NULL,
+    action character varying(50) NOT NULL,
+    resource character varying(100),
+    resource_id character varying(50),
+    ip_address inet,
+    user_agent character varying(255),
+    details jsonb NOT NULL,
+    "timestamp" timestamp with time zone NOT NULL,
+    user_id integer
+);
+
+
+ALTER TABLE public.core_auditlog OWNER TO pos_user;
+
+--
+-- Name: core_auditlog_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.core_auditlog ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.core_auditlog_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: core_backuplog; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.core_backuplog (
+    id bigint NOT NULL,
+    filename character varying(255) NOT NULL,
+    file_path character varying(500) NOT NULL,
+    file_size_bytes bigint NOT NULL,
+    backup_type character varying(30) NOT NULL,
+    status character varying(30) NOT NULL,
+    dropbox_path character varying(500),
+    error_message text,
+    created_at timestamp with time zone NOT NULL,
+    created_by_id integer
+);
+
+
+ALTER TABLE public.core_backuplog OWNER TO pos_user;
+
+--
+-- Name: core_backuplog_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.core_backuplog ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.core_backuplog_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: core_systemsetting; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.core_systemsetting (
+    id bigint NOT NULL,
+    key character varying(100) NOT NULL,
+    value text NOT NULL,
+    description character varying(255) NOT NULL,
+    "group" character varying(50) NOT NULL,
+    updated_at timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.core_systemsetting OWNER TO pos_user;
+
+--
+-- Name: core_systemsetting_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.core_systemsetting ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.core_systemsetting_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: django_admin_log; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.django_admin_log (
+    id integer NOT NULL,
+    action_time timestamp with time zone NOT NULL,
+    object_id text,
+    object_repr character varying(200) NOT NULL,
+    action_flag smallint NOT NULL,
+    change_message text NOT NULL,
+    content_type_id integer,
+    user_id integer NOT NULL,
+    CONSTRAINT django_admin_log_action_flag_check CHECK ((action_flag >= 0))
+);
+
+
+ALTER TABLE public.django_admin_log OWNER TO pos_user;
+
+--
+-- Name: django_admin_log_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.django_admin_log ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.django_admin_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: django_content_type; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.django_content_type (
+    id integer NOT NULL,
+    app_label character varying(100) NOT NULL,
+    model character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.django_content_type OWNER TO pos_user;
+
+--
+-- Name: django_content_type_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.django_content_type ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.django_content_type_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: django_migrations; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.django_migrations (
+    id bigint NOT NULL,
+    app character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    applied timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.django_migrations OWNER TO pos_user;
+
+--
+-- Name: django_migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.django_migrations ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.django_migrations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: django_session; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.django_session (
+    session_key character varying(40) NOT NULL,
+    session_data text NOT NULL,
+    expire_date timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.django_session OWNER TO pos_user;
+
+--
+-- Name: employees_attendance; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.employees_attendance (
+    id bigint NOT NULL,
+    date date NOT NULL,
+    check_in time without time zone,
+    check_out time without time zone,
+    status character varying(20) NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    created_by_id integer,
+    employee_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.employees_attendance OWNER TO pos_user;
+
+--
+-- Name: employees_attendance_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.employees_attendance ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.employees_attendance_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: employees_employee; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.employees_employee (
+    id bigint NOT NULL,
+    employee_id character varying(50) NOT NULL,
+    full_name character varying(150) NOT NULL,
+    phone character varying(30),
+    email character varying(120),
+    address text,
+    job_title character varying(100) NOT NULL,
+    department character varying(100) NOT NULL,
+    date_of_joining date NOT NULL,
+    basic_salary numeric(12,2) NOT NULL,
+    payment_method character varying(20) NOT NULL,
+    bank_name character varying(100),
+    bank_account_title character varying(150),
+    bank_account_number character varying(50),
+    is_active boolean NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    created_by_id integer,
+    user_id integer
+);
+
+
+ALTER TABLE public.employees_employee OWNER TO pos_user;
+
+--
+-- Name: employees_employee_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.employees_employee ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.employees_employee_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: employees_salarypayment; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.employees_salarypayment (
+    id bigint NOT NULL,
+    payment_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    payment_method character varying(20) NOT NULL,
+    reference character varying(100),
+    notes text,
+    status character varying(20) NOT NULL,
+    cancelled_at timestamp with time zone,
+    cancellation_reason text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    cancelled_by_id integer,
+    created_by_id integer,
+    employee_id bigint NOT NULL,
+    journal_entry_id bigint,
+    payment_account_id bigint NOT NULL,
+    reversal_journal_entry_id bigint,
+    salary_slip_id bigint NOT NULL,
+    cheque_bank character varying(100),
+    cheque_date date,
+    cheque_number character varying(100)
+);
+
+
+ALTER TABLE public.employees_salarypayment OWNER TO pos_user;
+
+--
+-- Name: employees_salarypayment_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.employees_salarypayment ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.employees_salarypayment_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: employees_salaryslip; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.employees_salaryslip (
+    id bigint NOT NULL,
+    slip_number character varying(50) NOT NULL,
+    month smallint NOT NULL,
+    year integer NOT NULL,
+    payroll_period character varying(20) NOT NULL,
+    date date NOT NULL,
+    basic_salary numeric(12,2) NOT NULL,
+    allowances numeric(12,2) NOT NULL,
+    deductions numeric(12,2) NOT NULL,
+    net_salary numeric(12,2) NOT NULL,
+    paid_amount numeric(12,2) NOT NULL,
+    status character varying(20) NOT NULL,
+    notes text,
+    submitted_at timestamp with time zone,
+    cancelled_at timestamp with time zone,
+    cancellation_reason text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    cancelled_by_id integer,
+    created_by_id integer,
+    employee_id bigint NOT NULL,
+    journal_entry_id bigint,
+    reversal_journal_entry_id bigint,
+    submitted_by_id integer,
+    CONSTRAINT employees_salaryslip_month_check CHECK ((month >= 0)),
+    CONSTRAINT employees_salaryslip_year_check CHECK ((year >= 0))
+);
+
+
+ALTER TABLE public.employees_salaryslip OWNER TO pos_user;
+
+--
+-- Name: employees_salaryslip_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.employees_salaryslip ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.employees_salaryslip_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: expenses_accounttransfer; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.expenses_accounttransfer (
+    id bigint NOT NULL,
+    transfer_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    amount numeric(15,2) NOT NULL,
+    reference character varying(100),
+    notes text,
+    status character varying(20) NOT NULL,
+    cancelled_at timestamp with time zone,
+    cancellation_reason text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    cancelled_by_id integer,
+    created_by_id integer,
+    from_account_id bigint NOT NULL,
+    journal_entry_id bigint,
+    reversal_journal_entry_id bigint,
+    to_account_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.expenses_accounttransfer OWNER TO pos_user;
+
+--
+-- Name: expenses_accounttransfer_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.expenses_accounttransfer ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.expenses_accounttransfer_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: expenses_expense; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.expenses_expense (
+    id bigint NOT NULL,
+    expense_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    description character varying(255) NOT NULL,
+    amount numeric(15,2) NOT NULL,
+    reference_no character varying(100),
+    attachment character varying(100),
+    notes text,
+    status character varying(20) NOT NULL,
+    submitted_at timestamp with time zone,
+    cancelled_at timestamp with time zone,
+    cancellation_reason text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    cancelled_by_id integer,
+    created_by_id integer,
+    expense_account_id bigint NOT NULL,
+    journal_entry_id bigint,
+    payment_account_id bigint NOT NULL,
+    reversal_journal_entry_id bigint,
+    submitted_by_id integer,
+    cheque_bank character varying(100),
+    cheque_date date,
+    cheque_number character varying(50),
+    payment_method character varying(20) NOT NULL
+);
+
+
+ALTER TABLE public.expenses_expense OWNER TO pos_user;
+
+--
+-- Name: expenses_expense_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.expenses_expense ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.expenses_expense_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: inventory_stockadjustment; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.inventory_stockadjustment (
+    id bigint NOT NULL,
+    adjustment_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    adjustment_type character varying(10) NOT NULL,
+    reason character varying(30) NOT NULL,
+    notes text,
+    total_quantity numeric(12,2) NOT NULL,
+    total_cost_impact numeric(14,2) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    created_by_id integer
+);
+
+
+ALTER TABLE public.inventory_stockadjustment OWNER TO pos_user;
+
+--
+-- Name: inventory_stockadjustment_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.inventory_stockadjustment ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.inventory_stockadjustment_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: inventory_stockadjustmentitem; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.inventory_stockadjustmentitem (
+    id bigint NOT NULL,
+    system_stock numeric(12,2) NOT NULL,
+    actual_stock numeric(12,2) NOT NULL,
+    difference_quantity numeric(12,2) NOT NULL,
+    unit_cost numeric(12,2) NOT NULL,
+    subtotal numeric(14,2) NOT NULL,
+    adjustment_id bigint NOT NULL,
+    product_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.inventory_stockadjustmentitem OWNER TO pos_user;
+
+--
+-- Name: inventory_stockadjustmentitem_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.inventory_stockadjustmentitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.inventory_stockadjustmentitem_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: inventory_stockmovement; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.inventory_stockmovement (
+    id bigint NOT NULL,
+    movement_type character varying(30) NOT NULL,
+    quantity numeric(12,2) NOT NULL,
+    unit_cost numeric(12,2) NOT NULL,
+    reference_type character varying(50),
+    reference_id character varying(100),
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    product_id bigint NOT NULL,
+    balance_after numeric(12,2) NOT NULL,
+    created_by_id integer
+);
+
+
+ALTER TABLE public.inventory_stockmovement OWNER TO pos_user;
+
+--
+-- Name: inventory_stockmovement_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.inventory_stockmovement ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.inventory_stockmovement_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: products_category; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.products_category (
+    id bigint NOT NULL,
+    code character varying(30) NOT NULL,
+    name character varying(150) NOT NULL,
+    description text,
+    is_active boolean NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    parent_id bigint
+);
+
+
+ALTER TABLE public.products_category OWNER TO pos_user;
+
+--
+-- Name: products_category_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.products_category ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.products_category_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: products_product; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.products_product (
+    id bigint NOT NULL,
+    sku character varying(50) NOT NULL,
+    name character varying(200) NOT NULL,
+    barcode character varying(100),
+    purchase_price numeric(12,2) NOT NULL,
+    selling_price numeric(12,2) NOT NULL,
+    image character varying(100),
+    image_url character varying(500),
+    description text,
+    is_active boolean NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    category_id bigint NOT NULL,
+    unit_id bigint NOT NULL,
+    min_stock_level numeric(12,2) NOT NULL,
+    maintain_stock boolean NOT NULL,
+    warranty_period_days integer,
+    CONSTRAINT products_product_warranty_period_days_check CHECK ((warranty_period_days >= 0))
+);
+
+
+ALTER TABLE public.products_product OWNER TO pos_user;
+
+--
+-- Name: products_product_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.products_product ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.products_product_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: products_unit; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.products_unit (
+    id bigint NOT NULL,
+    name character varying(50) NOT NULL,
+    short_code character varying(15) NOT NULL,
+    allow_decimal boolean NOT NULL,
+    is_active boolean NOT NULL,
+    created_at timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.products_unit OWNER TO pos_user;
+
+--
+-- Name: products_unit_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.products_unit ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.products_unit_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: purchases_purchase; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.purchases_purchase (
+    id bigint NOT NULL,
+    purchase_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    status character varying(20) NOT NULL,
+    subtotal numeric(14,2) NOT NULL,
+    discount_amount numeric(12,2) NOT NULL,
+    tax_amount numeric(12,2) NOT NULL,
+    grand_total numeric(14,2) NOT NULL,
+    paid_amount numeric(14,2) NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    created_by_id integer,
+    payment_account_id bigint,
+    payment_method_id bigint,
+    supplier_id bigint NOT NULL,
+    initial_paid_amount numeric(14,2) NOT NULL,
+    supplier_invoice_file text,
+    supplier_invoice_number character varying(100),
+    cheque_bank character varying(100),
+    cheque_date date,
+    cheque_number character varying(50)
+);
+
+
+ALTER TABLE public.purchases_purchase OWNER TO pos_user;
+
+--
+-- Name: purchases_purchase_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.purchases_purchase ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.purchases_purchase_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: purchases_purchaseitem; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.purchases_purchaseitem (
+    id bigint NOT NULL,
+    quantity numeric(12,2) NOT NULL,
+    purchase_rate numeric(12,2) NOT NULL,
+    tax_rate numeric(5,2) NOT NULL,
+    subtotal numeric(14,2) NOT NULL,
+    returned_quantity numeric(12,2) NOT NULL,
+    product_id bigint NOT NULL,
+    purchase_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.purchases_purchaseitem OWNER TO pos_user;
+
+--
+-- Name: purchases_purchaseitem_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.purchases_purchaseitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.purchases_purchaseitem_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: purchases_purchasereturn; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.purchases_purchasereturn (
+    id bigint NOT NULL,
+    return_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    total_amount numeric(14,2) NOT NULL,
+    refund_method character varying(30) NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    created_by_id integer,
+    original_purchase_id bigint NOT NULL,
+    supplier_id bigint NOT NULL,
+    payment_account_id bigint,
+    cheque_bank character varying(100),
+    cheque_date date,
+    cheque_number character varying(50)
+);
+
+
+ALTER TABLE public.purchases_purchasereturn OWNER TO pos_user;
+
+--
+-- Name: purchases_purchasereturn_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.purchases_purchasereturn ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.purchases_purchasereturn_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: purchases_purchasereturnitem; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.purchases_purchasereturnitem (
+    id bigint NOT NULL,
+    quantity numeric(12,2) NOT NULL,
+    unit_rate numeric(12,2) NOT NULL,
+    subtotal numeric(14,2) NOT NULL,
+    product_id bigint NOT NULL,
+    purchase_item_id bigint NOT NULL,
+    purchase_return_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.purchases_purchasereturnitem OWNER TO pos_user;
+
+--
+-- Name: purchases_purchasereturnitem_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.purchases_purchasereturnitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.purchases_purchasereturnitem_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: purchases_supplierpayment; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.purchases_supplierpayment (
+    id bigint NOT NULL,
+    payment_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    amount numeric(14,2) NOT NULL,
+    reference character varying(100),
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    created_by_id integer,
+    payment_account_id bigint NOT NULL,
+    payment_method character varying(20) NOT NULL,
+    supplier_id bigint NOT NULL,
+    cancellation_reason text,
+    cancelled_at timestamp with time zone,
+    cancelled_by_id integer,
+    journal_entry_id bigint,
+    reversal_journal_entry_id bigint,
+    status character varying(20) NOT NULL,
+    submitted_at timestamp with time zone,
+    submitted_by_id integer,
+    updated_at timestamp with time zone NOT NULL,
+    cheque_bank character varying(100),
+    cheque_date date,
+    cheque_number character varying(50),
+    screenshot character varying(100)
+);
+
+
+ALTER TABLE public.purchases_supplierpayment OWNER TO pos_user;
+
+--
+-- Name: purchases_supplierpayment_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.purchases_supplierpayment ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.purchases_supplierpayment_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: sales_posdaysession; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.sales_posdaysession (
+    id bigint NOT NULL,
+    session_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    status character varying(20) NOT NULL,
+    opening_cash numeric(12,2) NOT NULL,
+    opened_at timestamp with time zone NOT NULL,
+    opening_notes text,
+    closed_at timestamp with time zone,
+    expected_cash numeric(12,2),
+    actual_cash numeric(12,2),
+    cash_difference numeric(12,2),
+    difference_reason text,
+    closing_notes text,
+    z_report_snapshot jsonb,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    closed_by_id integer,
+    opened_by_id integer NOT NULL
+);
+
+
+ALTER TABLE public.sales_posdaysession OWNER TO pos_user;
+
+--
+-- Name: sales_posdaysession_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.sales_posdaysession ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.sales_posdaysession_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: sales_sale; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.sales_sale (
+    id bigint NOT NULL,
+    invoice_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    status character varying(20) NOT NULL,
+    subtotal numeric(12,2) NOT NULL,
+    discount_amount numeric(12,2) NOT NULL,
+    tax_amount numeric(12,2) NOT NULL,
+    grand_total numeric(12,2) NOT NULL,
+    paid_amount numeric(12,2) NOT NULL,
+    change_amount numeric(12,2) NOT NULL,
+    due_amount numeric(12,2) NOT NULL,
+    payment_method character varying(20) NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    created_by_id integer,
+    customer_id bigint NOT NULL,
+    payment_account_id bigint,
+    cheque_bank character varying(100),
+    cheque_date date,
+    cheque_number character varying(50)
+);
+
+
+ALTER TABLE public.sales_sale OWNER TO pos_user;
+
+--
+-- Name: sales_sale_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.sales_sale ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.sales_sale_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: sales_saleitem; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.sales_saleitem (
+    id bigint NOT NULL,
+    quantity numeric(12,2) NOT NULL,
+    unit_price numeric(12,2) NOT NULL,
+    unit_cost numeric(12,2) NOT NULL,
+    discount numeric(12,2) NOT NULL,
+    subtotal numeric(12,2) NOT NULL,
+    returned_quantity numeric(12,2) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    product_id bigint NOT NULL,
+    sale_id bigint NOT NULL,
+    warranty_expiry_date date,
+    warranty_period_days_snapshot integer,
+    CONSTRAINT sales_saleitem_warranty_period_days_snapshot_check CHECK ((warranty_period_days_snapshot >= 0))
+);
+
+
+ALTER TABLE public.sales_saleitem OWNER TO pos_user;
+
+--
+-- Name: sales_saleitem_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.sales_saleitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.sales_saleitem_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: sales_salepayment; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.sales_salepayment (
+    id bigint NOT NULL,
+    payment_method character varying(20) NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    notes character varying(255),
+    created_at timestamp with time zone NOT NULL,
+    sale_id bigint NOT NULL,
+    payment_account_id bigint,
+    cheque_bank character varying(100),
+    cheque_date date,
+    cheque_number character varying(50)
+);
+
+
+ALTER TABLE public.sales_salepayment OWNER TO pos_user;
+
+--
+-- Name: sales_salepayment_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.sales_salepayment ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.sales_salepayment_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: sales_salesreturn; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.sales_salesreturn (
+    id bigint NOT NULL,
+    return_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    refund_amount numeric(12,2) NOT NULL,
+    reason character varying(200) NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    created_by_id integer,
+    original_sale_id bigint NOT NULL,
+    payment_account_id bigint,
+    cheque_bank character varying(100),
+    cheque_date date,
+    cheque_number character varying(50),
+    refund_method character varying(20) NOT NULL
+);
+
+
+ALTER TABLE public.sales_salesreturn OWNER TO pos_user;
+
+--
+-- Name: sales_salesreturn_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.sales_salesreturn ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.sales_salesreturn_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: sales_salesreturnitem; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.sales_salesreturnitem (
+    id bigint NOT NULL,
+    quantity numeric(12,2) NOT NULL,
+    unit_price numeric(12,2) NOT NULL,
+    unit_cost numeric(12,2) NOT NULL,
+    subtotal numeric(12,2) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    product_id bigint NOT NULL,
+    return_order_id bigint NOT NULL,
+    sale_item_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.sales_salesreturnitem OWNER TO pos_user;
+
+--
+-- Name: sales_salesreturnitem_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.sales_salesreturnitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.sales_salesreturnitem_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: users_userprofile; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.users_userprofile (
+    id bigint NOT NULL,
+    phone character varying(30),
+    pin_code character varying(6),
+    avatar character varying(100),
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    user_id integer NOT NULL,
+    company character varying(150),
+    data_scope character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.users_userprofile OWNER TO pos_user;
+
+--
+-- Name: users_userprofile_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.users_userprofile ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.users_userprofile_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: warranty_customerwarrantyclaim; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.warranty_customerwarrantyclaim (
+    id bigint NOT NULL,
+    claim_number character varying(50) NOT NULL,
+    quantity numeric(12,2) NOT NULL,
+    claim_date date NOT NULL,
+    warranty_expiry_date date,
+    original_unit_cost numeric(12,2) NOT NULL,
+    replacement_unit_cost numeric(12,2) NOT NULL,
+    status character varying(30) NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    completed_at timestamp with time zone,
+    claimed_product_id bigint NOT NULL,
+    created_by_id integer,
+    customer_id bigint NOT NULL,
+    journal_entry_id bigint,
+    original_sale_id bigint NOT NULL,
+    replacement_product_id bigint NOT NULL,
+    sale_item_id bigint NOT NULL,
+    supplier_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.warranty_customerwarrantyclaim OWNER TO pos_user;
+
+--
+-- Name: warranty_customerwarrantyclaim_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.warranty_customerwarrantyclaim ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.warranty_customerwarrantyclaim_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.warranty_supplierwarrantyclaim (
+    id bigint NOT NULL,
+    claim_number character varying(50) NOT NULL,
+    date date NOT NULL,
+    status character varying(30) NOT NULL,
+    total_quantity numeric(12,2) NOT NULL,
+    total_valuation numeric(14,2) NOT NULL,
+    notes text,
+    created_at timestamp with time zone NOT NULL,
+    processed_at timestamp with time zone,
+    completed_at timestamp with time zone,
+    completion_journal_entry_id bigint,
+    created_by_id integer,
+    dispatch_journal_entry_id bigint,
+    supplier_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.warranty_supplierwarrantyclaim OWNER TO pos_user;
+
+--
+-- Name: warranty_supplierwarrantyclaim_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.warranty_supplierwarrantyclaim ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.warranty_supplierwarrantyclaim_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: warranty_supplierwarrantyclaimitem; Type: TABLE; Schema: public; Owner: pos_user
+--
+
+CREATE TABLE public.warranty_supplierwarrantyclaimitem (
+    id bigint NOT NULL,
+    quantity numeric(12,2) NOT NULL,
+    unit_cost numeric(12,2) NOT NULL,
+    valuation numeric(14,2) NOT NULL,
+    customer_warranty_claim_id bigint NOT NULL,
+    product_id bigint NOT NULL,
+    supplier_warranty_claim_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.warranty_supplierwarrantyclaimitem OWNER TO pos_user;
+
+--
+-- Name: warranty_supplierwarrantyclaimitem_id_seq; Type: SEQUENCE; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE public.warranty_supplierwarrantyclaimitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.warranty_supplierwarrantyclaimitem_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Data for Name: accounting_account; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.accounting_account VALUES (1, '1000', 'Assets', 'ASSET', true, true, NULL, '2026-08-16 12:16:05.922383+00', '2026-08-16 12:16:05.922398+00', NULL);
+INSERT INTO public.accounting_account VALUES (5, '1030', 'Accounts Receivable (Customer Credit)', 'ASSET', true, true, NULL, '2026-08-16 12:16:05.973292+00', '2026-08-16 12:16:05.973323+00', 1);
+INSERT INTO public.accounting_account VALUES (6, '1040', 'Inventory Asset (Merchandise)', 'ASSET', true, true, NULL, '2026-08-16 12:16:05.978231+00', '2026-08-16 12:16:05.978266+00', 1);
+INSERT INTO public.accounting_account VALUES (8, '2000', 'Liabilities', 'LIABILITY', true, true, NULL, '2026-08-16 12:16:05.992172+00', '2026-08-16 12:16:05.99221+00', NULL);
+INSERT INTO public.accounting_account VALUES (9, '2010', 'Accounts Payable (Suppliers)', 'LIABILITY', true, true, NULL, '2026-08-16 12:16:06.009273+00', '2026-08-16 12:16:06.00929+00', 8);
+INSERT INTO public.accounting_account VALUES (10, '2020', 'Sales Tax Payable', 'LIABILITY', true, true, NULL, '2026-08-16 12:16:06.016177+00', '2026-08-16 12:16:06.016204+00', 8);
+INSERT INTO public.accounting_account VALUES (12, '3000', 'Equity', 'EQUITY', true, true, NULL, '2026-08-16 12:16:06.027647+00', '2026-08-16 12:16:06.027667+00', NULL);
+INSERT INTO public.accounting_account VALUES (13, '3010', 'Owner''s Capital / Equity', 'EQUITY', true, true, NULL, '2026-08-16 12:16:06.0324+00', '2026-08-16 12:16:06.032413+00', 12);
+INSERT INTO public.accounting_account VALUES (14, '3020', 'Retained Earnings', 'EQUITY', true, true, NULL, '2026-08-16 12:16:06.036967+00', '2026-08-16 12:16:06.036986+00', 12);
+INSERT INTO public.accounting_account VALUES (15, '4000', 'Revenue / Income', 'INCOME', true, true, NULL, '2026-08-16 12:16:06.041445+00', '2026-08-16 12:16:06.041459+00', NULL);
+INSERT INTO public.accounting_account VALUES (16, '4010', 'Sales Revenue', 'INCOME', true, true, NULL, '2026-08-16 12:16:06.046294+00', '2026-08-16 12:16:06.046313+00', 15);
+INSERT INTO public.accounting_account VALUES (17, '4020', 'Sales Returns & Allowances', 'INCOME', true, true, NULL, '2026-08-16 12:16:06.051161+00', '2026-08-16 12:16:06.051179+00', 15);
+INSERT INTO public.accounting_account VALUES (35, '1050', 'Store Equipment & Fixtures', 'ASSET', true, false, NULL, '2026-08-20 09:24:59.256945+00', '2026-08-20 09:24:59.25702+00', 1);
+INSERT INTO public.accounting_account VALUES (36, '2030', 'Accrued Salaries Payable', 'LIABILITY', true, false, NULL, '2026-08-20 09:24:59.280819+00', '2026-08-20 09:24:59.280852+00', 8);
+INSERT INTO public.accounting_account VALUES (37, '4030', 'Discount Received (Supplier)', 'INCOME', true, false, NULL, '2026-08-20 09:24:59.313249+00', '2026-08-20 09:24:59.313287+00', 15);
+INSERT INTO public.accounting_account VALUES (38, '4040', 'Other Operating Income', 'INCOME', true, false, NULL, '2026-08-20 09:24:59.325424+00', '2026-08-20 09:24:59.32545+00', 15);
+INSERT INTO public.accounting_account VALUES (2, '1010', 'Cash Accounts', 'ASSET', true, true, NULL, '2026-08-16 12:16:05.929478+00', '2026-08-20 09:25:10.764168+00', 1);
+INSERT INTO public.accounting_account VALUES (33, '1011', 'Cash in Hand (Main Drawer)', 'ASSET', true, true, NULL, '2026-08-20 09:10:23.170945+00', '2026-08-20 09:25:10.76909+00', 2);
+INSERT INTO public.accounting_account VALUES (3, '1020', 'Bank & Digital Accounts', 'ASSET', true, true, NULL, '2026-08-16 12:16:05.935572+00', '2026-08-20 09:25:10.773284+00', 1);
+INSERT INTO public.accounting_account VALUES (34, '1021', 'Main Bank Account', 'ASSET', true, true, NULL, '2026-08-20 09:10:23.203689+00', '2026-08-20 09:25:10.779007+00', 3);
+INSERT INTO public.accounting_account VALUES (20, '5000', 'Direct Expenses (COGS)', 'EXPENSE', true, true, NULL, '2026-08-16 12:16:06.064751+00', '2026-08-27 12:44:52.890513+00', NULL);
+INSERT INTO public.accounting_account VALUES (51, '5100', 'Indirect Expenses', 'EXPENSE', true, false, '', '2026-08-27 12:37:27.82567+00', '2026-08-27 12:44:52.900187+00', NULL);
+INSERT INTO public.accounting_account VALUES (21, '5010', 'Cost of Goods Sold (COGS)', 'EXPENSE', true, true, NULL, '2026-08-16 12:16:06.070845+00', '2026-08-27 12:44:52.90252+00', 20);
+INSERT INTO public.accounting_account VALUES (45, '5080', 'Inventory Shrinkage & Write-offs', 'EXPENSE', true, false, NULL, '2026-08-20 09:24:59.401023+00', '2026-08-27 12:44:52.904343+00', 20);
+INSERT INTO public.accounting_account VALUES (39, '5020', 'Salaries & Wages Expense', 'EXPENSE', true, false, NULL, '2026-08-20 09:24:59.341769+00', '2026-08-27 12:44:52.908537+00', 51);
+INSERT INTO public.accounting_account VALUES (40, '5030', 'Store Rent Expense', 'EXPENSE', true, false, NULL, '2026-08-20 09:24:59.350184+00', '2026-08-27 12:44:52.909502+00', 51);
+INSERT INTO public.accounting_account VALUES (41, '5040', 'Utilities (Electricity, Water)', 'EXPENSE', true, false, NULL, '2026-08-20 09:24:59.363802+00', '2026-08-27 12:44:52.911017+00', 51);
+INSERT INTO public.accounting_account VALUES (42, '5050', 'Store Maintenance & Supplies', 'EXPENSE', true, false, NULL, '2026-08-20 09:24:59.374063+00', '2026-08-27 12:44:52.91261+00', 51);
+INSERT INTO public.accounting_account VALUES (43, '5060', 'Marketing & Advertising', 'EXPENSE', true, false, NULL, '2026-08-20 09:24:59.383357+00', '2026-08-27 12:44:52.913717+00', 51);
+INSERT INTO public.accounting_account VALUES (44, '5070', 'Bank & Card Gateway Fees', 'EXPENSE', true, false, NULL, '2026-08-20 09:24:59.391317+00', '2026-08-27 12:44:52.914531+00', 51);
+INSERT INTO public.accounting_account VALUES (52, '5082', 'Entertainment', 'EXPENSE', true, false, '', '2026-08-27 12:38:14.903996+00', '2026-08-27 12:44:52.915322+00', 51);
+INSERT INTO public.accounting_account VALUES (48, '1027', 'Easy-Paisa', 'ASSET', true, false, '', '2026-08-27 07:52:22.063773+00', '2026-08-28 04:54:09.014346+00', 3);
+INSERT INTO public.accounting_account VALUES (57, '1060', 'Warranty Claim Asset', 'ASSET', true, true, NULL, '2026-08-31 11:02:38.494843+00', '2026-08-31 11:02:38.494884+00', 1);
+INSERT INTO public.accounting_account VALUES (58, '1070', 'Supplier Claim Asset', 'ASSET', true, true, NULL, '2026-08-31 11:02:38.518807+00', '2026-08-31 11:02:38.518836+00', 1);
+INSERT INTO public.accounting_account VALUES (59, '1500', 'Property, Plant & Equipment', 'ASSET', true, false, NULL, '2026-09-02 10:52:55.867595+00', '2026-09-02 10:52:55.867641+00', NULL);
+INSERT INTO public.accounting_account VALUES (61, '1026', 'Meezan Bank', 'ASSET', true, false, '', '2026-09-04 18:54:18.654782+00', '2026-09-04 18:54:18.6549+00', 3);
+INSERT INTO public.accounting_account VALUES (4, '1025', 'HBL Islamic Premium Business Account', 'ASSET', true, true, '', '2026-08-16 12:16:05.941936+00', '2026-08-29 12:35:15.104099+00', 3);
+
+
+--
+-- Data for Name: accounting_journalentry; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: accounting_journalitem; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: accounting_paymentmethod; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.accounting_paymentmethod VALUES (1, 'Cash', 'CASH', true, '2026-08-16 12:16:06.113729+00', 2);
+INSERT INTO public.accounting_paymentmethod VALUES (2, 'Bank Transfer', 'BANK', true, '2026-08-16 12:16:06.118351+00', 3);
+INSERT INTO public.accounting_paymentmethod VALUES (3, 'Credit / Debit Card', 'CARD', true, '2026-08-16 12:16:06.122137+00', 4);
+INSERT INTO public.accounting_paymentmethod VALUES (4, 'Cheque', 'CHEQUE', true, '2026-08-31 08:45:16.857986+00', 3);
+
+
+--
+-- Data for Name: auth_group; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.auth_group VALUES (4, 'Inventory Manager');
+INSERT INTO public.auth_group VALUES (5, 'Accountant');
+INSERT INTO public.auth_group VALUES (9, 'Store Supervisor');
+INSERT INTO public.auth_group VALUES (2, 'Manager');
+INSERT INTO public.auth_group VALUES (8, 'Abdullah Store Owner');
+INSERT INTO public.auth_group VALUES (3, 'Cashier');
+INSERT INTO public.auth_group VALUES (11, 'Counter Cashier Restricted');
+INSERT INTO public.auth_group VALUES (1, 'Administrator');
+
+
+--
+-- Data for Name: auth_group_permissions; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.auth_group_permissions VALUES (540, 1, 5);
+INSERT INTO public.auth_group_permissions VALUES (541, 1, 6);
+INSERT INTO public.auth_group_permissions VALUES (542, 1, 7);
+INSERT INTO public.auth_group_permissions VALUES (543, 1, 8);
+INSERT INTO public.auth_group_permissions VALUES (544, 1, 9);
+INSERT INTO public.auth_group_permissions VALUES (545, 1, 10);
+INSERT INTO public.auth_group_permissions VALUES (546, 1, 11);
+INSERT INTO public.auth_group_permissions VALUES (547, 1, 12);
+INSERT INTO public.auth_group_permissions VALUES (548, 1, 13);
+INSERT INTO public.auth_group_permissions VALUES (549, 1, 14);
+INSERT INTO public.auth_group_permissions VALUES (550, 1, 15);
+INSERT INTO public.auth_group_permissions VALUES (551, 1, 16);
+INSERT INTO public.auth_group_permissions VALUES (552, 1, 25);
+INSERT INTO public.auth_group_permissions VALUES (553, 1, 26);
+INSERT INTO public.auth_group_permissions VALUES (554, 1, 27);
+INSERT INTO public.auth_group_permissions VALUES (555, 1, 28);
+INSERT INTO public.auth_group_permissions VALUES (556, 1, 29);
+INSERT INTO public.auth_group_permissions VALUES (557, 1, 30);
+INSERT INTO public.auth_group_permissions VALUES (558, 1, 31);
+INSERT INTO public.auth_group_permissions VALUES (566, 1, 167);
+INSERT INTO public.auth_group_permissions VALUES (567, 1, 168);
+INSERT INTO public.auth_group_permissions VALUES (568, 1, 169);
+INSERT INTO public.auth_group_permissions VALUES (569, 1, 170);
+INSERT INTO public.auth_group_permissions VALUES (570, 1, 171);
+INSERT INTO public.auth_group_permissions VALUES (35, 2, 32);
+INSERT INTO public.auth_group_permissions VALUES (36, 2, 33);
+INSERT INTO public.auth_group_permissions VALUES (37, 2, 34);
+INSERT INTO public.auth_group_permissions VALUES (38, 2, 35);
+INSERT INTO public.auth_group_permissions VALUES (39, 2, 36);
+INSERT INTO public.auth_group_permissions VALUES (40, 2, 37);
+INSERT INTO public.auth_group_permissions VALUES (41, 2, 38);
+INSERT INTO public.auth_group_permissions VALUES (42, 2, 39);
+INSERT INTO public.auth_group_permissions VALUES (43, 2, 40);
+INSERT INTO public.auth_group_permissions VALUES (44, 2, 41);
+INSERT INTO public.auth_group_permissions VALUES (45, 2, 42);
+INSERT INTO public.auth_group_permissions VALUES (46, 2, 13);
+INSERT INTO public.auth_group_permissions VALUES (47, 2, 14);
+INSERT INTO public.auth_group_permissions VALUES (48, 2, 16);
+INSERT INTO public.auth_group_permissions VALUES (49, 2, 30);
+INSERT INTO public.auth_group_permissions VALUES (50, 2, 31);
+INSERT INTO public.auth_group_permissions VALUES (51, 3, 32);
+INSERT INTO public.auth_group_permissions VALUES (52, 3, 33);
+INSERT INTO public.auth_group_permissions VALUES (53, 3, 35);
+INSERT INTO public.auth_group_permissions VALUES (54, 3, 36);
+INSERT INTO public.auth_group_permissions VALUES (55, 4, 40);
+INSERT INTO public.auth_group_permissions VALUES (56, 4, 41);
+INSERT INTO public.auth_group_permissions VALUES (57, 4, 38);
+INSERT INTO public.auth_group_permissions VALUES (58, 4, 39);
+INSERT INTO public.auth_group_permissions VALUES (59, 5, 42);
+INSERT INTO public.auth_group_permissions VALUES (60, 5, 39);
+INSERT INTO public.auth_group_permissions VALUES (77, 8, 38);
+INSERT INTO public.auth_group_permissions VALUES (78, 8, 39);
+INSERT INTO public.auth_group_permissions VALUES (79, 8, 40);
+INSERT INTO public.auth_group_permissions VALUES (80, 8, 41);
+INSERT INTO public.auth_group_permissions VALUES (81, 8, 42);
+INSERT INTO public.auth_group_permissions VALUES (82, 8, 47);
+INSERT INTO public.auth_group_permissions VALUES (83, 8, 48);
+INSERT INTO public.auth_group_permissions VALUES (84, 8, 49);
+INSERT INTO public.auth_group_permissions VALUES (85, 8, 50);
+INSERT INTO public.auth_group_permissions VALUES (86, 8, 51);
+INSERT INTO public.auth_group_permissions VALUES (87, 8, 52);
+INSERT INTO public.auth_group_permissions VALUES (88, 8, 53);
+INSERT INTO public.auth_group_permissions VALUES (89, 8, 54);
+INSERT INTO public.auth_group_permissions VALUES (90, 8, 55);
+INSERT INTO public.auth_group_permissions VALUES (91, 8, 56);
+INSERT INTO public.auth_group_permissions VALUES (92, 8, 57);
+INSERT INTO public.auth_group_permissions VALUES (93, 8, 58);
+INSERT INTO public.auth_group_permissions VALUES (94, 8, 59);
+INSERT INTO public.auth_group_permissions VALUES (95, 8, 60);
+INSERT INTO public.auth_group_permissions VALUES (96, 8, 61);
+INSERT INTO public.auth_group_permissions VALUES (97, 8, 62);
+INSERT INTO public.auth_group_permissions VALUES (98, 8, 63);
+INSERT INTO public.auth_group_permissions VALUES (99, 8, 64);
+INSERT INTO public.auth_group_permissions VALUES (100, 8, 65);
+INSERT INTO public.auth_group_permissions VALUES (101, 8, 66);
+INSERT INTO public.auth_group_permissions VALUES (102, 8, 67);
+INSERT INTO public.auth_group_permissions VALUES (103, 8, 68);
+INSERT INTO public.auth_group_permissions VALUES (104, 8, 69);
+INSERT INTO public.auth_group_permissions VALUES (105, 8, 70);
+INSERT INTO public.auth_group_permissions VALUES (106, 8, 71);
+INSERT INTO public.auth_group_permissions VALUES (107, 8, 72);
+INSERT INTO public.auth_group_permissions VALUES (108, 8, 73);
+INSERT INTO public.auth_group_permissions VALUES (109, 8, 74);
+INSERT INTO public.auth_group_permissions VALUES (110, 8, 75);
+INSERT INTO public.auth_group_permissions VALUES (111, 8, 76);
+INSERT INTO public.auth_group_permissions VALUES (112, 8, 77);
+INSERT INTO public.auth_group_permissions VALUES (113, 8, 78);
+INSERT INTO public.auth_group_permissions VALUES (114, 8, 79);
+INSERT INTO public.auth_group_permissions VALUES (115, 8, 80);
+INSERT INTO public.auth_group_permissions VALUES (116, 8, 81);
+INSERT INTO public.auth_group_permissions VALUES (117, 8, 82);
+INSERT INTO public.auth_group_permissions VALUES (118, 8, 83);
+INSERT INTO public.auth_group_permissions VALUES (119, 8, 84);
+INSERT INTO public.auth_group_permissions VALUES (120, 8, 85);
+INSERT INTO public.auth_group_permissions VALUES (121, 8, 86);
+INSERT INTO public.auth_group_permissions VALUES (122, 8, 87);
+INSERT INTO public.auth_group_permissions VALUES (123, 8, 88);
+INSERT INTO public.auth_group_permissions VALUES (124, 8, 89);
+INSERT INTO public.auth_group_permissions VALUES (125, 8, 90);
+INSERT INTO public.auth_group_permissions VALUES (126, 8, 91);
+INSERT INTO public.auth_group_permissions VALUES (127, 8, 92);
+INSERT INTO public.auth_group_permissions VALUES (128, 8, 93);
+INSERT INTO public.auth_group_permissions VALUES (129, 8, 94);
+INSERT INTO public.auth_group_permissions VALUES (130, 8, 95);
+INSERT INTO public.auth_group_permissions VALUES (131, 8, 96);
+INSERT INTO public.auth_group_permissions VALUES (132, 8, 97);
+INSERT INTO public.auth_group_permissions VALUES (133, 8, 98);
+INSERT INTO public.auth_group_permissions VALUES (134, 8, 99);
+INSERT INTO public.auth_group_permissions VALUES (135, 8, 100);
+INSERT INTO public.auth_group_permissions VALUES (136, 8, 101);
+INSERT INTO public.auth_group_permissions VALUES (137, 8, 102);
+INSERT INTO public.auth_group_permissions VALUES (138, 8, 103);
+INSERT INTO public.auth_group_permissions VALUES (139, 8, 104);
+INSERT INTO public.auth_group_permissions VALUES (140, 8, 105);
+INSERT INTO public.auth_group_permissions VALUES (141, 8, 106);
+INSERT INTO public.auth_group_permissions VALUES (142, 8, 107);
+INSERT INTO public.auth_group_permissions VALUES (143, 8, 108);
+INSERT INTO public.auth_group_permissions VALUES (144, 8, 109);
+INSERT INTO public.auth_group_permissions VALUES (145, 8, 110);
+INSERT INTO public.auth_group_permissions VALUES (146, 8, 111);
+INSERT INTO public.auth_group_permissions VALUES (147, 8, 112);
+INSERT INTO public.auth_group_permissions VALUES (148, 8, 113);
+INSERT INTO public.auth_group_permissions VALUES (149, 8, 114);
+INSERT INTO public.auth_group_permissions VALUES (464, 1, 38);
+INSERT INTO public.auth_group_permissions VALUES (465, 1, 39);
+INSERT INTO public.auth_group_permissions VALUES (466, 1, 40);
+INSERT INTO public.auth_group_permissions VALUES (467, 1, 63);
+INSERT INTO public.auth_group_permissions VALUES (468, 1, 64);
+INSERT INTO public.auth_group_permissions VALUES (469, 1, 65);
+INSERT INTO public.auth_group_permissions VALUES (470, 1, 66);
+INSERT INTO public.auth_group_permissions VALUES (471, 1, 67);
+INSERT INTO public.auth_group_permissions VALUES (170, 8, 135);
+INSERT INTO public.auth_group_permissions VALUES (171, 8, 136);
+INSERT INTO public.auth_group_permissions VALUES (172, 8, 137);
+INSERT INTO public.auth_group_permissions VALUES (173, 8, 138);
+INSERT INTO public.auth_group_permissions VALUES (174, 8, 139);
+INSERT INTO public.auth_group_permissions VALUES (175, 8, 140);
+INSERT INTO public.auth_group_permissions VALUES (176, 8, 141);
+INSERT INTO public.auth_group_permissions VALUES (177, 8, 142);
+INSERT INTO public.auth_group_permissions VALUES (178, 8, 143);
+INSERT INTO public.auth_group_permissions VALUES (179, 8, 144);
+INSERT INTO public.auth_group_permissions VALUES (180, 8, 145);
+INSERT INTO public.auth_group_permissions VALUES (181, 8, 146);
+INSERT INTO public.auth_group_permissions VALUES (472, 1, 68);
+INSERT INTO public.auth_group_permissions VALUES (473, 1, 69);
+INSERT INTO public.auth_group_permissions VALUES (474, 1, 70);
+INSERT INTO public.auth_group_permissions VALUES (475, 1, 71);
+INSERT INTO public.auth_group_permissions VALUES (186, 8, 167);
+INSERT INTO public.auth_group_permissions VALUES (187, 8, 168);
+INSERT INTO public.auth_group_permissions VALUES (188, 8, 169);
+INSERT INTO public.auth_group_permissions VALUES (189, 8, 170);
+INSERT INTO public.auth_group_permissions VALUES (190, 9, 32);
+INSERT INTO public.auth_group_permissions VALUES (191, 9, 41);
+INSERT INTO public.auth_group_permissions VALUES (192, 9, 37);
+INSERT INTO public.auth_group_permissions VALUES (193, 8, 171);
+INSERT INTO public.auth_group_permissions VALUES (194, 8, 172);
+INSERT INTO public.auth_group_permissions VALUES (195, 8, 173);
+INSERT INTO public.auth_group_permissions VALUES (476, 1, 72);
+INSERT INTO public.auth_group_permissions VALUES (477, 1, 73);
+INSERT INTO public.auth_group_permissions VALUES (478, 1, 74);
+INSERT INTO public.auth_group_permissions VALUES (479, 1, 83);
+INSERT INTO public.auth_group_permissions VALUES (196, 8, 174);
+INSERT INTO public.auth_group_permissions VALUES (571, 1, 172);
+INSERT INTO public.auth_group_permissions VALUES (572, 1, 173);
+INSERT INTO public.auth_group_permissions VALUES (573, 1, 174);
+INSERT INTO public.auth_group_permissions VALUES (577, 1, 43);
+INSERT INTO public.auth_group_permissions VALUES (578, 1, 44);
+INSERT INTO public.auth_group_permissions VALUES (579, 1, 45);
+INSERT INTO public.auth_group_permissions VALUES (580, 1, 46);
+INSERT INTO public.auth_group_permissions VALUES (842, 8, 128);
+INSERT INTO public.auth_group_permissions VALUES (843, 8, 129);
+INSERT INTO public.auth_group_permissions VALUES (844, 8, 130);
+INSERT INTO public.auth_group_permissions VALUES (845, 8, 131);
+INSERT INTO public.auth_group_permissions VALUES (846, 8, 132);
+INSERT INTO public.auth_group_permissions VALUES (847, 8, 133);
+INSERT INTO public.auth_group_permissions VALUES (848, 8, 134);
+INSERT INTO public.auth_group_permissions VALUES (849, 8, 32);
+INSERT INTO public.auth_group_permissions VALUES (850, 8, 33);
+INSERT INTO public.auth_group_permissions VALUES (851, 8, 34);
+INSERT INTO public.auth_group_permissions VALUES (852, 8, 163);
+INSERT INTO public.auth_group_permissions VALUES (853, 8, 164);
+INSERT INTO public.auth_group_permissions VALUES (854, 8, 165);
+INSERT INTO public.auth_group_permissions VALUES (855, 8, 166);
+INSERT INTO public.auth_group_permissions VALUES (856, 8, 35);
+INSERT INTO public.auth_group_permissions VALUES (857, 8, 36);
+INSERT INTO public.auth_group_permissions VALUES (858, 8, 37);
+INSERT INTO public.auth_group_permissions VALUES (859, 8, 115);
+INSERT INTO public.auth_group_permissions VALUES (860, 8, 116);
+INSERT INTO public.auth_group_permissions VALUES (861, 8, 117);
+INSERT INTO public.auth_group_permissions VALUES (862, 8, 118);
+INSERT INTO public.auth_group_permissions VALUES (863, 8, 119);
+INSERT INTO public.auth_group_permissions VALUES (864, 8, 120);
+INSERT INTO public.auth_group_permissions VALUES (865, 8, 121);
+INSERT INTO public.auth_group_permissions VALUES (866, 8, 122);
+INSERT INTO public.auth_group_permissions VALUES (867, 8, 123);
+INSERT INTO public.auth_group_permissions VALUES (868, 8, 124);
+INSERT INTO public.auth_group_permissions VALUES (869, 8, 125);
+INSERT INTO public.auth_group_permissions VALUES (870, 8, 126);
+INSERT INTO public.auth_group_permissions VALUES (871, 8, 127);
+INSERT INTO public.auth_group_permissions VALUES (884, 1, 128);
+INSERT INTO public.auth_group_permissions VALUES (885, 1, 129);
+INSERT INTO public.auth_group_permissions VALUES (886, 1, 130);
+INSERT INTO public.auth_group_permissions VALUES (887, 1, 131);
+INSERT INTO public.auth_group_permissions VALUES (888, 1, 132);
+INSERT INTO public.auth_group_permissions VALUES (889, 1, 133);
+INSERT INTO public.auth_group_permissions VALUES (890, 1, 134);
+INSERT INTO public.auth_group_permissions VALUES (891, 1, 32);
+INSERT INTO public.auth_group_permissions VALUES (892, 1, 33);
+INSERT INTO public.auth_group_permissions VALUES (893, 1, 34);
+INSERT INTO public.auth_group_permissions VALUES (894, 1, 163);
+INSERT INTO public.auth_group_permissions VALUES (895, 1, 164);
+INSERT INTO public.auth_group_permissions VALUES (896, 1, 165);
+INSERT INTO public.auth_group_permissions VALUES (897, 1, 166);
+INSERT INTO public.auth_group_permissions VALUES (898, 1, 35);
+INSERT INTO public.auth_group_permissions VALUES (899, 1, 36);
+INSERT INTO public.auth_group_permissions VALUES (900, 1, 37);
+INSERT INTO public.auth_group_permissions VALUES (904, 1, 115);
+INSERT INTO public.auth_group_permissions VALUES (905, 1, 116);
+INSERT INTO public.auth_group_permissions VALUES (906, 1, 117);
+INSERT INTO public.auth_group_permissions VALUES (907, 1, 118);
+INSERT INTO public.auth_group_permissions VALUES (908, 1, 119);
+INSERT INTO public.auth_group_permissions VALUES (909, 1, 120);
+INSERT INTO public.auth_group_permissions VALUES (910, 1, 121);
+INSERT INTO public.auth_group_permissions VALUES (911, 1, 122);
+INSERT INTO public.auth_group_permissions VALUES (912, 1, 123);
+INSERT INTO public.auth_group_permissions VALUES (913, 1, 124);
+INSERT INTO public.auth_group_permissions VALUES (914, 1, 125);
+INSERT INTO public.auth_group_permissions VALUES (915, 1, 126);
+INSERT INTO public.auth_group_permissions VALUES (916, 1, 127);
+INSERT INTO public.auth_group_permissions VALUES (919, 8, 175);
+INSERT INTO public.auth_group_permissions VALUES (920, 8, 176);
+INSERT INTO public.auth_group_permissions VALUES (921, 8, 177);
+INSERT INTO public.auth_group_permissions VALUES (922, 8, 178);
+INSERT INTO public.auth_group_permissions VALUES (923, 8, 179);
+INSERT INTO public.auth_group_permissions VALUES (439, 1, 41);
+INSERT INTO public.auth_group_permissions VALUES (440, 1, 79);
+INSERT INTO public.auth_group_permissions VALUES (441, 1, 80);
+INSERT INTO public.auth_group_permissions VALUES (442, 1, 81);
+INSERT INTO public.auth_group_permissions VALUES (443, 1, 82);
+INSERT INTO public.auth_group_permissions VALUES (444, 1, 87);
+INSERT INTO public.auth_group_permissions VALUES (445, 1, 88);
+INSERT INTO public.auth_group_permissions VALUES (446, 1, 89);
+INSERT INTO public.auth_group_permissions VALUES (447, 1, 90);
+INSERT INTO public.auth_group_permissions VALUES (448, 1, 91);
+INSERT INTO public.auth_group_permissions VALUES (449, 1, 92);
+INSERT INTO public.auth_group_permissions VALUES (450, 1, 93);
+INSERT INTO public.auth_group_permissions VALUES (451, 1, 94);
+INSERT INTO public.auth_group_permissions VALUES (452, 1, 95);
+INSERT INTO public.auth_group_permissions VALUES (453, 1, 96);
+INSERT INTO public.auth_group_permissions VALUES (454, 1, 97);
+INSERT INTO public.auth_group_permissions VALUES (455, 1, 98);
+INSERT INTO public.auth_group_permissions VALUES (456, 1, 99);
+INSERT INTO public.auth_group_permissions VALUES (457, 1, 100);
+INSERT INTO public.auth_group_permissions VALUES (458, 1, 101);
+INSERT INTO public.auth_group_permissions VALUES (459, 1, 102);
+INSERT INTO public.auth_group_permissions VALUES (460, 1, 103);
+INSERT INTO public.auth_group_permissions VALUES (461, 1, 104);
+INSERT INTO public.auth_group_permissions VALUES (462, 1, 105);
+INSERT INTO public.auth_group_permissions VALUES (463, 1, 106);
+INSERT INTO public.auth_group_permissions VALUES (480, 1, 84);
+INSERT INTO public.auth_group_permissions VALUES (481, 1, 85);
+INSERT INTO public.auth_group_permissions VALUES (482, 1, 86);
+INSERT INTO public.auth_group_permissions VALUES (483, 1, 107);
+INSERT INTO public.auth_group_permissions VALUES (484, 1, 108);
+INSERT INTO public.auth_group_permissions VALUES (485, 1, 109);
+INSERT INTO public.auth_group_permissions VALUES (486, 1, 110);
+INSERT INTO public.auth_group_permissions VALUES (487, 1, 111);
+INSERT INTO public.auth_group_permissions VALUES (488, 1, 112);
+INSERT INTO public.auth_group_permissions VALUES (489, 1, 113);
+INSERT INTO public.auth_group_permissions VALUES (490, 1, 114);
+INSERT INTO public.auth_group_permissions VALUES (491, 1, 75);
+INSERT INTO public.auth_group_permissions VALUES (492, 1, 76);
+INSERT INTO public.auth_group_permissions VALUES (493, 1, 77);
+INSERT INTO public.auth_group_permissions VALUES (494, 1, 78);
+INSERT INTO public.auth_group_permissions VALUES (495, 1, 143);
+INSERT INTO public.auth_group_permissions VALUES (496, 1, 144);
+INSERT INTO public.auth_group_permissions VALUES (497, 1, 145);
+INSERT INTO public.auth_group_permissions VALUES (498, 1, 146);
+INSERT INTO public.auth_group_permissions VALUES (515, 1, 135);
+INSERT INTO public.auth_group_permissions VALUES (516, 1, 136);
+INSERT INTO public.auth_group_permissions VALUES (517, 1, 137);
+INSERT INTO public.auth_group_permissions VALUES (518, 1, 138);
+INSERT INTO public.auth_group_permissions VALUES (519, 1, 139);
+INSERT INTO public.auth_group_permissions VALUES (520, 1, 140);
+INSERT INTO public.auth_group_permissions VALUES (521, 1, 141);
+INSERT INTO public.auth_group_permissions VALUES (522, 1, 142);
+INSERT INTO public.auth_group_permissions VALUES (523, 1, 42);
+INSERT INTO public.auth_group_permissions VALUES (524, 1, 47);
+INSERT INTO public.auth_group_permissions VALUES (525, 1, 48);
+INSERT INTO public.auth_group_permissions VALUES (526, 1, 49);
+INSERT INTO public.auth_group_permissions VALUES (527, 1, 50);
+INSERT INTO public.auth_group_permissions VALUES (528, 1, 51);
+INSERT INTO public.auth_group_permissions VALUES (529, 1, 52);
+INSERT INTO public.auth_group_permissions VALUES (530, 1, 53);
+INSERT INTO public.auth_group_permissions VALUES (531, 1, 54);
+INSERT INTO public.auth_group_permissions VALUES (532, 1, 55);
+INSERT INTO public.auth_group_permissions VALUES (533, 1, 56);
+INSERT INTO public.auth_group_permissions VALUES (534, 1, 57);
+INSERT INTO public.auth_group_permissions VALUES (535, 1, 58);
+INSERT INTO public.auth_group_permissions VALUES (536, 1, 59);
+INSERT INTO public.auth_group_permissions VALUES (537, 1, 60);
+INSERT INTO public.auth_group_permissions VALUES (538, 1, 61);
+INSERT INTO public.auth_group_permissions VALUES (539, 1, 62);
+INSERT INTO public.auth_group_permissions VALUES (933, 1, 175);
+INSERT INTO public.auth_group_permissions VALUES (934, 1, 176);
+INSERT INTO public.auth_group_permissions VALUES (935, 1, 177);
+INSERT INTO public.auth_group_permissions VALUES (936, 1, 178);
+INSERT INTO public.auth_group_permissions VALUES (937, 1, 179);
+INSERT INTO public.auth_group_permissions VALUES (938, 1, 180);
+INSERT INTO public.auth_group_permissions VALUES (958, 2, 181);
+INSERT INTO public.auth_group_permissions VALUES (959, 2, 182);
+INSERT INTO public.auth_group_permissions VALUES (960, 2, 183);
+INSERT INTO public.auth_group_permissions VALUES (961, 2, 184);
+INSERT INTO public.auth_group_permissions VALUES (962, 2, 185);
+INSERT INTO public.auth_group_permissions VALUES (963, 2, 186);
+INSERT INTO public.auth_group_permissions VALUES (964, 2, 187);
+INSERT INTO public.auth_group_permissions VALUES (984, 11, 122);
+INSERT INTO public.auth_group_permissions VALUES (985, 11, 119);
+INSERT INTO public.auth_group_permissions VALUES (986, 1, 181);
+INSERT INTO public.auth_group_permissions VALUES (987, 1, 182);
+INSERT INTO public.auth_group_permissions VALUES (988, 1, 183);
+INSERT INTO public.auth_group_permissions VALUES (989, 1, 184);
+INSERT INTO public.auth_group_permissions VALUES (990, 1, 185);
+INSERT INTO public.auth_group_permissions VALUES (991, 1, 186);
+INSERT INTO public.auth_group_permissions VALUES (992, 1, 187);
+INSERT INTO public.auth_group_permissions VALUES (993, 1, 188);
+INSERT INTO public.auth_group_permissions VALUES (994, 1, 189);
+INSERT INTO public.auth_group_permissions VALUES (995, 1, 190);
+INSERT INTO public.auth_group_permissions VALUES (996, 1, 191);
+INSERT INTO public.auth_group_permissions VALUES (997, 1, 192);
+INSERT INTO public.auth_group_permissions VALUES (998, 1, 193);
+INSERT INTO public.auth_group_permissions VALUES (999, 1, 194);
+INSERT INTO public.auth_group_permissions VALUES (1000, 1, 195);
+INSERT INTO public.auth_group_permissions VALUES (1001, 1, 196);
+INSERT INTO public.auth_group_permissions VALUES (1002, 1, 197);
+INSERT INTO public.auth_group_permissions VALUES (1003, 1, 198);
+INSERT INTO public.auth_group_permissions VALUES (1004, 1, 199);
+INSERT INTO public.auth_group_permissions VALUES (1005, 1, 160);
+INSERT INTO public.auth_group_permissions VALUES (1006, 1, 161);
+INSERT INTO public.auth_group_permissions VALUES (1007, 1, 162);
+INSERT INTO public.auth_group_permissions VALUES (1008, 1, 147);
+INSERT INTO public.auth_group_permissions VALUES (1009, 1, 148);
+INSERT INTO public.auth_group_permissions VALUES (1010, 1, 149);
+INSERT INTO public.auth_group_permissions VALUES (1011, 1, 150);
+INSERT INTO public.auth_group_permissions VALUES (1012, 1, 151);
+INSERT INTO public.auth_group_permissions VALUES (1013, 1, 152);
+INSERT INTO public.auth_group_permissions VALUES (1014, 1, 153);
+INSERT INTO public.auth_group_permissions VALUES (1015, 1, 154);
+INSERT INTO public.auth_group_permissions VALUES (1016, 1, 155);
+INSERT INTO public.auth_group_permissions VALUES (1017, 1, 156);
+INSERT INTO public.auth_group_permissions VALUES (1018, 1, 157);
+INSERT INTO public.auth_group_permissions VALUES (1019, 1, 158);
+INSERT INTO public.auth_group_permissions VALUES (1020, 1, 159);
+
+
+--
+-- Data for Name: auth_permission; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.auth_permission VALUES (1, 'Can add log entry', 1, 'add_logentry');
+INSERT INTO public.auth_permission VALUES (2, 'Can change log entry', 1, 'change_logentry');
+INSERT INTO public.auth_permission VALUES (3, 'Can delete log entry', 1, 'delete_logentry');
+INSERT INTO public.auth_permission VALUES (4, 'Can view log entry', 1, 'view_logentry');
+INSERT INTO public.auth_permission VALUES (5, 'Can add permission', 2, 'add_permission');
+INSERT INTO public.auth_permission VALUES (6, 'Can change permission', 2, 'change_permission');
+INSERT INTO public.auth_permission VALUES (7, 'Can delete permission', 2, 'delete_permission');
+INSERT INTO public.auth_permission VALUES (8, 'Can view permission', 2, 'view_permission');
+INSERT INTO public.auth_permission VALUES (9, 'Can add group', 3, 'add_group');
+INSERT INTO public.auth_permission VALUES (10, 'Can change group', 3, 'change_group');
+INSERT INTO public.auth_permission VALUES (11, 'Can delete group', 3, 'delete_group');
+INSERT INTO public.auth_permission VALUES (12, 'Can view group', 3, 'view_group');
+INSERT INTO public.auth_permission VALUES (13, 'Can add user', 4, 'add_user');
+INSERT INTO public.auth_permission VALUES (14, 'Can change user', 4, 'change_user');
+INSERT INTO public.auth_permission VALUES (15, 'Can delete user', 4, 'delete_user');
+INSERT INTO public.auth_permission VALUES (16, 'Can view user', 4, 'view_user');
+INSERT INTO public.auth_permission VALUES (17, 'Can add content type', 5, 'add_contenttype');
+INSERT INTO public.auth_permission VALUES (18, 'Can change content type', 5, 'change_contenttype');
+INSERT INTO public.auth_permission VALUES (19, 'Can delete content type', 5, 'delete_contenttype');
+INSERT INTO public.auth_permission VALUES (20, 'Can view content type', 5, 'view_contenttype');
+INSERT INTO public.auth_permission VALUES (21, 'Can add session', 6, 'add_session');
+INSERT INTO public.auth_permission VALUES (22, 'Can change session', 6, 'change_session');
+INSERT INTO public.auth_permission VALUES (23, 'Can delete session', 6, 'delete_session');
+INSERT INTO public.auth_permission VALUES (24, 'Can view session', 6, 'view_session');
+INSERT INTO public.auth_permission VALUES (25, 'Can add Audit Log', 7, 'add_auditlog');
+INSERT INTO public.auth_permission VALUES (26, 'Can change Audit Log', 7, 'change_auditlog');
+INSERT INTO public.auth_permission VALUES (27, 'Can delete Audit Log', 7, 'delete_auditlog');
+INSERT INTO public.auth_permission VALUES (28, 'Can view Audit Log', 7, 'view_auditlog');
+INSERT INTO public.auth_permission VALUES (29, 'Can create and modify roles and assign permissions', 8, 'manage_roles');
+INSERT INTO public.auth_permission VALUES (30, 'Can create, update, and toggle active status of users', 8, 'manage_users');
+INSERT INTO public.auth_permission VALUES (31, 'Can view system security audit logs', 8, 'view_audit_logs');
+INSERT INTO public.auth_permission VALUES (32, 'Can access the POS terminal screen', 8, 'access_pos_register');
+INSERT INTO public.auth_permission VALUES (33, 'Can open cash drawer without sale', 8, 'open_cash_drawer');
+INSERT INTO public.auth_permission VALUES (34, 'Can perform end-of-day register closure (Z-Report)', 8, 'close_register_z_report');
+INSERT INTO public.auth_permission VALUES (35, 'Can apply manual percentage discount to sale', 8, 'apply_custom_discount');
+INSERT INTO public.auth_permission VALUES (36, 'Can void or cancel an active receipt', 8, 'cancel_active_sale');
+INSERT INTO public.auth_permission VALUES (37, 'Can process customer refunds and product returns', 8, 'process_sale_return');
+INSERT INTO public.auth_permission VALUES (38, 'Can create, edit, and archive products', 8, 'manage_products');
+INSERT INTO public.auth_permission VALUES (39, 'Can view purchase cost prices of inventory', 8, 'view_cost_prices');
+INSERT INTO public.auth_permission VALUES (40, 'Can create stock count write-offs or adjustments', 8, 'create_stock_adjustment');
+INSERT INTO public.auth_permission VALUES (41, 'Can approve supplier purchase orders', 8, 'approve_purchases');
+INSERT INTO public.auth_permission VALUES (42, 'Can access executive financial and profit reports', 8, 'view_financial_reports');
+INSERT INTO public.auth_permission VALUES (43, 'Can add User Profile', 9, 'add_userprofile');
+INSERT INTO public.auth_permission VALUES (44, 'Can change User Profile', 9, 'change_userprofile');
+INSERT INTO public.auth_permission VALUES (45, 'Can delete User Profile', 9, 'delete_userprofile');
+INSERT INTO public.auth_permission VALUES (46, 'Can view User Profile', 9, 'view_userprofile');
+INSERT INTO public.auth_permission VALUES (47, 'Can add Payment Method', 10, 'add_paymentmethod');
+INSERT INTO public.auth_permission VALUES (48, 'Can change Payment Method', 10, 'change_paymentmethod');
+INSERT INTO public.auth_permission VALUES (49, 'Can delete Payment Method', 10, 'delete_paymentmethod');
+INSERT INTO public.auth_permission VALUES (50, 'Can view Payment Method', 10, 'view_paymentmethod');
+INSERT INTO public.auth_permission VALUES (51, 'Can add Journal Item', 11, 'add_journalitem');
+INSERT INTO public.auth_permission VALUES (52, 'Can change Journal Item', 11, 'change_journalitem');
+INSERT INTO public.auth_permission VALUES (53, 'Can delete Journal Item', 11, 'delete_journalitem');
+INSERT INTO public.auth_permission VALUES (54, 'Can view Journal Item', 11, 'view_journalitem');
+INSERT INTO public.auth_permission VALUES (55, 'Can add Account', 12, 'add_account');
+INSERT INTO public.auth_permission VALUES (56, 'Can change Account', 12, 'change_account');
+INSERT INTO public.auth_permission VALUES (57, 'Can delete Account', 12, 'delete_account');
+INSERT INTO public.auth_permission VALUES (58, 'Can view Account', 12, 'view_account');
+INSERT INTO public.auth_permission VALUES (59, 'Can add Journal Entry', 13, 'add_journalentry');
+INSERT INTO public.auth_permission VALUES (60, 'Can change Journal Entry', 13, 'change_journalentry');
+INSERT INTO public.auth_permission VALUES (61, 'Can delete Journal Entry', 13, 'delete_journalentry');
+INSERT INTO public.auth_permission VALUES (62, 'Can view Journal Entry', 13, 'view_journalentry');
+INSERT INTO public.auth_permission VALUES (63, 'Can add Product', 14, 'add_product');
+INSERT INTO public.auth_permission VALUES (64, 'Can change Product', 14, 'change_product');
+INSERT INTO public.auth_permission VALUES (65, 'Can delete Product', 14, 'delete_product');
+INSERT INTO public.auth_permission VALUES (66, 'Can view Product', 14, 'view_product');
+INSERT INTO public.auth_permission VALUES (67, 'Can add Unit of Measure', 15, 'add_unit');
+INSERT INTO public.auth_permission VALUES (68, 'Can change Unit of Measure', 15, 'change_unit');
+INSERT INTO public.auth_permission VALUES (69, 'Can delete Unit of Measure', 15, 'delete_unit');
+INSERT INTO public.auth_permission VALUES (70, 'Can view Unit of Measure', 15, 'view_unit');
+INSERT INTO public.auth_permission VALUES (71, 'Can add Category', 16, 'add_category');
+INSERT INTO public.auth_permission VALUES (72, 'Can change Category', 16, 'change_category');
+INSERT INTO public.auth_permission VALUES (73, 'Can delete Category', 16, 'delete_category');
+INSERT INTO public.auth_permission VALUES (74, 'Can view Category', 16, 'view_category');
+INSERT INTO public.auth_permission VALUES (75, 'Can add Customer', 17, 'add_customer');
+INSERT INTO public.auth_permission VALUES (76, 'Can change Customer', 17, 'change_customer');
+INSERT INTO public.auth_permission VALUES (77, 'Can delete Customer', 17, 'delete_customer');
+INSERT INTO public.auth_permission VALUES (78, 'Can view Customer', 17, 'view_customer');
+INSERT INTO public.auth_permission VALUES (79, 'Can add Supplier', 18, 'add_supplier');
+INSERT INTO public.auth_permission VALUES (80, 'Can change Supplier', 18, 'change_supplier');
+INSERT INTO public.auth_permission VALUES (81, 'Can delete Supplier', 18, 'delete_supplier');
+INSERT INTO public.auth_permission VALUES (82, 'Can view Supplier', 18, 'view_supplier');
+INSERT INTO public.auth_permission VALUES (83, 'Can add Stock Movement', 19, 'add_stockmovement');
+INSERT INTO public.auth_permission VALUES (84, 'Can change Stock Movement', 19, 'change_stockmovement');
+INSERT INTO public.auth_permission VALUES (85, 'Can delete Stock Movement', 19, 'delete_stockmovement');
+INSERT INTO public.auth_permission VALUES (86, 'Can view Stock Movement', 19, 'view_stockmovement');
+INSERT INTO public.auth_permission VALUES (87, 'Can add Purchase Return', 20, 'add_purchasereturn');
+INSERT INTO public.auth_permission VALUES (88, 'Can change Purchase Return', 20, 'change_purchasereturn');
+INSERT INTO public.auth_permission VALUES (89, 'Can delete Purchase Return', 20, 'delete_purchasereturn');
+INSERT INTO public.auth_permission VALUES (90, 'Can view Purchase Return', 20, 'view_purchasereturn');
+INSERT INTO public.auth_permission VALUES (91, 'Can add Purchase Return Item', 21, 'add_purchasereturnitem');
+INSERT INTO public.auth_permission VALUES (92, 'Can change Purchase Return Item', 21, 'change_purchasereturnitem');
+INSERT INTO public.auth_permission VALUES (93, 'Can delete Purchase Return Item', 21, 'delete_purchasereturnitem');
+INSERT INTO public.auth_permission VALUES (94, 'Can view Purchase Return Item', 21, 'view_purchasereturnitem');
+INSERT INTO public.auth_permission VALUES (95, 'Can add Supplier Payment', 22, 'add_supplierpayment');
+INSERT INTO public.auth_permission VALUES (96, 'Can change Supplier Payment', 22, 'change_supplierpayment');
+INSERT INTO public.auth_permission VALUES (97, 'Can delete Supplier Payment', 22, 'delete_supplierpayment');
+INSERT INTO public.auth_permission VALUES (98, 'Can view Supplier Payment', 22, 'view_supplierpayment');
+INSERT INTO public.auth_permission VALUES (99, 'Can add Purchase Order', 23, 'add_purchase');
+INSERT INTO public.auth_permission VALUES (100, 'Can change Purchase Order', 23, 'change_purchase');
+INSERT INTO public.auth_permission VALUES (101, 'Can delete Purchase Order', 23, 'delete_purchase');
+INSERT INTO public.auth_permission VALUES (102, 'Can view Purchase Order', 23, 'view_purchase');
+INSERT INTO public.auth_permission VALUES (103, 'Can add Purchase Item', 24, 'add_purchaseitem');
+INSERT INTO public.auth_permission VALUES (104, 'Can change Purchase Item', 24, 'change_purchaseitem');
+INSERT INTO public.auth_permission VALUES (105, 'Can delete Purchase Item', 24, 'delete_purchaseitem');
+INSERT INTO public.auth_permission VALUES (106, 'Can view Purchase Item', 24, 'view_purchaseitem');
+INSERT INTO public.auth_permission VALUES (107, 'Can add Stock Adjustment', 25, 'add_stockadjustment');
+INSERT INTO public.auth_permission VALUES (108, 'Can change Stock Adjustment', 25, 'change_stockadjustment');
+INSERT INTO public.auth_permission VALUES (109, 'Can delete Stock Adjustment', 25, 'delete_stockadjustment');
+INSERT INTO public.auth_permission VALUES (110, 'Can view Stock Adjustment', 25, 'view_stockadjustment');
+INSERT INTO public.auth_permission VALUES (111, 'Can add Stock Adjustment Item', 26, 'add_stockadjustmentitem');
+INSERT INTO public.auth_permission VALUES (112, 'Can change Stock Adjustment Item', 26, 'change_stockadjustmentitem');
+INSERT INTO public.auth_permission VALUES (113, 'Can delete Stock Adjustment Item', 26, 'delete_stockadjustmentitem');
+INSERT INTO public.auth_permission VALUES (114, 'Can view Stock Adjustment Item', 26, 'view_stockadjustmentitem');
+INSERT INTO public.auth_permission VALUES (115, 'Can add Sales Return', 27, 'add_salesreturn');
+INSERT INTO public.auth_permission VALUES (116, 'Can change Sales Return', 27, 'change_salesreturn');
+INSERT INTO public.auth_permission VALUES (117, 'Can delete Sales Return', 27, 'delete_salesreturn');
+INSERT INTO public.auth_permission VALUES (118, 'Can view Sales Return', 27, 'view_salesreturn');
+INSERT INTO public.auth_permission VALUES (119, 'Can add Sale', 28, 'add_sale');
+INSERT INTO public.auth_permission VALUES (120, 'Can change Sale', 28, 'change_sale');
+INSERT INTO public.auth_permission VALUES (121, 'Can delete Sale', 28, 'delete_sale');
+INSERT INTO public.auth_permission VALUES (122, 'Can view Sale', 28, 'view_sale');
+INSERT INTO public.auth_permission VALUES (123, 'Can add Sale Payment', 29, 'add_salepayment');
+INSERT INTO public.auth_permission VALUES (124, 'Can change Sale Payment', 29, 'change_salepayment');
+INSERT INTO public.auth_permission VALUES (125, 'Can delete Sale Payment', 29, 'delete_salepayment');
+INSERT INTO public.auth_permission VALUES (126, 'Can view Sale Payment', 29, 'view_salepayment');
+INSERT INTO public.auth_permission VALUES (127, 'Can add Sale Item', 30, 'add_saleitem');
+INSERT INTO public.auth_permission VALUES (128, 'Can change Sale Item', 30, 'change_saleitem');
+INSERT INTO public.auth_permission VALUES (129, 'Can delete Sale Item', 30, 'delete_saleitem');
+INSERT INTO public.auth_permission VALUES (130, 'Can view Sale Item', 30, 'view_saleitem');
+INSERT INTO public.auth_permission VALUES (131, 'Can add Sales Return Item', 31, 'add_salesreturnitem');
+INSERT INTO public.auth_permission VALUES (132, 'Can change Sales Return Item', 31, 'change_salesreturnitem');
+INSERT INTO public.auth_permission VALUES (133, 'Can delete Sales Return Item', 31, 'delete_salesreturnitem');
+INSERT INTO public.auth_permission VALUES (134, 'Can view Sales Return Item', 31, 'view_salesreturnitem');
+INSERT INTO public.auth_permission VALUES (135, 'Can add Account Transfer', 32, 'add_accounttransfer');
+INSERT INTO public.auth_permission VALUES (136, 'Can change Account Transfer', 32, 'change_accounttransfer');
+INSERT INTO public.auth_permission VALUES (137, 'Can delete Account Transfer', 32, 'delete_accounttransfer');
+INSERT INTO public.auth_permission VALUES (138, 'Can view Account Transfer', 32, 'view_accounttransfer');
+INSERT INTO public.auth_permission VALUES (139, 'Can add Expense', 33, 'add_expense');
+INSERT INTO public.auth_permission VALUES (140, 'Can change Expense', 33, 'change_expense');
+INSERT INTO public.auth_permission VALUES (141, 'Can delete Expense', 33, 'delete_expense');
+INSERT INTO public.auth_permission VALUES (142, 'Can view Expense', 33, 'view_expense');
+INSERT INTO public.auth_permission VALUES (143, 'Can add Customer Payment', 34, 'add_customerpayment');
+INSERT INTO public.auth_permission VALUES (144, 'Can change Customer Payment', 34, 'change_customerpayment');
+INSERT INTO public.auth_permission VALUES (145, 'Can delete Customer Payment', 34, 'delete_customerpayment');
+INSERT INTO public.auth_permission VALUES (146, 'Can view Customer Payment', 34, 'view_customerpayment');
+INSERT INTO public.auth_permission VALUES (147, 'Can add Employee', 35, 'add_employee');
+INSERT INTO public.auth_permission VALUES (148, 'Can change Employee', 35, 'change_employee');
+INSERT INTO public.auth_permission VALUES (149, 'Can delete Employee', 35, 'delete_employee');
+INSERT INTO public.auth_permission VALUES (150, 'Can view Employee', 35, 'view_employee');
+INSERT INTO public.auth_permission VALUES (151, 'Can add Salary Slip', 36, 'add_salaryslip');
+INSERT INTO public.auth_permission VALUES (152, 'Can change Salary Slip', 36, 'change_salaryslip');
+INSERT INTO public.auth_permission VALUES (153, 'Can delete Salary Slip', 36, 'delete_salaryslip');
+INSERT INTO public.auth_permission VALUES (154, 'Can view Salary Slip', 36, 'view_salaryslip');
+INSERT INTO public.auth_permission VALUES (155, 'Can add Salary Payment', 37, 'add_salarypayment');
+INSERT INTO public.auth_permission VALUES (156, 'Can change Salary Payment', 37, 'change_salarypayment');
+INSERT INTO public.auth_permission VALUES (157, 'Can delete Salary Payment', 37, 'delete_salarypayment');
+INSERT INTO public.auth_permission VALUES (158, 'Can view Salary Payment', 37, 'view_salarypayment');
+INSERT INTO public.auth_permission VALUES (159, 'Can add Attendance Record', 38, 'add_attendance');
+INSERT INTO public.auth_permission VALUES (160, 'Can change Attendance Record', 38, 'change_attendance');
+INSERT INTO public.auth_permission VALUES (161, 'Can delete Attendance Record', 38, 'delete_attendance');
+INSERT INTO public.auth_permission VALUES (162, 'Can view Attendance Record', 38, 'view_attendance');
+INSERT INTO public.auth_permission VALUES (163, 'Can add POS Day Session', 39, 'add_posdaysession');
+INSERT INTO public.auth_permission VALUES (164, 'Can change POS Day Session', 39, 'change_posdaysession');
+INSERT INTO public.auth_permission VALUES (165, 'Can delete POS Day Session', 39, 'delete_posdaysession');
+INSERT INTO public.auth_permission VALUES (166, 'Can view POS Day Session', 39, 'view_posdaysession');
+INSERT INTO public.auth_permission VALUES (167, 'Can add System Setting', 40, 'add_systemsetting');
+INSERT INTO public.auth_permission VALUES (168, 'Can change System Setting', 40, 'change_systemsetting');
+INSERT INTO public.auth_permission VALUES (169, 'Can delete System Setting', 40, 'delete_systemsetting');
+INSERT INTO public.auth_permission VALUES (170, 'Can view System Setting', 40, 'view_systemsetting');
+INSERT INTO public.auth_permission VALUES (171, 'Can add Backup Log', 41, 'add_backuplog');
+INSERT INTO public.auth_permission VALUES (172, 'Can change Backup Log', 41, 'change_backuplog');
+INSERT INTO public.auth_permission VALUES (173, 'Can delete Backup Log', 41, 'delete_backuplog');
+INSERT INTO public.auth_permission VALUES (174, 'Can view Backup Log', 41, 'view_backuplog');
+INSERT INTO public.auth_permission VALUES (175, 'Can access the main business overview dashboard', 8, 'view_dashboard');
+INSERT INTO public.auth_permission VALUES (176, 'Can view live revenue graphs, sales trends, and KPI summaries', 8, 'view_dashboard_analytics');
+INSERT INTO public.auth_permission VALUES (177, 'Can view sales performance and invoice analytical reports', 8, 'view_sales_reports');
+INSERT INTO public.auth_permission VALUES (178, 'Can view stock valuation and inventory movement reports', 8, 'view_inventory_reports');
+INSERT INTO public.auth_permission VALUES (179, 'Can export system data and analytical reports to Excel/PDF', 8, 'export_reports');
+INSERT INTO public.auth_permission VALUES (180, 'Can access the business reports center', 8, 'view_reports');
+INSERT INTO public.auth_permission VALUES (181, 'Can view customer warranty claim records', 8, 'view_customer_warranty_claim');
+INSERT INTO public.auth_permission VALUES (182, 'Can create customer warranty claim request', 8, 'create_customer_warranty_claim');
+INSERT INTO public.auth_permission VALUES (183, 'Can complete customer warranty replacement and issue items', 8, 'process_customer_warranty_claim');
+INSERT INTO public.auth_permission VALUES (184, 'Can view supplier warranty claim batches', 8, 'view_supplier_warranty_claim');
+INSERT INTO public.auth_permission VALUES (185, 'Can create supplier warranty claim batch', 8, 'create_supplier_warranty_claim');
+INSERT INTO public.auth_permission VALUES (186, 'Can dispatch warranty claim batch to supplier (In Progress)', 8, 'process_supplier_warranty_claim');
+INSERT INTO public.auth_permission VALUES (187, 'Can receive supplier replacement stock (Warranty Completed)', 8, 'complete_supplier_warranty_claim');
+INSERT INTO public.auth_permission VALUES (188, 'Can add Customer Warranty Claim', 42, 'add_customerwarrantyclaim');
+INSERT INTO public.auth_permission VALUES (189, 'Can change Customer Warranty Claim', 42, 'change_customerwarrantyclaim');
+INSERT INTO public.auth_permission VALUES (190, 'Can delete Customer Warranty Claim', 42, 'delete_customerwarrantyclaim');
+INSERT INTO public.auth_permission VALUES (191, 'Can view Customer Warranty Claim', 42, 'view_customerwarrantyclaim');
+INSERT INTO public.auth_permission VALUES (192, 'Can add Supplier Warranty Claim', 43, 'add_supplierwarrantyclaim');
+INSERT INTO public.auth_permission VALUES (193, 'Can change Supplier Warranty Claim', 43, 'change_supplierwarrantyclaim');
+INSERT INTO public.auth_permission VALUES (194, 'Can delete Supplier Warranty Claim', 43, 'delete_supplierwarrantyclaim');
+INSERT INTO public.auth_permission VALUES (195, 'Can view Supplier Warranty Claim', 43, 'view_supplierwarrantyclaim');
+INSERT INTO public.auth_permission VALUES (196, 'Can add Supplier Warranty Claim Item', 44, 'add_supplierwarrantyclaimitem');
+INSERT INTO public.auth_permission VALUES (197, 'Can change Supplier Warranty Claim Item', 44, 'change_supplierwarrantyclaimitem');
+INSERT INTO public.auth_permission VALUES (198, 'Can delete Supplier Warranty Claim Item', 44, 'delete_supplierwarrantyclaimitem');
+INSERT INTO public.auth_permission VALUES (199, 'Can view Supplier Warranty Claim Item', 44, 'view_supplierwarrantyclaimitem');
+
+
+--
+-- Data for Name: auth_user; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.auth_user VALUES (9, 'pbkdf2_sha256$720000$ElBxaUDUQxvRrlGGliHb52$dnDN50HpsZvwwxyglwL392bg2UF2cIuV7oW8mmoWKQc=', NULL, false, 'abdullah_shop_owner', 'Abdullah', 'mughal', 'Abdullah@gmail.com', false, true, '2026-08-18 08:36:03.097492+00');
+INSERT INTO public.auth_user VALUES (10, 'pbkdf2_sha256$720000$m27FQHZNucF2EUv8TnumhD$TOht4Duh77ebMMSA9fEtPRIoITe++g3Ams6BI3r/gKs=', NULL, false, 'ahmad', 'Ahmad', 'mughal', '', false, true, '2026-08-25 11:15:53.805678+00');
+INSERT INTO public.auth_user VALUES (4, 'pbkdf2_sha256$720000$V5DHVNvesWmBkIvWX2Ha8d$6PAuXNyogl/322cTCyQJNqB0KSL4OrvosiOV4iVfqEM=', NULL, false, 'tariq_pos', 'Tariq', 'Iqbal', 'tariq@apexpos.local', false, true, '2026-08-16 11:52:24.745919+00');
+INSERT INTO public.auth_user VALUES (7, 'pbkdf2_sha256$720000$PbQftz1v2e7lMhFCudxMsM$6VggowlhhZWAjun8urI3sLboowD8Pxf+aH6XWZTeMEQ=', NULL, false, 'supervisor_isb', 'Hamza', 'Khan', 'hamza.khan@apexpos.com', false, true, '2026-08-18 08:25:32.636672+00');
+INSERT INTO public.auth_user VALUES (12, '', NULL, false, 'cashier_test', 'Test', 'Cashier', '', false, true, '2026-09-02 10:52:57.692724+00');
+INSERT INTO public.auth_user VALUES (1, 'pbkdf2_sha256$720000$arIGVzsMU0wy8yTfWwfLO7$gt9c+L2FY5S3ynb2i4XpC9SLDOfMRH/8H/mvvNLr0QI=', NULL, true, 'admin', 'System', 'Administrator', 'admin@apexpos.local', true, true, '2026-08-16 11:47:44.911996+00');
+INSERT INTO public.auth_user VALUES (2, 'pbkdf2_sha256$720000$fANxHlXQLjbfSRvzegof6k$3byeuFiWh1l1uOx4yaDQrMncNuU/NwuszGUe57JN54Y=', NULL, false, 'manager', 'Store', 'Manager', 'manager@apexpos.local', true, true, '2026-08-16 11:47:45.342357+00');
+INSERT INTO public.auth_user VALUES (3, 'pbkdf2_sha256$720000$0XOpGns8MMCFW5UXaM7a2f$gmwupf1khMXXc1hcA8hvUpptesDimBLlCiHDqPahwXA=', NULL, false, 'cashier', 'Ahmed', 'Cashier', 'cashier@apexpos.local', false, true, '2026-08-16 11:47:45.729286+00');
+
+
+--
+-- Data for Name: auth_user_groups; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.auth_user_groups VALUES (1, 1, 1);
+INSERT INTO public.auth_user_groups VALUES (2, 2, 2);
+INSERT INTO public.auth_user_groups VALUES (3, 3, 3);
+INSERT INTO public.auth_user_groups VALUES (4, 4, 3);
+INSERT INTO public.auth_user_groups VALUES (7, 7, 9);
+INSERT INTO public.auth_user_groups VALUES (8, 9, 8);
+INSERT INTO public.auth_user_groups VALUES (9, 7, 3);
+INSERT INTO public.auth_user_groups VALUES (10, 10, 1);
+INSERT INTO public.auth_user_groups VALUES (12, 12, 11);
+
+
+--
+-- Data for Name: auth_user_user_permissions; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: contacts_customer; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.contacts_customer VALUES (25, 'CUS-00001', 'Walk-in Customer', NULL, NULL, NULL, true, false, true, 'Default system record for anonymous counter sales', '2026-08-25 09:09:29.365628+00', '2026-09-04 22:17:53.371284+00', 0.00);
+
+
+--
+-- Data for Name: contacts_customerpayment; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: contacts_supplier; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: core_auditlog; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: core_backuplog; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.core_backuplog VALUES (1, 'apexpos_backup_2026_08_25_064333.sql', '/app/backups/apexpos_backup_2026_08_25_064333.sql', 1364729, 'IMPORT_RESTORE', 'RESTORED', NULL, NULL, '2026-08-25 06:44:03.111955+00', NULL);
+INSERT INTO public.core_backuplog VALUES (2, 'apexpos_backup_2026_08_25_064638.sql', '/app/backups/apexpos_backup_2026_08_25_064638.sql', 1365186, 'AUTOMATIC_DAILY', 'LOCAL_ONLY', NULL, NULL, '2026-08-25 06:46:39.391506+00', NULL);
+INSERT INTO public.core_backuplog VALUES (3, 'apexpos_backup_2026_08_25_064706.sql', '/app/backups/apexpos_backup_2026_08_25_064706.sql', 1365713, 'MANUAL', 'LOCAL_ONLY', NULL, NULL, '2026-08-25 06:47:07.771016+00', 1);
+INSERT INTO public.core_backuplog VALUES (4, 'apexpos_backup_2026_08_25_070230.sql', '/app/backups/apexpos_backup_2026_08_25_070230.sql', 1366370, 'IMPORT_RESTORE', 'RESTORED', NULL, NULL, '2026-08-25 07:08:45.802454+00', 1);
+INSERT INTO public.core_backuplog VALUES (5, 'apexpos_backup_2026_08_25_070926.sql', '/app/backups/apexpos_backup_2026_08_25_070926.sql', 1366822, 'MANUAL', 'LOCAL_ONLY', NULL, NULL, '2026-08-25 07:09:27.811037+00', 1);
+INSERT INTO public.core_backuplog VALUES (6, 'apexpos_backup_2026_08_27_091744.sql', '/app/backups/apexpos_backup_2026_08_27_091744.sql', 1176198, 'AUTOMATIC_DAILY', 'LOCAL_ONLY', NULL, NULL, '2026-08-27 09:17:46.163002+00', NULL);
+INSERT INTO public.core_backuplog VALUES (7, 'apexpos_backup_2026_08_28_050104.sql', '/app/backups/apexpos_backup_2026_08_28_050104.sql', 2537988, 'AUTOMATIC_DAILY', 'LOCAL_ONLY', NULL, NULL, '2026-08-28 05:01:04.74822+00', NULL);
+INSERT INTO public.core_backuplog VALUES (8, 'apexpos_backup_2026_08_29_112708.sql', '/app/backups/apexpos_backup_2026_08_29_112708.sql', 2546908, 'AUTOMATIC_DAILY', 'LOCAL_ONLY', NULL, NULL, '2026-08-29 11:27:09.381409+00', NULL);
+INSERT INTO public.core_backuplog VALUES (9, 'apexpos_backup_2026_09_01_050405.sql', '/app/backups/apexpos_backup_2026_09_01_050405.sql', 2614725, 'AUTOMATIC_DAILY', 'LOCAL_ONLY', NULL, NULL, '2026-09-01 05:04:07.700165+00', NULL);
+INSERT INTO public.core_backuplog VALUES (10, 'apexpos_backup_2026_09_03_110120.sql', '/app/backups/apexpos_backup_2026_09_03_110120.sql', 8354119, 'AUTOMATIC_DAILY', 'LOCAL_ONLY', NULL, NULL, '2026-09-03 11:01:24.519116+00', NULL);
+
+
+--
+-- Data for Name: core_systemsetting; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.core_systemsetting VALUES (12, 'auto_print_receipt', 'true', 'Automatically launch print dialog on checkout', 'POS', '2026-09-04 22:17:53.286912+00');
+INSERT INTO public.core_systemsetting VALUES (1, 'company_name', 'ApexPOS Enterprise Store', 'Official store / business name', 'GENERAL', '2026-09-04 22:17:53.143601+00');
+INSERT INTO public.core_systemsetting VALUES (21, 'company_logo', '', 'Store logo image URL or base64 data', 'GENERAL', '2026-09-04 22:17:53.190888+00');
+INSERT INTO public.core_systemsetting VALUES (49, 'supplier_warranty_claim_prefix', 'SUP-CLM-', 'Prefix for Supplier Warranty Claim batches', 'POS', '2026-09-04 22:17:53.339756+00');
+INSERT INTO public.core_systemsetting VALUES (38, 'stock_adjustment_prefix', 'ADJ-', 'Prefix for Inventory / Stock Adjustment', 'POS', '2026-09-03 11:21:01.398428+00');
+INSERT INTO public.core_systemsetting VALUES (13, 'low_stock_default_threshold', '10', 'Default low stock alert threshold level', 'INVENTORY', '2026-09-04 22:17:53.292959+00');
+INSERT INTO public.core_systemsetting VALUES (2, 'company_phone', '+92 42 111 2653', 'Primary business contact phone', 'GENERAL', '2026-09-04 22:17:53.230955+00');
+INSERT INTO public.core_systemsetting VALUES (24, 'invoice_start_number', '1', 'Start number for Sales Invoice', 'POS', '2026-09-04 22:17:53.380272+00');
+INSERT INTO public.core_systemsetting VALUES (32, 'customer_payment_prefix', 'CPAY-', 'Prefix for Customer Payment Voucher', 'POS', '2026-09-03 11:21:01.246646+00');
+INSERT INTO public.core_systemsetting VALUES (34, 'supplier_payment_prefix', 'SPAY-', 'Prefix for Supplier Payment Voucher', 'POS', '2026-09-03 11:21:01.408881+00');
+INSERT INTO public.core_systemsetting VALUES (3, 'company_email', 'support@apexpos.com', 'Official store email address', 'GENERAL', '2026-09-04 22:17:53.236007+00');
+INSERT INTO public.core_systemsetting VALUES (4, 'company_address', 'Main Boulevard, Gulberg III, Lahore, Pakistan', 'Physical branch address', 'GENERAL', '2026-09-04 22:17:53.24114+00');
+INSERT INTO public.core_systemsetting VALUES (42, 'supplier_prefix', 'SUP-', 'Prefix for Supplier ID Code', 'POS', '2026-09-03 11:21:01.422726+00');
+INSERT INTO public.core_systemsetting VALUES (36, 'journal_entry_prefix', 'JE-', 'Prefix for Journal Entry (GL)', 'POS', '2026-09-03 11:21:01.323787+00');
+INSERT INTO public.core_systemsetting VALUES (22, 'customer_start_number', '1', 'Start number for Customer ID Code', 'POS', '2026-09-04 22:17:53.452381+00');
+INSERT INTO public.core_systemsetting VALUES (23, 'supplier_start_number', '1', 'Start number for Supplier ID Code', 'POS', '2026-09-04 22:17:53.459985+00');
+INSERT INTO public.core_systemsetting VALUES (5, 'tax_id', 'NTN-0891234-7', 'National Tax Number (NTN) / STRN', 'GENERAL', '2026-09-04 22:17:53.245927+00');
+INSERT INTO public.core_systemsetting VALUES (6, 'currency_symbol', 'Rs.', 'Display currency prefix', 'GENERAL', '2026-09-04 22:17:53.250628+00');
+INSERT INTO public.core_systemsetting VALUES (43, 'employee_start_number', '1', 'Start number for Employee ID Code', 'POS', '2026-09-04 22:17:53.46776+00');
+INSERT INTO public.core_systemsetting VALUES (28, 'purchase_order_prefix', 'PUR-', 'Prefix for Purchase Order', 'POS', '2026-09-03 11:21:01.336306+00');
+INSERT INTO public.core_systemsetting VALUES (45, 'salary_slip_start_number', '1', 'Start number for Salary Slip Number', 'POS', '2026-09-04 22:17:53.475908+00');
+INSERT INTO public.core_systemsetting VALUES (7, 'currency_code', 'PKR', 'ISO currency code', 'GENERAL', '2026-09-04 22:17:53.257115+00');
+INSERT INTO public.core_systemsetting VALUES (30, 'purchase_return_prefix', 'PRTN-', 'Prefix for Purchase Return', 'POS', '2026-09-03 11:21:01.347406+00');
+INSERT INTO public.core_systemsetting VALUES (41, 'customer_prefix', 'CUS-', 'Prefix for Customer ID Code', 'POS', '2026-09-03 11:21:01.257792+00');
+INSERT INTO public.core_systemsetting VALUES (8, 'tax_rate_percent', '0.00', 'Default sales tax rate percentage', 'POS', '2026-09-04 22:17:53.262823+00');
+INSERT INTO public.core_systemsetting VALUES (14, 'default_cash_account', '1010', 'Default GL Cash in Hand Account', 'ACCOUNTING', '2026-09-04 22:17:53.298034+00');
+INSERT INTO public.core_systemsetting VALUES (48, 'customer_warranty_claim_start_number', '1', 'Start number for Customer Warranty Claim', 'POS', '2026-09-04 22:17:53.484469+00');
+INSERT INTO public.core_systemsetting VALUES (50, 'supplier_warranty_claim_start_number', '1', 'Start number for Supplier Warranty Claim / RMA', 'POS', '2026-09-04 22:17:53.493396+00');
+INSERT INTO public.core_systemsetting VALUES (9, 'invoice_prefix', 'INV-', 'Prefix for generated sales receipts', 'POS', '2026-09-04 22:17:53.268096+00');
+INSERT INTO public.core_systemsetting VALUES (25, 'sales_return_start_number', '1', 'Start number for Sales Return', 'POS', '2026-09-04 22:17:53.388131+00');
+INSERT INTO public.core_systemsetting VALUES (27, 'purchase_order_start_number', '1', 'Start number for Purchase Order', 'POS', '2026-09-04 22:17:53.39579+00');
+INSERT INTO public.core_systemsetting VALUES (29, 'purchase_return_start_number', '1', 'Start number for Purchase Return', 'POS', '2026-09-04 22:17:53.403127+00');
+INSERT INTO public.core_systemsetting VALUES (31, 'customer_payment_start_number', '1', 'Start number for Customer Payment Voucher', 'POS', '2026-09-04 22:17:53.411179+00');
+INSERT INTO public.core_systemsetting VALUES (33, 'supplier_payment_start_number', '1', 'Start number for Supplier Payment Voucher', 'POS', '2026-09-04 22:17:53.417722+00');
+INSERT INTO public.core_systemsetting VALUES (15, 'default_bank_account', '1020', 'Default GL Bank Account', 'ACCOUNTING', '2026-09-04 22:17:53.30286+00');
+INSERT INTO public.core_systemsetting VALUES (16, 'default_sales_account', '4010', 'Default GL Sales Revenue Account', 'ACCOUNTING', '2026-09-04 22:17:53.309075+00');
+INSERT INTO public.core_systemsetting VALUES (17, 'default_inventory_account', '1040', 'Default GL Inventory Asset Account', 'ACCOUNTING', '2026-09-04 22:17:53.31363+00');
+INSERT INTO public.core_systemsetting VALUES (10, 'receipt_header', 'ApexPOS Retail - Premier Supermarket', 'Header note printed on POS receipts', 'POS', '2026-09-04 22:17:53.273788+00');
+INSERT INTO public.core_systemsetting VALUES (18, 'default_cogs_account', '5010', 'Default GL Cost of Goods Sold Account', 'ACCOUNTING', '2026-09-04 22:17:53.318208+00');
+INSERT INTO public.core_systemsetting VALUES (35, 'journal_entry_start_number', '1', 'Start number for Journal Entry (GL)', 'POS', '2026-09-04 22:17:53.425046+00');
+INSERT INTO public.core_systemsetting VALUES (19, 'default_ap_account', '2010', 'Default GL Accounts Payable Account', 'ACCOUNTING', '2026-09-04 22:17:53.324129+00');
+INSERT INTO public.core_systemsetting VALUES (20, 'default_ar_account', '1030', 'Default GL Accounts Receivable Account', 'ACCOUNTING', '2026-09-04 22:17:53.328168+00');
+INSERT INTO public.core_systemsetting VALUES (11, 'receipt_footer', 'Thank you for shopping with us! No return without receipt.', 'Footer message printed on POS receipts', 'POS', '2026-09-04 22:17:53.278788+00');
+INSERT INTO public.core_systemsetting VALUES (44, 'employee_prefix', 'EMP-', 'Prefix for Employee ID Code', 'POS', '2026-09-03 11:21:01.283521+00');
+INSERT INTO public.core_systemsetting VALUES (47, 'customer_warranty_claim_prefix', 'CLM-', 'Prefix for Customer Warranty Claim slips', 'POS', '2026-09-04 22:17:53.331508+00');
+INSERT INTO public.core_systemsetting VALUES (40, 'expense_prefix', 'EXP-', 'Prefix for Expense Voucher', 'POS', '2026-09-03 11:21:01.293837+00');
+INSERT INTO public.core_systemsetting VALUES (37, 'stock_adjustment_start_number', '1', 'Start number for Inventory / Stock Adjustment', 'POS', '2026-09-04 22:17:53.436388+00');
+INSERT INTO public.core_systemsetting VALUES (46, 'salary_slip_prefix', 'SAL-', 'Prefix for Salary Slip Number', 'POS', '2026-09-03 11:21:01.37135+00');
+INSERT INTO public.core_systemsetting VALUES (39, 'expense_start_number', '1', 'Start number for Expense Voucher', 'POS', '2026-09-04 22:17:53.446587+00');
+INSERT INTO public.core_systemsetting VALUES (26, 'sales_return_prefix', 'RET-', 'Prefix for Sales Return', 'POS', '2026-09-03 11:21:01.38627+00');
+
+
+--
+-- Data for Name: django_admin_log; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: django_content_type; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.django_content_type VALUES (1, 'admin', 'logentry');
+INSERT INTO public.django_content_type VALUES (2, 'auth', 'permission');
+INSERT INTO public.django_content_type VALUES (3, 'auth', 'group');
+INSERT INTO public.django_content_type VALUES (4, 'auth', 'user');
+INSERT INTO public.django_content_type VALUES (5, 'contenttypes', 'contenttype');
+INSERT INTO public.django_content_type VALUES (6, 'sessions', 'session');
+INSERT INTO public.django_content_type VALUES (7, 'core', 'auditlog');
+INSERT INTO public.django_content_type VALUES (8, 'users', 'pospermissionregistry');
+INSERT INTO public.django_content_type VALUES (9, 'users', 'userprofile');
+INSERT INTO public.django_content_type VALUES (10, 'accounting', 'paymentmethod');
+INSERT INTO public.django_content_type VALUES (11, 'accounting', 'journalitem');
+INSERT INTO public.django_content_type VALUES (12, 'accounting', 'account');
+INSERT INTO public.django_content_type VALUES (13, 'accounting', 'journalentry');
+INSERT INTO public.django_content_type VALUES (14, 'products', 'product');
+INSERT INTO public.django_content_type VALUES (15, 'products', 'unit');
+INSERT INTO public.django_content_type VALUES (16, 'products', 'category');
+INSERT INTO public.django_content_type VALUES (17, 'contacts', 'customer');
+INSERT INTO public.django_content_type VALUES (18, 'contacts', 'supplier');
+INSERT INTO public.django_content_type VALUES (19, 'inventory', 'stockmovement');
+INSERT INTO public.django_content_type VALUES (20, 'purchases', 'purchasereturn');
+INSERT INTO public.django_content_type VALUES (21, 'purchases', 'purchasereturnitem');
+INSERT INTO public.django_content_type VALUES (22, 'purchases', 'supplierpayment');
+INSERT INTO public.django_content_type VALUES (23, 'purchases', 'purchase');
+INSERT INTO public.django_content_type VALUES (24, 'purchases', 'purchaseitem');
+INSERT INTO public.django_content_type VALUES (25, 'inventory', 'stockadjustment');
+INSERT INTO public.django_content_type VALUES (26, 'inventory', 'stockadjustmentitem');
+INSERT INTO public.django_content_type VALUES (27, 'sales', 'salesreturn');
+INSERT INTO public.django_content_type VALUES (28, 'sales', 'sale');
+INSERT INTO public.django_content_type VALUES (29, 'sales', 'salepayment');
+INSERT INTO public.django_content_type VALUES (30, 'sales', 'saleitem');
+INSERT INTO public.django_content_type VALUES (31, 'sales', 'salesreturnitem');
+INSERT INTO public.django_content_type VALUES (32, 'expenses', 'accounttransfer');
+INSERT INTO public.django_content_type VALUES (33, 'expenses', 'expense');
+INSERT INTO public.django_content_type VALUES (34, 'contacts', 'customerpayment');
+INSERT INTO public.django_content_type VALUES (35, 'employees', 'employee');
+INSERT INTO public.django_content_type VALUES (36, 'employees', 'salaryslip');
+INSERT INTO public.django_content_type VALUES (37, 'employees', 'salarypayment');
+INSERT INTO public.django_content_type VALUES (38, 'employees', 'attendance');
+INSERT INTO public.django_content_type VALUES (39, 'sales', 'posdaysession');
+INSERT INTO public.django_content_type VALUES (40, 'core', 'systemsetting');
+INSERT INTO public.django_content_type VALUES (41, 'core', 'backuplog');
+INSERT INTO public.django_content_type VALUES (42, 'warranty', 'customerwarrantyclaim');
+INSERT INTO public.django_content_type VALUES (43, 'warranty', 'supplierwarrantyclaim');
+INSERT INTO public.django_content_type VALUES (44, 'warranty', 'supplierwarrantyclaimitem');
+
+
+--
+-- Data for Name: django_migrations; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.django_migrations VALUES (1, 'contenttypes', '0001_initial', '2026-08-16 11:27:07.660924+00');
+INSERT INTO public.django_migrations VALUES (2, 'auth', '0001_initial', '2026-08-16 11:27:07.96545+00');
+INSERT INTO public.django_migrations VALUES (3, 'admin', '0001_initial', '2026-08-16 11:27:08.033639+00');
+INSERT INTO public.django_migrations VALUES (4, 'admin', '0002_logentry_remove_auto_add', '2026-08-16 11:27:08.049884+00');
+INSERT INTO public.django_migrations VALUES (5, 'admin', '0003_logentry_add_action_flag_choices', '2026-08-16 11:27:08.070316+00');
+INSERT INTO public.django_migrations VALUES (6, 'contenttypes', '0002_remove_content_type_name', '2026-08-16 11:27:08.102385+00');
+INSERT INTO public.django_migrations VALUES (7, 'auth', '0002_alter_permission_name_max_length', '2026-08-16 11:27:08.130384+00');
+INSERT INTO public.django_migrations VALUES (8, 'auth', '0003_alter_user_email_max_length', '2026-08-16 11:27:08.149325+00');
+INSERT INTO public.django_migrations VALUES (9, 'auth', '0004_alter_user_username_opts', '2026-08-16 11:27:08.165197+00');
+INSERT INTO public.django_migrations VALUES (10, 'auth', '0005_alter_user_last_login_null', '2026-08-16 11:27:08.18619+00');
+INSERT INTO public.django_migrations VALUES (11, 'auth', '0006_require_contenttypes_0002', '2026-08-16 11:27:08.192107+00');
+INSERT INTO public.django_migrations VALUES (12, 'auth', '0007_alter_validators_add_error_messages', '2026-08-16 11:27:08.230251+00');
+INSERT INTO public.django_migrations VALUES (13, 'auth', '0008_alter_user_username_max_length', '2026-08-16 11:27:08.263801+00');
+INSERT INTO public.django_migrations VALUES (14, 'auth', '0009_alter_user_last_name_max_length', '2026-08-16 11:27:08.27943+00');
+INSERT INTO public.django_migrations VALUES (15, 'auth', '0010_alter_group_name_max_length', '2026-08-16 11:27:08.301746+00');
+INSERT INTO public.django_migrations VALUES (16, 'auth', '0011_update_proxy_permissions', '2026-08-16 11:27:08.337686+00');
+INSERT INTO public.django_migrations VALUES (17, 'auth', '0012_alter_user_first_name_max_length', '2026-08-16 11:27:08.373119+00');
+INSERT INTO public.django_migrations VALUES (18, 'sessions', '0001_initial', '2026-08-16 11:27:08.501871+00');
+INSERT INTO public.django_migrations VALUES (19, 'core', '0001_initial', '2026-08-16 11:47:38.295449+00');
+INSERT INTO public.django_migrations VALUES (20, 'users', '0001_initial', '2026-08-16 11:47:38.345792+00');
+INSERT INTO public.django_migrations VALUES (21, 'accounting', '0001_initial', '2026-08-16 12:16:03.672234+00');
+INSERT INTO public.django_migrations VALUES (22, 'products', '0001_initial', '2026-08-16 12:49:32.680304+00');
+INSERT INTO public.django_migrations VALUES (23, 'contacts', '0001_initial', '2026-08-16 13:20:22.511552+00');
+INSERT INTO public.django_migrations VALUES (24, 'inventory', '0001_initial', '2026-08-16 13:53:40.294481+00');
+INSERT INTO public.django_migrations VALUES (25, 'purchases', '0001_initial', '2026-08-16 13:53:40.6812+00');
+INSERT INTO public.django_migrations VALUES (26, 'purchases', '0002_purchase_initial_paid_amount_and_more', '2026-08-16 14:24:18.652629+00');
+INSERT INTO public.django_migrations VALUES (27, 'inventory', '0002_stockmovement_balance_after_stockmovement_created_by_and_more', '2026-08-16 15:01:12.315318+00');
+INSERT INTO public.django_migrations VALUES (28, 'products', '0002_product_min_stock_level', '2026-08-16 15:06:25.640378+00');
+INSERT INTO public.django_migrations VALUES (29, 'sales', '0001_initial', '2026-08-17 08:51:35.679784+00');
+INSERT INTO public.django_migrations VALUES (30, 'accounting', '0002_alter_journalentry_reference_type', '2026-08-17 09:55:09.407696+00');
+INSERT INTO public.django_migrations VALUES (31, 'expenses', '0001_initial', '2026-08-17 09:55:09.680797+00');
+INSERT INTO public.django_migrations VALUES (32, 'contacts', '0002_customerpayment', '2026-08-17 10:24:49.880787+00');
+INSERT INTO public.django_migrations VALUES (33, 'accounting', '0003_alter_journalentry_reference_type', '2026-08-17 10:55:37.30197+00');
+INSERT INTO public.django_migrations VALUES (34, 'employees', '0001_initial', '2026-08-17 10:55:38.100016+00');
+INSERT INTO public.django_migrations VALUES (35, 'sales', '0002_posdaysession', '2026-08-17 11:18:25.703583+00');
+INSERT INTO public.django_migrations VALUES (36, 'purchases', '0003_supplierpayment_cancellation_reason_and_more', '2026-08-17 11:58:01.339134+00');
+INSERT INTO public.django_migrations VALUES (37, 'core', '0002_systemsetting', '2026-08-17 13:31:31.262031+00');
+INSERT INTO public.django_migrations VALUES (38, 'users', '0002_userprofile_company_userprofile_data_scope', '2026-08-18 07:58:15.82856+00');
+INSERT INTO public.django_migrations VALUES (39, 'purchases', '0004_purchase_supplier_invoice_file_and_more', '2026-08-18 09:29:34.853793+00');
+INSERT INTO public.django_migrations VALUES (40, 'products', '0003_product_maintain_stock', '2026-08-18 13:02:24.198528+00');
+INSERT INTO public.django_migrations VALUES (41, 'sales', '0003_sale_payment_account_salepayment_payment_account', '2026-08-20 08:22:56.592095+00');
+INSERT INTO public.django_migrations VALUES (42, 'sales', '0004_salesreturn_payment_account', '2026-08-23 16:02:06.259623+00');
+INSERT INTO public.django_migrations VALUES (43, 'contacts', '0003_customer_opening_balance_supplier_opening_balance', '2026-08-24 11:27:48.793006+00');
+INSERT INTO public.django_migrations VALUES (44, 'expenses', '0002_expense_expenses_ex_date_d0c7f0_idx_and_more', '2026-08-24 13:08:45.741683+00');
+INSERT INTO public.django_migrations VALUES (45, 'inventory', '0003_stockmovement_inventory_s_product_5919a9_idx_and_more', '2026-08-24 13:08:45.969787+00');
+INSERT INTO public.django_migrations VALUES (46, 'purchases', '0005_purchase_purchases_p_date_e78ace_idx_and_more', '2026-08-24 13:08:46.124391+00');
+INSERT INTO public.django_migrations VALUES (47, 'sales', '0005_sale_sales_sale_created_118b60_idx_and_more', '2026-08-24 13:08:46.839987+00');
+INSERT INTO public.django_migrations VALUES (48, 'core', '0003_backuplog', '2026-08-25 06:42:29.878907+00');
+INSERT INTO public.django_migrations VALUES (49, 'purchases', '0006_purchasereturn_payment_account_and_more', '2026-08-25 17:08:47.717646+00');
+INSERT INTO public.django_migrations VALUES (50, 'contacts', '0004_customerpayment_screenshot', '2026-08-27 09:07:27.768954+00');
+INSERT INTO public.django_migrations VALUES (51, 'contacts', '0005_customerpayment_cheque_bank_and_more', '2026-08-31 08:45:01.626731+00');
+INSERT INTO public.django_migrations VALUES (52, 'expenses', '0003_expense_cheque_bank_expense_cheque_date_and_more', '2026-08-31 08:45:01.983448+00');
+INSERT INTO public.django_migrations VALUES (53, 'purchases', '0007_purchase_cheque_bank_purchase_cheque_date_and_more', '2026-08-31 08:45:02.684814+00');
+INSERT INTO public.django_migrations VALUES (54, 'sales', '0006_sale_cheque_bank_sale_cheque_date_sale_cheque_number_and_more', '2026-08-31 08:45:03.423377+00');
+INSERT INTO public.django_migrations VALUES (55, 'employees', '0002_salarypayment_cheque_bank_salarypayment_cheque_date_and_more', '2026-08-31 09:19:38.294589+00');
+INSERT INTO public.django_migrations VALUES (56, 'accounting', '0004_alter_journalentry_reference_type', '2026-08-31 11:02:21.728144+00');
+INSERT INTO public.django_migrations VALUES (57, 'inventory', '0004_alter_stockmovement_movement_type', '2026-08-31 11:02:21.838412+00');
+INSERT INTO public.django_migrations VALUES (58, 'products', '0004_product_warranty_period_days', '2026-08-31 11:02:21.909804+00');
+INSERT INTO public.django_migrations VALUES (59, 'sales', '0007_saleitem_warranty_expiry_date_and_more', '2026-08-31 11:02:22.011519+00');
+INSERT INTO public.django_migrations VALUES (60, 'users', '0003_alter_pospermissionregistry_options', '2026-08-31 11:02:22.020707+00');
+INSERT INTO public.django_migrations VALUES (61, 'warranty', '0001_initial', '2026-08-31 11:02:22.961838+00');
+INSERT INTO public.django_migrations VALUES (62, 'purchases', '0008_supplierpayment_screenshot', '2026-09-07 09:02:56.89999+00');
+
+
+--
+-- Data for Name: django_session; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: employees_attendance; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: employees_employee; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.employees_employee VALUES (99, 'EMP-TEST-01', 'Tariq Mahmood', NULL, NULL, NULL, 'Store Manager', 'Operations', '2026-09-04', 50000.00, 'CASH', NULL, NULL, NULL, true, NULL, '2026-09-04 23:03:46.119465+00', '2026-09-04 23:03:46.119494+00', NULL, NULL);
+
+
+--
+-- Data for Name: employees_salarypayment; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: employees_salaryslip; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: expenses_accounttransfer; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: expenses_expense; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: inventory_stockadjustment; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: inventory_stockadjustmentitem; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: inventory_stockmovement; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: products_category; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.products_category VALUES (25, 'SOFTDRINKS', 'Soft Drinks', NULL, true, '2026-08-25 07:41:44.9256+00', '2026-08-25 07:41:44.925759+00', NULL);
+INSERT INTO public.products_category VALUES (50, 'FANS', 'Fans', '', true, '2026-09-04 18:40:40.496582+00', '2026-09-04 18:40:40.496636+00', NULL);
+INSERT INTO public.products_category VALUES (51, 'TEST', 'Test Cat', NULL, true, '2026-09-04 21:01:37.183702+00', '2026-09-04 21:01:37.183741+00', NULL);
+INSERT INTO public.products_category VALUES (52, 'GEN', 'General', 'Default General Category', true, '2026-09-04 22:17:53.360309+00', '2026-09-04 22:17:53.360329+00', NULL);
+INSERT INTO public.products_category VALUES (53, '', 'Beverages & Snacks', NULL, true, '2026-09-04 23:03:44.586693+00', '2026-09-04 23:03:44.586718+00', NULL);
+
+
+--
+-- Data for Name: products_product; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: products_unit; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.products_unit VALUES (18, 'Piece', 'pcs', false, true, '2026-08-25 07:41:44.87802+00');
+INSERT INTO public.products_unit VALUES (19, 'Btl', 'btl', false, true, '2026-08-25 07:41:44.950022+00');
+INSERT INTO public.products_unit VALUES (20, 'Pk', 'pk', false, true, '2026-08-25 07:41:45.256956+00');
+INSERT INTO public.products_unit VALUES (21, 'Kilograms', 'kg', false, true, '2026-08-25 07:51:44.372295+00');
+INSERT INTO public.products_unit VALUES (27, 'Box', 'box', false, true, '2026-09-02 11:59:04.784594+00');
+INSERT INTO public.products_unit VALUES (28, 'Liter', 'ltr', true, true, '2026-09-02 11:59:04.808531+00');
+
+
+--
+-- Data for Name: purchases_purchase; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: purchases_purchaseitem; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: purchases_purchasereturn; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: purchases_purchasereturnitem; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: purchases_supplierpayment; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: sales_posdaysession; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: sales_sale; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: sales_saleitem; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: sales_salepayment; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: sales_salesreturn; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: sales_salesreturnitem; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: users_userprofile; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+INSERT INTO public.users_userprofile VALUES (9, '+923056064849', '1234', '', NULL, '2026-08-18 08:36:03.118884+00', '2026-08-22 15:02:39.177298+00', 9, 'Mughal Supermarket', 'ALL_COMPANY');
+INSERT INTO public.users_userprofile VALUES (10, '', '', '', NULL, '2026-08-25 11:15:53.834278+00', '2026-08-25 11:15:55.520613+00', 10, 'Abdullah Supermarket', 'ALL_COMPANY');
+INSERT INTO public.users_userprofile VALUES (4, '+1 555-0199', '4321', '', NULL, '2026-08-16 11:52:24.749637+00', '2026-08-28 05:15:53.088232+00', 4, 'ApexPOS Enterprise Store', 'ALL_COMPANY');
+INSERT INTO public.users_userprofile VALUES (7, '+92 51 9988776', '4321', '', NULL, '2026-08-18 08:25:32.642713+00', '2026-08-28 05:16:04.387158+00', 7, 'Gulberg Mega Branch - Lahore', 'ALL_COMPANY');
+INSERT INTO public.users_userprofile VALUES (12, NULL, NULL, '', NULL, '2026-09-02 10:52:57.700214+00', '2026-09-02 10:52:57.700236+00', 12, 'ApexPOS Enterprise Store', 'ALL_COMPANY');
+INSERT INTO public.users_userprofile VALUES (1, '+1 555-0100', '9999', '', NULL, '2026-08-16 11:47:44.914174+00', '2026-09-04 22:17:51.268883+00', 1, 'ApexPOS Enterprise Store', 'ALL_COMPANY');
+INSERT INTO public.users_userprofile VALUES (2, '+1 555-0101', '1234', '', NULL, '2026-08-16 11:47:45.343684+00', '2026-09-04 22:17:52.049592+00', 2, 'ApexPOS Enterprise Store', 'ALL_COMPANY');
+INSERT INTO public.users_userprofile VALUES (3, '+1 555-0102', '0000', '', NULL, '2026-08-16 11:47:45.730542+00', '2026-09-04 22:17:52.89335+00', 3, 'ApexPOS Enterprise Store', 'ALL_COMPANY');
+
+
+--
+-- Data for Name: warranty_customerwarrantyclaim; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: warranty_supplierwarrantyclaim; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Data for Name: warranty_supplierwarrantyclaimitem; Type: TABLE DATA; Schema: public; Owner: pos_user
+--
+
+
+
+--
+-- Name: accounting_account_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.accounting_account_id_seq', 62, true);
+
+
+--
+-- Name: accounting_journalentry_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.accounting_journalentry_id_seq', 36342, true);
+
+
+--
+-- Name: accounting_journalitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.accounting_journalitem_id_seq', 72911, true);
+
+
+--
+-- Name: accounting_paymentmethod_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.accounting_paymentmethod_id_seq', 4, true);
+
+
+--
+-- Name: auth_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.auth_group_id_seq', 11, true);
+
+
+--
+-- Name: auth_group_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 1020, true);
+
+
+--
+-- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.auth_permission_id_seq', 199, true);
+
+
+--
+-- Name: auth_user_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 12, true);
+
+
+--
+-- Name: auth_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.auth_user_id_seq', 12, true);
+
+
+--
+-- Name: auth_user_user_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.auth_user_user_permissions_id_seq', 1, false);
+
+
+--
+-- Name: contacts_customer_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.contacts_customer_id_seq', 253, true);
+
+
+--
+-- Name: contacts_customerpayment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.contacts_customerpayment_id_seq', 2556, true);
+
+
+--
+-- Name: contacts_supplier_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.contacts_supplier_id_seq', 182, true);
+
+
+--
+-- Name: core_auditlog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.core_auditlog_id_seq', 353, true);
+
+
+--
+-- Name: core_backuplog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.core_backuplog_id_seq', 10, true);
+
+
+--
+-- Name: core_systemsetting_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.core_systemsetting_id_seq', 50, true);
+
+
+--
+-- Name: django_admin_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.django_admin_log_id_seq', 1, false);
+
+
+--
+-- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.django_content_type_id_seq', 44, true);
+
+
+--
+-- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 62, true);
+
+
+--
+-- Name: employees_attendance_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.employees_attendance_id_seq', 43, true);
+
+
+--
+-- Name: employees_employee_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.employees_employee_id_seq', 99, true);
+
+
+--
+-- Name: employees_salarypayment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.employees_salarypayment_id_seq', 160, true);
+
+
+--
+-- Name: employees_salaryslip_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.employees_salaryslip_id_seq', 157, true);
+
+
+--
+-- Name: expenses_accounttransfer_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.expenses_accounttransfer_id_seq', 2013, true);
+
+
+--
+-- Name: expenses_expense_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.expenses_expense_id_seq', 2540, true);
+
+
+--
+-- Name: inventory_stockadjustment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.inventory_stockadjustment_id_seq', 14, true);
+
+
+--
+-- Name: inventory_stockadjustmentitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.inventory_stockadjustmentitem_id_seq', 13, true);
+
+
+--
+-- Name: inventory_stockmovement_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.inventory_stockmovement_id_seq', 28130, true);
+
+
+--
+-- Name: products_category_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.products_category_id_seq', 53, true);
+
+
+--
+-- Name: products_product_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.products_product_id_seq', 79, true);
+
+
+--
+-- Name: products_unit_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.products_unit_id_seq', 28, true);
+
+
+--
+-- Name: purchases_purchase_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.purchases_purchase_id_seq', 4219, true);
+
+
+--
+-- Name: purchases_purchaseitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.purchases_purchaseitem_id_seq', 12572, true);
+
+
+--
+-- Name: purchases_purchasereturn_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.purchases_purchasereturn_id_seq', 3531, true);
+
+
+--
+-- Name: purchases_purchasereturnitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.purchases_purchasereturnitem_id_seq', 3530, true);
+
+
+--
+-- Name: purchases_supplierpayment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.purchases_supplierpayment_id_seq', 3540, true);
+
+
+--
+-- Name: sales_posdaysession_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.sales_posdaysession_id_seq', 1762, true);
+
+
+--
+-- Name: sales_sale_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.sales_sale_id_seq', 4036, true);
+
+
+--
+-- Name: sales_saleitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.sales_saleitem_id_seq', 7956, true);
+
+
+--
+-- Name: sales_salepayment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.sales_salepayment_id_seq', 4253, true);
+
+
+--
+-- Name: sales_salesreturn_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.sales_salesreturn_id_seq', 2566, true);
+
+
+--
+-- Name: sales_salesreturnitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.sales_salesreturnitem_id_seq', 2566, true);
+
+
+--
+-- Name: users_userprofile_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.users_userprofile_id_seq', 12, true);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.warranty_customerwarrantyclaim_id_seq', 1510, true);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.warranty_supplierwarrantyclaim_id_seq', 1507, true);
+
+
+--
+-- Name: warranty_supplierwarrantyclaimitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pos_user
+--
+
+SELECT pg_catalog.setval('public.warranty_supplierwarrantyclaimitem_id_seq', 1508, true);
+
+
+--
+-- Name: accounting_account accounting_account_code_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_account
+    ADD CONSTRAINT accounting_account_code_key UNIQUE (code);
+
+
+--
+-- Name: accounting_account accounting_account_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_account
+    ADD CONSTRAINT accounting_account_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: accounting_journalentry accounting_journalentry_entry_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_journalentry
+    ADD CONSTRAINT accounting_journalentry_entry_number_key UNIQUE (entry_number);
+
+
+--
+-- Name: accounting_journalentry accounting_journalentry_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_journalentry
+    ADD CONSTRAINT accounting_journalentry_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: accounting_journalitem accounting_journalitem_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_journalitem
+    ADD CONSTRAINT accounting_journalitem_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: accounting_paymentmethod accounting_paymentmethod_code_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_paymentmethod
+    ADD CONSTRAINT accounting_paymentmethod_code_key UNIQUE (code);
+
+
+--
+-- Name: accounting_paymentmethod accounting_paymentmethod_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_paymentmethod
+    ADD CONSTRAINT accounting_paymentmethod_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_group auth_group_name_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_group
+    ADD CONSTRAINT auth_group_name_key UNIQUE (name);
+
+
+--
+-- Name: auth_group_permissions auth_group_permissions_group_id_permission_id_0cd325b0_uniq; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_group_permissions
+    ADD CONSTRAINT auth_group_permissions_group_id_permission_id_0cd325b0_uniq UNIQUE (group_id, permission_id);
+
+
+--
+-- Name: auth_group_permissions auth_group_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_group_permissions
+    ADD CONSTRAINT auth_group_permissions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_group auth_group_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_group
+    ADD CONSTRAINT auth_group_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_permission auth_permission_content_type_id_codename_01ab375a_uniq; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_permission
+    ADD CONSTRAINT auth_permission_content_type_id_codename_01ab375a_uniq UNIQUE (content_type_id, codename);
+
+
+--
+-- Name: auth_permission auth_permission_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_permission
+    ADD CONSTRAINT auth_permission_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_user_groups auth_user_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user_groups
+    ADD CONSTRAINT auth_user_groups_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_user_groups auth_user_groups_user_id_group_id_94350c0c_uniq; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user_groups
+    ADD CONSTRAINT auth_user_groups_user_id_group_id_94350c0c_uniq UNIQUE (user_id, group_id);
+
+
+--
+-- Name: auth_user auth_user_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user
+    ADD CONSTRAINT auth_user_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_user_user_permissions auth_user_user_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user_user_permissions
+    ADD CONSTRAINT auth_user_user_permissions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_user_user_permissions auth_user_user_permissions_user_id_permission_id_14a6b632_uniq; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user_user_permissions
+    ADD CONSTRAINT auth_user_user_permissions_user_id_permission_id_14a6b632_uniq UNIQUE (user_id, permission_id);
+
+
+--
+-- Name: auth_user auth_user_username_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user
+    ADD CONSTRAINT auth_user_username_key UNIQUE (username);
+
+
+--
+-- Name: contacts_customer contacts_customer_customer_id_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customer
+    ADD CONSTRAINT contacts_customer_customer_id_key UNIQUE (customer_id);
+
+
+--
+-- Name: contacts_customer contacts_customer_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customer
+    ADD CONSTRAINT contacts_customer_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: contacts_customerpayment contacts_customerpayment_payment_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customerpayment
+    ADD CONSTRAINT contacts_customerpayment_payment_number_key UNIQUE (payment_number);
+
+
+--
+-- Name: contacts_customerpayment contacts_customerpayment_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customerpayment
+    ADD CONSTRAINT contacts_customerpayment_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: contacts_supplier contacts_supplier_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_supplier
+    ADD CONSTRAINT contacts_supplier_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: contacts_supplier contacts_supplier_supplier_id_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_supplier
+    ADD CONSTRAINT contacts_supplier_supplier_id_key UNIQUE (supplier_id);
+
+
+--
+-- Name: core_auditlog core_auditlog_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.core_auditlog
+    ADD CONSTRAINT core_auditlog_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: core_backuplog core_backuplog_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.core_backuplog
+    ADD CONSTRAINT core_backuplog_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: core_systemsetting core_systemsetting_key_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.core_systemsetting
+    ADD CONSTRAINT core_systemsetting_key_key UNIQUE (key);
+
+
+--
+-- Name: core_systemsetting core_systemsetting_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.core_systemsetting
+    ADD CONSTRAINT core_systemsetting_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: django_admin_log django_admin_log_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.django_admin_log
+    ADD CONSTRAINT django_admin_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: django_content_type django_content_type_app_label_model_76bd3d3b_uniq; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.django_content_type
+    ADD CONSTRAINT django_content_type_app_label_model_76bd3d3b_uniq UNIQUE (app_label, model);
+
+
+--
+-- Name: django_content_type django_content_type_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.django_content_type
+    ADD CONSTRAINT django_content_type_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: django_migrations django_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.django_migrations
+    ADD CONSTRAINT django_migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: django_session django_session_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.django_session
+    ADD CONSTRAINT django_session_pkey PRIMARY KEY (session_key);
+
+
+--
+-- Name: employees_attendance employees_attendance_employee_id_date_8cf32e52_uniq; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_attendance
+    ADD CONSTRAINT employees_attendance_employee_id_date_8cf32e52_uniq UNIQUE (employee_id, date);
+
+
+--
+-- Name: employees_attendance employees_attendance_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_attendance
+    ADD CONSTRAINT employees_attendance_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: employees_employee employees_employee_employee_id_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_employee
+    ADD CONSTRAINT employees_employee_employee_id_key UNIQUE (employee_id);
+
+
+--
+-- Name: employees_employee employees_employee_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_employee
+    ADD CONSTRAINT employees_employee_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: employees_employee employees_employee_user_id_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_employee
+    ADD CONSTRAINT employees_employee_user_id_key UNIQUE (user_id);
+
+
+--
+-- Name: employees_salarypayment employees_salarypayment_payment_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salarypayment
+    ADD CONSTRAINT employees_salarypayment_payment_number_key UNIQUE (payment_number);
+
+
+--
+-- Name: employees_salarypayment employees_salarypayment_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salarypayment
+    ADD CONSTRAINT employees_salarypayment_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: employees_salaryslip employees_salaryslip_employee_id_month_year_35e7deb5_uniq; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salaryslip
+    ADD CONSTRAINT employees_salaryslip_employee_id_month_year_35e7deb5_uniq UNIQUE (employee_id, month, year);
+
+
+--
+-- Name: employees_salaryslip employees_salaryslip_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salaryslip
+    ADD CONSTRAINT employees_salaryslip_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: employees_salaryslip employees_salaryslip_slip_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salaryslip
+    ADD CONSTRAINT employees_salaryslip_slip_number_key UNIQUE (slip_number);
+
+
+--
+-- Name: expenses_accounttransfer expenses_accounttransfer_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_accounttransfer
+    ADD CONSTRAINT expenses_accounttransfer_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: expenses_accounttransfer expenses_accounttransfer_transfer_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_accounttransfer
+    ADD CONSTRAINT expenses_accounttransfer_transfer_number_key UNIQUE (transfer_number);
+
+
+--
+-- Name: expenses_expense expenses_expense_expense_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_expense
+    ADD CONSTRAINT expenses_expense_expense_number_key UNIQUE (expense_number);
+
+
+--
+-- Name: expenses_expense expenses_expense_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_expense
+    ADD CONSTRAINT expenses_expense_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: inventory_stockadjustment inventory_stockadjustment_adjustment_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.inventory_stockadjustment
+    ADD CONSTRAINT inventory_stockadjustment_adjustment_number_key UNIQUE (adjustment_number);
+
+
+--
+-- Name: inventory_stockadjustment inventory_stockadjustment_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.inventory_stockadjustment
+    ADD CONSTRAINT inventory_stockadjustment_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: inventory_stockadjustmentitem inventory_stockadjustmentitem_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.inventory_stockadjustmentitem
+    ADD CONSTRAINT inventory_stockadjustmentitem_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: inventory_stockmovement inventory_stockmovement_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.inventory_stockmovement
+    ADD CONSTRAINT inventory_stockmovement_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: products_category products_category_code_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_category
+    ADD CONSTRAINT products_category_code_key UNIQUE (code);
+
+
+--
+-- Name: products_category products_category_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_category
+    ADD CONSTRAINT products_category_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: products_product products_product_barcode_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_product
+    ADD CONSTRAINT products_product_barcode_key UNIQUE (barcode);
+
+
+--
+-- Name: products_product products_product_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_product
+    ADD CONSTRAINT products_product_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: products_product products_product_sku_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_product
+    ADD CONSTRAINT products_product_sku_key UNIQUE (sku);
+
+
+--
+-- Name: products_unit products_unit_name_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_unit
+    ADD CONSTRAINT products_unit_name_key UNIQUE (name);
+
+
+--
+-- Name: products_unit products_unit_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_unit
+    ADD CONSTRAINT products_unit_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: products_unit products_unit_short_code_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_unit
+    ADD CONSTRAINT products_unit_short_code_key UNIQUE (short_code);
+
+
+--
+-- Name: purchases_purchase purchases_purchase_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchase
+    ADD CONSTRAINT purchases_purchase_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: purchases_purchase purchases_purchase_purchase_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchase
+    ADD CONSTRAINT purchases_purchase_purchase_number_key UNIQUE (purchase_number);
+
+
+--
+-- Name: purchases_purchaseitem purchases_purchaseitem_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchaseitem
+    ADD CONSTRAINT purchases_purchaseitem_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: purchases_purchasereturn purchases_purchasereturn_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturn
+    ADD CONSTRAINT purchases_purchasereturn_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: purchases_purchasereturn purchases_purchasereturn_return_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturn
+    ADD CONSTRAINT purchases_purchasereturn_return_number_key UNIQUE (return_number);
+
+
+--
+-- Name: purchases_purchasereturnitem purchases_purchasereturnitem_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturnitem
+    ADD CONSTRAINT purchases_purchasereturnitem_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: purchases_supplierpayment purchases_supplierpayment_payment_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_supplierpayment
+    ADD CONSTRAINT purchases_supplierpayment_payment_number_key UNIQUE (payment_number);
+
+
+--
+-- Name: purchases_supplierpayment purchases_supplierpayment_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_supplierpayment
+    ADD CONSTRAINT purchases_supplierpayment_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sales_posdaysession sales_posdaysession_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_posdaysession
+    ADD CONSTRAINT sales_posdaysession_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sales_posdaysession sales_posdaysession_session_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_posdaysession
+    ADD CONSTRAINT sales_posdaysession_session_number_key UNIQUE (session_number);
+
+
+--
+-- Name: sales_sale sales_sale_invoice_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_sale
+    ADD CONSTRAINT sales_sale_invoice_number_key UNIQUE (invoice_number);
+
+
+--
+-- Name: sales_sale sales_sale_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_sale
+    ADD CONSTRAINT sales_sale_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sales_saleitem sales_saleitem_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_saleitem
+    ADD CONSTRAINT sales_saleitem_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sales_salepayment sales_salepayment_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salepayment
+    ADD CONSTRAINT sales_salepayment_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sales_salesreturn sales_salesreturn_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salesreturn
+    ADD CONSTRAINT sales_salesreturn_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sales_salesreturn sales_salesreturn_return_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salesreturn
+    ADD CONSTRAINT sales_salesreturn_return_number_key UNIQUE (return_number);
+
+
+--
+-- Name: sales_salesreturnitem sales_salesreturnitem_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salesreturnitem
+    ADD CONSTRAINT sales_salesreturnitem_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users_userprofile users_userprofile_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.users_userprofile
+    ADD CONSTRAINT users_userprofile_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users_userprofile users_userprofile_user_id_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.users_userprofile
+    ADD CONSTRAINT users_userprofile_user_id_key UNIQUE (user_id);
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwarrantyclaim_claim_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwarrantyclaim_claim_number_key UNIQUE (claim_number);
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwarrantyclaim_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwarrantyclaim_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim warranty_supplierwarrantyclaim_claim_number_key; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaim
+    ADD CONSTRAINT warranty_supplierwarrantyclaim_claim_number_key UNIQUE (claim_number);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim warranty_supplierwarrantyclaim_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaim
+    ADD CONSTRAINT warranty_supplierwarrantyclaim_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: warranty_supplierwarrantyclaimitem warranty_supplierwarrantyclaimitem_pkey; Type: CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaimitem
+    ADD CONSTRAINT warranty_supplierwarrantyclaimitem_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: accounting_account_account_type_9264f0d7; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_account_account_type_9264f0d7 ON public.accounting_account USING btree (account_type);
+
+
+--
+-- Name: accounting_account_account_type_9264f0d7_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_account_account_type_9264f0d7_like ON public.accounting_account USING btree (account_type varchar_pattern_ops);
+
+
+--
+-- Name: accounting_account_code_3531831c_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_account_code_3531831c_like ON public.accounting_account USING btree (code varchar_pattern_ops);
+
+
+--
+-- Name: accounting_account_is_active_fc2ff830; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_account_is_active_fc2ff830 ON public.accounting_account USING btree (is_active);
+
+
+--
+-- Name: accounting_account_parent_id_b1e41435; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_account_parent_id_b1e41435 ON public.accounting_account USING btree (parent_id);
+
+
+--
+-- Name: accounting_journalentry_created_by_id_60f500e8; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalentry_created_by_id_60f500e8 ON public.accounting_journalentry USING btree (created_by_id);
+
+
+--
+-- Name: accounting_journalentry_entry_date_39ee2a6d; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalentry_entry_date_39ee2a6d ON public.accounting_journalentry USING btree (entry_date);
+
+
+--
+-- Name: accounting_journalentry_entry_number_a4d81ea6_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalentry_entry_number_a4d81ea6_like ON public.accounting_journalentry USING btree (entry_number varchar_pattern_ops);
+
+
+--
+-- Name: accounting_journalentry_reference_id_c231f1da; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalentry_reference_id_c231f1da ON public.accounting_journalentry USING btree (reference_id);
+
+
+--
+-- Name: accounting_journalentry_reference_id_c231f1da_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalentry_reference_id_c231f1da_like ON public.accounting_journalentry USING btree (reference_id varchar_pattern_ops);
+
+
+--
+-- Name: accounting_journalentry_reference_type_0f55804a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalentry_reference_type_0f55804a ON public.accounting_journalentry USING btree (reference_type);
+
+
+--
+-- Name: accounting_journalentry_reference_type_0f55804a_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalentry_reference_type_0f55804a_like ON public.accounting_journalentry USING btree (reference_type varchar_pattern_ops);
+
+
+--
+-- Name: accounting_journalentry_status_20c767ba; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalentry_status_20c767ba ON public.accounting_journalentry USING btree (status);
+
+
+--
+-- Name: accounting_journalentry_status_20c767ba_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalentry_status_20c767ba_like ON public.accounting_journalentry USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: accounting_journalitem_account_id_059cd84b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalitem_account_id_059cd84b ON public.accounting_journalitem USING btree (account_id);
+
+
+--
+-- Name: accounting_journalitem_journal_entry_id_c2d8859a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_journalitem_journal_entry_id_c2d8859a ON public.accounting_journalitem USING btree (journal_entry_id);
+
+
+--
+-- Name: accounting_paymentmethod_code_51738148_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_paymentmethod_code_51738148_like ON public.accounting_paymentmethod USING btree (code varchar_pattern_ops);
+
+
+--
+-- Name: accounting_paymentmethod_linked_account_id_3b558d55; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX accounting_paymentmethod_linked_account_id_3b558d55 ON public.accounting_paymentmethod USING btree (linked_account_id);
+
+
+--
+-- Name: auth_group_name_a6ea08ec_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX auth_group_name_a6ea08ec_like ON public.auth_group USING btree (name varchar_pattern_ops);
+
+
+--
+-- Name: auth_group_permissions_group_id_b120cbf9; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX auth_group_permissions_group_id_b120cbf9 ON public.auth_group_permissions USING btree (group_id);
+
+
+--
+-- Name: auth_group_permissions_permission_id_84c5c92e; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX auth_group_permissions_permission_id_84c5c92e ON public.auth_group_permissions USING btree (permission_id);
+
+
+--
+-- Name: auth_permission_content_type_id_2f476e4b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX auth_permission_content_type_id_2f476e4b ON public.auth_permission USING btree (content_type_id);
+
+
+--
+-- Name: auth_user_groups_group_id_97559544; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX auth_user_groups_group_id_97559544 ON public.auth_user_groups USING btree (group_id);
+
+
+--
+-- Name: auth_user_groups_user_id_6a12ed8b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX auth_user_groups_user_id_6a12ed8b ON public.auth_user_groups USING btree (user_id);
+
+
+--
+-- Name: auth_user_user_permissions_permission_id_1fbb5f2c; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX auth_user_user_permissions_permission_id_1fbb5f2c ON public.auth_user_user_permissions USING btree (permission_id);
+
+
+--
+-- Name: auth_user_user_permissions_user_id_a95ead1b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX auth_user_user_permissions_user_id_a95ead1b ON public.auth_user_user_permissions USING btree (user_id);
+
+
+--
+-- Name: auth_user_username_6821ab7c_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX auth_user_username_6821ab7c_like ON public.auth_user USING btree (username varchar_pattern_ops);
+
+
+--
+-- Name: contacts_customer_customer_id_9a69d68a_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customer_customer_id_9a69d68a_like ON public.contacts_customer USING btree (customer_id varchar_pattern_ops);
+
+
+--
+-- Name: contacts_customer_is_active_9aeddf47; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customer_is_active_9aeddf47 ON public.contacts_customer USING btree (is_active);
+
+
+--
+-- Name: contacts_customer_name_05aee97f; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customer_name_05aee97f ON public.contacts_customer USING btree (name);
+
+
+--
+-- Name: contacts_customer_name_05aee97f_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customer_name_05aee97f_like ON public.contacts_customer USING btree (name varchar_pattern_ops);
+
+
+--
+-- Name: contacts_customer_phone_15c0d8fe; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customer_phone_15c0d8fe ON public.contacts_customer USING btree (phone);
+
+
+--
+-- Name: contacts_customer_phone_15c0d8fe_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customer_phone_15c0d8fe_like ON public.contacts_customer USING btree (phone varchar_pattern_ops);
+
+
+--
+-- Name: contacts_customerpayment_cancelled_by_id_ed349dc9; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_cancelled_by_id_ed349dc9 ON public.contacts_customerpayment USING btree (cancelled_by_id);
+
+
+--
+-- Name: contacts_customerpayment_created_by_id_773f1081; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_created_by_id_773f1081 ON public.contacts_customerpayment USING btree (created_by_id);
+
+
+--
+-- Name: contacts_customerpayment_customer_id_0c1d8598; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_customer_id_0c1d8598 ON public.contacts_customerpayment USING btree (customer_id);
+
+
+--
+-- Name: contacts_customerpayment_date_6a8d9b17; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_date_6a8d9b17 ON public.contacts_customerpayment USING btree (date);
+
+
+--
+-- Name: contacts_customerpayment_journal_entry_id_ec923eca; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_journal_entry_id_ec923eca ON public.contacts_customerpayment USING btree (journal_entry_id);
+
+
+--
+-- Name: contacts_customerpayment_payment_account_id_6bedef76; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_payment_account_id_6bedef76 ON public.contacts_customerpayment USING btree (payment_account_id);
+
+
+--
+-- Name: contacts_customerpayment_payment_method_2ab0f888; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_payment_method_2ab0f888 ON public.contacts_customerpayment USING btree (payment_method);
+
+
+--
+-- Name: contacts_customerpayment_payment_method_2ab0f888_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_payment_method_2ab0f888_like ON public.contacts_customerpayment USING btree (payment_method varchar_pattern_ops);
+
+
+--
+-- Name: contacts_customerpayment_payment_number_f8a20968_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_payment_number_f8a20968_like ON public.contacts_customerpayment USING btree (payment_number varchar_pattern_ops);
+
+
+--
+-- Name: contacts_customerpayment_reversal_journal_entry_id_08458c02; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_reversal_journal_entry_id_08458c02 ON public.contacts_customerpayment USING btree (reversal_journal_entry_id);
+
+
+--
+-- Name: contacts_customerpayment_status_a63c2174; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_status_a63c2174 ON public.contacts_customerpayment USING btree (status);
+
+
+--
+-- Name: contacts_customerpayment_status_a63c2174_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_status_a63c2174_like ON public.contacts_customerpayment USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: contacts_customerpayment_submitted_by_id_906dddb4; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_customerpayment_submitted_by_id_906dddb4 ON public.contacts_customerpayment USING btree (submitted_by_id);
+
+
+--
+-- Name: contacts_supplier_company_name_3fe5a392; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_supplier_company_name_3fe5a392 ON public.contacts_supplier USING btree (company_name);
+
+
+--
+-- Name: contacts_supplier_company_name_3fe5a392_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_supplier_company_name_3fe5a392_like ON public.contacts_supplier USING btree (company_name varchar_pattern_ops);
+
+
+--
+-- Name: contacts_supplier_is_active_89998698; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_supplier_is_active_89998698 ON public.contacts_supplier USING btree (is_active);
+
+
+--
+-- Name: contacts_supplier_name_fc612019; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_supplier_name_fc612019 ON public.contacts_supplier USING btree (name);
+
+
+--
+-- Name: contacts_supplier_name_fc612019_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_supplier_name_fc612019_like ON public.contacts_supplier USING btree (name varchar_pattern_ops);
+
+
+--
+-- Name: contacts_supplier_phone_2139f1b5; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_supplier_phone_2139f1b5 ON public.contacts_supplier USING btree (phone);
+
+
+--
+-- Name: contacts_supplier_phone_2139f1b5_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_supplier_phone_2139f1b5_like ON public.contacts_supplier USING btree (phone varchar_pattern_ops);
+
+
+--
+-- Name: contacts_supplier_supplier_id_b51ba53d_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX contacts_supplier_supplier_id_b51ba53d_like ON public.contacts_supplier USING btree (supplier_id varchar_pattern_ops);
+
+
+--
+-- Name: core_auditlog_timestamp_c6ef4463; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX core_auditlog_timestamp_c6ef4463 ON public.core_auditlog USING btree ("timestamp");
+
+
+--
+-- Name: core_auditlog_user_id_3797aaab; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX core_auditlog_user_id_3797aaab ON public.core_auditlog USING btree (user_id);
+
+
+--
+-- Name: core_backuplog_created_at_4b093af7; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX core_backuplog_created_at_4b093af7 ON public.core_backuplog USING btree (created_at);
+
+
+--
+-- Name: core_backuplog_created_by_id_8679fb3e; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX core_backuplog_created_by_id_8679fb3e ON public.core_backuplog USING btree (created_by_id);
+
+
+--
+-- Name: core_backuplog_filename_96a9e5c8; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX core_backuplog_filename_96a9e5c8 ON public.core_backuplog USING btree (filename);
+
+
+--
+-- Name: core_backuplog_filename_96a9e5c8_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX core_backuplog_filename_96a9e5c8_like ON public.core_backuplog USING btree (filename varchar_pattern_ops);
+
+
+--
+-- Name: core_systemsetting_group_a87b64e6; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX core_systemsetting_group_a87b64e6 ON public.core_systemsetting USING btree ("group");
+
+
+--
+-- Name: core_systemsetting_group_a87b64e6_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX core_systemsetting_group_a87b64e6_like ON public.core_systemsetting USING btree ("group" varchar_pattern_ops);
+
+
+--
+-- Name: core_systemsetting_key_59c82693_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX core_systemsetting_key_59c82693_like ON public.core_systemsetting USING btree (key varchar_pattern_ops);
+
+
+--
+-- Name: django_admin_log_content_type_id_c4bce8eb; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX django_admin_log_content_type_id_c4bce8eb ON public.django_admin_log USING btree (content_type_id);
+
+
+--
+-- Name: django_admin_log_user_id_c564eba6; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX django_admin_log_user_id_c564eba6 ON public.django_admin_log USING btree (user_id);
+
+
+--
+-- Name: django_session_expire_date_a5c62663; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX django_session_expire_date_a5c62663 ON public.django_session USING btree (expire_date);
+
+
+--
+-- Name: django_session_session_key_c0390e0f_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX django_session_session_key_c0390e0f_like ON public.django_session USING btree (session_key varchar_pattern_ops);
+
+
+--
+-- Name: employees_attendance_created_by_id_bdeecf5e; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_attendance_created_by_id_bdeecf5e ON public.employees_attendance USING btree (created_by_id);
+
+
+--
+-- Name: employees_attendance_date_87f71277; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_attendance_date_87f71277 ON public.employees_attendance USING btree (date);
+
+
+--
+-- Name: employees_attendance_employee_id_450daa06; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_attendance_employee_id_450daa06 ON public.employees_attendance USING btree (employee_id);
+
+
+--
+-- Name: employees_attendance_status_192578fb; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_attendance_status_192578fb ON public.employees_attendance USING btree (status);
+
+
+--
+-- Name: employees_attendance_status_192578fb_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_attendance_status_192578fb_like ON public.employees_attendance USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: employees_employee_created_by_id_bfa47e39; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_created_by_id_bfa47e39 ON public.employees_employee USING btree (created_by_id);
+
+
+--
+-- Name: employees_employee_date_of_joining_1c90c2f7; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_date_of_joining_1c90c2f7 ON public.employees_employee USING btree (date_of_joining);
+
+
+--
+-- Name: employees_employee_department_979247e0; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_department_979247e0 ON public.employees_employee USING btree (department);
+
+
+--
+-- Name: employees_employee_department_979247e0_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_department_979247e0_like ON public.employees_employee USING btree (department varchar_pattern_ops);
+
+
+--
+-- Name: employees_employee_employee_id_e152a244_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_employee_id_e152a244_like ON public.employees_employee USING btree (employee_id varchar_pattern_ops);
+
+
+--
+-- Name: employees_employee_full_name_27a5251d; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_full_name_27a5251d ON public.employees_employee USING btree (full_name);
+
+
+--
+-- Name: employees_employee_full_name_27a5251d_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_full_name_27a5251d_like ON public.employees_employee USING btree (full_name varchar_pattern_ops);
+
+
+--
+-- Name: employees_employee_is_active_bc4a1119; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_is_active_bc4a1119 ON public.employees_employee USING btree (is_active);
+
+
+--
+-- Name: employees_employee_job_title_c6826f8c; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_job_title_c6826f8c ON public.employees_employee USING btree (job_title);
+
+
+--
+-- Name: employees_employee_job_title_c6826f8c_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_job_title_c6826f8c_like ON public.employees_employee USING btree (job_title varchar_pattern_ops);
+
+
+--
+-- Name: employees_employee_phone_cdfc871b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_phone_cdfc871b ON public.employees_employee USING btree (phone);
+
+
+--
+-- Name: employees_employee_phone_cdfc871b_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_employee_phone_cdfc871b_like ON public.employees_employee USING btree (phone varchar_pattern_ops);
+
+
+--
+-- Name: employees_salarypayment_cancelled_by_id_ecd2b0a7; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_cancelled_by_id_ecd2b0a7 ON public.employees_salarypayment USING btree (cancelled_by_id);
+
+
+--
+-- Name: employees_salarypayment_created_by_id_77eb79e7; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_created_by_id_77eb79e7 ON public.employees_salarypayment USING btree (created_by_id);
+
+
+--
+-- Name: employees_salarypayment_date_4951ec7e; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_date_4951ec7e ON public.employees_salarypayment USING btree (date);
+
+
+--
+-- Name: employees_salarypayment_employee_id_93322f6f; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_employee_id_93322f6f ON public.employees_salarypayment USING btree (employee_id);
+
+
+--
+-- Name: employees_salarypayment_journal_entry_id_d6e1d980; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_journal_entry_id_d6e1d980 ON public.employees_salarypayment USING btree (journal_entry_id);
+
+
+--
+-- Name: employees_salarypayment_payment_account_id_4fe7d5c1; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_payment_account_id_4fe7d5c1 ON public.employees_salarypayment USING btree (payment_account_id);
+
+
+--
+-- Name: employees_salarypayment_payment_number_10b2d2c6_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_payment_number_10b2d2c6_like ON public.employees_salarypayment USING btree (payment_number varchar_pattern_ops);
+
+
+--
+-- Name: employees_salarypayment_reversal_journal_entry_id_008163c5; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_reversal_journal_entry_id_008163c5 ON public.employees_salarypayment USING btree (reversal_journal_entry_id);
+
+
+--
+-- Name: employees_salarypayment_salary_slip_id_ed4cf1cc; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_salary_slip_id_ed4cf1cc ON public.employees_salarypayment USING btree (salary_slip_id);
+
+
+--
+-- Name: employees_salarypayment_status_baef2ccd; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_status_baef2ccd ON public.employees_salarypayment USING btree (status);
+
+
+--
+-- Name: employees_salarypayment_status_baef2ccd_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salarypayment_status_baef2ccd_like ON public.employees_salarypayment USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: employees_salaryslip_cancelled_by_id_06c885f5; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_cancelled_by_id_06c885f5 ON public.employees_salaryslip USING btree (cancelled_by_id);
+
+
+--
+-- Name: employees_salaryslip_created_by_id_1029706c; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_created_by_id_1029706c ON public.employees_salaryslip USING btree (created_by_id);
+
+
+--
+-- Name: employees_salaryslip_employee_id_203bb26b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_employee_id_203bb26b ON public.employees_salaryslip USING btree (employee_id);
+
+
+--
+-- Name: employees_salaryslip_journal_entry_id_d29d73b5; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_journal_entry_id_d29d73b5 ON public.employees_salaryslip USING btree (journal_entry_id);
+
+
+--
+-- Name: employees_salaryslip_payroll_period_64f690f3; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_payroll_period_64f690f3 ON public.employees_salaryslip USING btree (payroll_period);
+
+
+--
+-- Name: employees_salaryslip_payroll_period_64f690f3_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_payroll_period_64f690f3_like ON public.employees_salaryslip USING btree (payroll_period varchar_pattern_ops);
+
+
+--
+-- Name: employees_salaryslip_reversal_journal_entry_id_36e0df8d; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_reversal_journal_entry_id_36e0df8d ON public.employees_salaryslip USING btree (reversal_journal_entry_id);
+
+
+--
+-- Name: employees_salaryslip_slip_number_d211951c_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_slip_number_d211951c_like ON public.employees_salaryslip USING btree (slip_number varchar_pattern_ops);
+
+
+--
+-- Name: employees_salaryslip_status_5b202553; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_status_5b202553 ON public.employees_salaryslip USING btree (status);
+
+
+--
+-- Name: employees_salaryslip_status_5b202553_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_status_5b202553_like ON public.employees_salaryslip USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: employees_salaryslip_submitted_by_id_8e964513; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX employees_salaryslip_submitted_by_id_8e964513 ON public.employees_salaryslip USING btree (submitted_by_id);
+
+
+--
+-- Name: expenses_accounttransfer_cancelled_by_id_b490e552; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_cancelled_by_id_b490e552 ON public.expenses_accounttransfer USING btree (cancelled_by_id);
+
+
+--
+-- Name: expenses_accounttransfer_created_by_id_adde15f7; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_created_by_id_adde15f7 ON public.expenses_accounttransfer USING btree (created_by_id);
+
+
+--
+-- Name: expenses_accounttransfer_date_7fc97647; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_date_7fc97647 ON public.expenses_accounttransfer USING btree (date);
+
+
+--
+-- Name: expenses_accounttransfer_from_account_id_c2c12741; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_from_account_id_c2c12741 ON public.expenses_accounttransfer USING btree (from_account_id);
+
+
+--
+-- Name: expenses_accounttransfer_journal_entry_id_21423ec2; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_journal_entry_id_21423ec2 ON public.expenses_accounttransfer USING btree (journal_entry_id);
+
+
+--
+-- Name: expenses_accounttransfer_reversal_journal_entry_id_da0b9416; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_reversal_journal_entry_id_da0b9416 ON public.expenses_accounttransfer USING btree (reversal_journal_entry_id);
+
+
+--
+-- Name: expenses_accounttransfer_status_bda48edf; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_status_bda48edf ON public.expenses_accounttransfer USING btree (status);
+
+
+--
+-- Name: expenses_accounttransfer_status_bda48edf_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_status_bda48edf_like ON public.expenses_accounttransfer USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: expenses_accounttransfer_to_account_id_4da25e3e; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_to_account_id_4da25e3e ON public.expenses_accounttransfer USING btree (to_account_id);
+
+
+--
+-- Name: expenses_accounttransfer_transfer_number_dd52b3c4_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_accounttransfer_transfer_number_dd52b3c4_like ON public.expenses_accounttransfer USING btree (transfer_number varchar_pattern_ops);
+
+
+--
+-- Name: expenses_ex_date_d0c7f0_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_ex_date_d0c7f0_idx ON public.expenses_expense USING btree (date, status);
+
+
+--
+-- Name: expenses_ex_status_ff7e7b_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_ex_status_ff7e7b_idx ON public.expenses_expense USING btree (status, date);
+
+
+--
+-- Name: expenses_expense_cancelled_by_id_11adec92; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_cancelled_by_id_11adec92 ON public.expenses_expense USING btree (cancelled_by_id);
+
+
+--
+-- Name: expenses_expense_created_by_id_a2610358; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_created_by_id_a2610358 ON public.expenses_expense USING btree (created_by_id);
+
+
+--
+-- Name: expenses_expense_date_0683cda7; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_date_0683cda7 ON public.expenses_expense USING btree (date);
+
+
+--
+-- Name: expenses_expense_expense_account_id_2edd00c7; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_expense_account_id_2edd00c7 ON public.expenses_expense USING btree (expense_account_id);
+
+
+--
+-- Name: expenses_expense_expense_number_5d4eb579_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_expense_number_5d4eb579_like ON public.expenses_expense USING btree (expense_number varchar_pattern_ops);
+
+
+--
+-- Name: expenses_expense_journal_entry_id_3e2f6a91; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_journal_entry_id_3e2f6a91 ON public.expenses_expense USING btree (journal_entry_id);
+
+
+--
+-- Name: expenses_expense_payment_account_id_9abbe10b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_payment_account_id_9abbe10b ON public.expenses_expense USING btree (payment_account_id);
+
+
+--
+-- Name: expenses_expense_payment_method_3da846a5; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_payment_method_3da846a5 ON public.expenses_expense USING btree (payment_method);
+
+
+--
+-- Name: expenses_expense_payment_method_3da846a5_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_payment_method_3da846a5_like ON public.expenses_expense USING btree (payment_method varchar_pattern_ops);
+
+
+--
+-- Name: expenses_expense_reversal_journal_entry_id_9323ba1d; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_reversal_journal_entry_id_9323ba1d ON public.expenses_expense USING btree (reversal_journal_entry_id);
+
+
+--
+-- Name: expenses_expense_status_c4261402; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_status_c4261402 ON public.expenses_expense USING btree (status);
+
+
+--
+-- Name: expenses_expense_status_c4261402_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_status_c4261402_like ON public.expenses_expense USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: expenses_expense_submitted_by_id_f7efca12; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX expenses_expense_submitted_by_id_f7efca12 ON public.expenses_expense USING btree (submitted_by_id);
+
+
+--
+-- Name: inventory_s_movemen_ed5291_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_s_movemen_ed5291_idx ON public.inventory_stockmovement USING btree (movement_type, created_at);
+
+
+--
+-- Name: inventory_s_product_5919a9_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_s_product_5919a9_idx ON public.inventory_stockmovement USING btree (product_id, created_at);
+
+
+--
+-- Name: inventory_stockadjustment_adjustment_number_df92e4d2_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockadjustment_adjustment_number_df92e4d2_like ON public.inventory_stockadjustment USING btree (adjustment_number varchar_pattern_ops);
+
+
+--
+-- Name: inventory_stockadjustment_adjustment_type_e81145a0; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockadjustment_adjustment_type_e81145a0 ON public.inventory_stockadjustment USING btree (adjustment_type);
+
+
+--
+-- Name: inventory_stockadjustment_adjustment_type_e81145a0_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockadjustment_adjustment_type_e81145a0_like ON public.inventory_stockadjustment USING btree (adjustment_type varchar_pattern_ops);
+
+
+--
+-- Name: inventory_stockadjustment_created_by_id_d3ef1412; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockadjustment_created_by_id_d3ef1412 ON public.inventory_stockadjustment USING btree (created_by_id);
+
+
+--
+-- Name: inventory_stockadjustment_date_cf6b67b4; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockadjustment_date_cf6b67b4 ON public.inventory_stockadjustment USING btree (date);
+
+
+--
+-- Name: inventory_stockadjustment_reason_184b7b81; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockadjustment_reason_184b7b81 ON public.inventory_stockadjustment USING btree (reason);
+
+
+--
+-- Name: inventory_stockadjustment_reason_184b7b81_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockadjustment_reason_184b7b81_like ON public.inventory_stockadjustment USING btree (reason varchar_pattern_ops);
+
+
+--
+-- Name: inventory_stockadjustmentitem_adjustment_id_af989cc3; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockadjustmentitem_adjustment_id_af989cc3 ON public.inventory_stockadjustmentitem USING btree (adjustment_id);
+
+
+--
+-- Name: inventory_stockadjustmentitem_product_id_a8b8e13c; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockadjustmentitem_product_id_a8b8e13c ON public.inventory_stockadjustmentitem USING btree (product_id);
+
+
+--
+-- Name: inventory_stockmovement_created_at_05b478ed; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockmovement_created_at_05b478ed ON public.inventory_stockmovement USING btree (created_at);
+
+
+--
+-- Name: inventory_stockmovement_created_by_id_9a39cb99; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockmovement_created_by_id_9a39cb99 ON public.inventory_stockmovement USING btree (created_by_id);
+
+
+--
+-- Name: inventory_stockmovement_movement_type_befd98d1; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockmovement_movement_type_befd98d1 ON public.inventory_stockmovement USING btree (movement_type);
+
+
+--
+-- Name: inventory_stockmovement_movement_type_befd98d1_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockmovement_movement_type_befd98d1_like ON public.inventory_stockmovement USING btree (movement_type varchar_pattern_ops);
+
+
+--
+-- Name: inventory_stockmovement_product_id_4eccfd0a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockmovement_product_id_4eccfd0a ON public.inventory_stockmovement USING btree (product_id);
+
+
+--
+-- Name: inventory_stockmovement_reference_id_9ae220ca; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockmovement_reference_id_9ae220ca ON public.inventory_stockmovement USING btree (reference_id);
+
+
+--
+-- Name: inventory_stockmovement_reference_id_9ae220ca_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockmovement_reference_id_9ae220ca_like ON public.inventory_stockmovement USING btree (reference_id varchar_pattern_ops);
+
+
+--
+-- Name: inventory_stockmovement_reference_type_22edfd73; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockmovement_reference_type_22edfd73 ON public.inventory_stockmovement USING btree (reference_type);
+
+
+--
+-- Name: inventory_stockmovement_reference_type_22edfd73_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX inventory_stockmovement_reference_type_22edfd73_like ON public.inventory_stockmovement USING btree (reference_type varchar_pattern_ops);
+
+
+--
+-- Name: products_category_code_320f842a_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_category_code_320f842a_like ON public.products_category USING btree (code varchar_pattern_ops);
+
+
+--
+-- Name: products_category_is_active_adb3f10a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_category_is_active_adb3f10a ON public.products_category USING btree (is_active);
+
+
+--
+-- Name: products_category_parent_id_3388f6c9; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_category_parent_id_3388f6c9 ON public.products_category USING btree (parent_id);
+
+
+--
+-- Name: products_product_barcode_0b42bc05_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_product_barcode_0b42bc05_like ON public.products_product USING btree (barcode varchar_pattern_ops);
+
+
+--
+-- Name: products_product_category_id_9b594869; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_product_category_id_9b594869 ON public.products_product USING btree (category_id);
+
+
+--
+-- Name: products_product_is_active_2e95eb0a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_product_is_active_2e95eb0a ON public.products_product USING btree (is_active);
+
+
+--
+-- Name: products_product_maintain_stock_941fd671; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_product_maintain_stock_941fd671 ON public.products_product USING btree (maintain_stock);
+
+
+--
+-- Name: products_product_name_fa23bcd2; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_product_name_fa23bcd2 ON public.products_product USING btree (name);
+
+
+--
+-- Name: products_product_name_fa23bcd2_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_product_name_fa23bcd2_like ON public.products_product USING btree (name varchar_pattern_ops);
+
+
+--
+-- Name: products_product_sku_3c51a516_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_product_sku_3c51a516_like ON public.products_product USING btree (sku varchar_pattern_ops);
+
+
+--
+-- Name: products_product_unit_id_07baa821; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_product_unit_id_07baa821 ON public.products_product USING btree (unit_id);
+
+
+--
+-- Name: products_unit_name_044d32ba_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_unit_name_044d32ba_like ON public.products_unit USING btree (name varchar_pattern_ops);
+
+
+--
+-- Name: products_unit_short_code_8532cc87_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX products_unit_short_code_8532cc87_like ON public.products_unit USING btree (short_code varchar_pattern_ops);
+
+
+--
+-- Name: purchases_p_date_e78ace_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_p_date_e78ace_idx ON public.purchases_purchase USING btree (date, status);
+
+
+--
+-- Name: purchases_p_supplie_4fc46d_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_p_supplie_4fc46d_idx ON public.purchases_purchase USING btree (supplier_id, status);
+
+
+--
+-- Name: purchases_purchase_created_by_id_699c5882; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_created_by_id_699c5882 ON public.purchases_purchase USING btree (created_by_id);
+
+
+--
+-- Name: purchases_purchase_date_205bc63b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_date_205bc63b ON public.purchases_purchase USING btree (date);
+
+
+--
+-- Name: purchases_purchase_payment_account_id_0e5d40a1; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_payment_account_id_0e5d40a1 ON public.purchases_purchase USING btree (payment_account_id);
+
+
+--
+-- Name: purchases_purchase_payment_method_id_5987dfb3; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_payment_method_id_5987dfb3 ON public.purchases_purchase USING btree (payment_method_id);
+
+
+--
+-- Name: purchases_purchase_purchase_number_81119e96_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_purchase_number_81119e96_like ON public.purchases_purchase USING btree (purchase_number varchar_pattern_ops);
+
+
+--
+-- Name: purchases_purchase_status_60cafd59; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_status_60cafd59 ON public.purchases_purchase USING btree (status);
+
+
+--
+-- Name: purchases_purchase_status_60cafd59_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_status_60cafd59_like ON public.purchases_purchase USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: purchases_purchase_supplier_id_2d052a2a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_supplier_id_2d052a2a ON public.purchases_purchase USING btree (supplier_id);
+
+
+--
+-- Name: purchases_purchase_supplier_invoice_number_ea7bc02b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_supplier_invoice_number_ea7bc02b ON public.purchases_purchase USING btree (supplier_invoice_number);
+
+
+--
+-- Name: purchases_purchase_supplier_invoice_number_ea7bc02b_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchase_supplier_invoice_number_ea7bc02b_like ON public.purchases_purchase USING btree (supplier_invoice_number varchar_pattern_ops);
+
+
+--
+-- Name: purchases_purchaseitem_product_id_61959486; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchaseitem_product_id_61959486 ON public.purchases_purchaseitem USING btree (product_id);
+
+
+--
+-- Name: purchases_purchaseitem_purchase_id_a7f96c61; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchaseitem_purchase_id_a7f96c61 ON public.purchases_purchaseitem USING btree (purchase_id);
+
+
+--
+-- Name: purchases_purchasereturn_created_by_id_817d1134; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchasereturn_created_by_id_817d1134 ON public.purchases_purchasereturn USING btree (created_by_id);
+
+
+--
+-- Name: purchases_purchasereturn_date_b0725e7d; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchasereturn_date_b0725e7d ON public.purchases_purchasereturn USING btree (date);
+
+
+--
+-- Name: purchases_purchasereturn_original_purchase_id_2f356e7b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchasereturn_original_purchase_id_2f356e7b ON public.purchases_purchasereturn USING btree (original_purchase_id);
+
+
+--
+-- Name: purchases_purchasereturn_payment_account_id_d12c9a1d; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchasereturn_payment_account_id_d12c9a1d ON public.purchases_purchasereturn USING btree (payment_account_id);
+
+
+--
+-- Name: purchases_purchasereturn_return_number_583bb287_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchasereturn_return_number_583bb287_like ON public.purchases_purchasereturn USING btree (return_number varchar_pattern_ops);
+
+
+--
+-- Name: purchases_purchasereturn_supplier_id_bbf28984; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchasereturn_supplier_id_bbf28984 ON public.purchases_purchasereturn USING btree (supplier_id);
+
+
+--
+-- Name: purchases_purchasereturnitem_product_id_6ea230ae; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchasereturnitem_product_id_6ea230ae ON public.purchases_purchasereturnitem USING btree (product_id);
+
+
+--
+-- Name: purchases_purchasereturnitem_purchase_item_id_087566e6; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchasereturnitem_purchase_item_id_087566e6 ON public.purchases_purchasereturnitem USING btree (purchase_item_id);
+
+
+--
+-- Name: purchases_purchasereturnitem_purchase_return_id_ef30a8e4; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_purchasereturnitem_purchase_return_id_ef30a8e4 ON public.purchases_purchasereturnitem USING btree (purchase_return_id);
+
+
+--
+-- Name: purchases_supplierpayment_cancelled_by_id_47c2db5a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_cancelled_by_id_47c2db5a ON public.purchases_supplierpayment USING btree (cancelled_by_id);
+
+
+--
+-- Name: purchases_supplierpayment_created_by_id_332d2ff2; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_created_by_id_332d2ff2 ON public.purchases_supplierpayment USING btree (created_by_id);
+
+
+--
+-- Name: purchases_supplierpayment_date_5ea0b849; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_date_5ea0b849 ON public.purchases_supplierpayment USING btree (date);
+
+
+--
+-- Name: purchases_supplierpayment_journal_entry_id_aa177e38; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_journal_entry_id_aa177e38 ON public.purchases_supplierpayment USING btree (journal_entry_id);
+
+
+--
+-- Name: purchases_supplierpayment_payment_account_id_93927a6d; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_payment_account_id_93927a6d ON public.purchases_supplierpayment USING btree (payment_account_id);
+
+
+--
+-- Name: purchases_supplierpayment_payment_method_id_f126c410; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_payment_method_id_f126c410 ON public.purchases_supplierpayment USING btree (payment_method);
+
+
+--
+-- Name: purchases_supplierpayment_payment_number_b7bd7142_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_payment_number_b7bd7142_like ON public.purchases_supplierpayment USING btree (payment_number varchar_pattern_ops);
+
+
+--
+-- Name: purchases_supplierpayment_reversal_journal_entry_id_718f4ab5; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_reversal_journal_entry_id_718f4ab5 ON public.purchases_supplierpayment USING btree (reversal_journal_entry_id);
+
+
+--
+-- Name: purchases_supplierpayment_status_a861d84a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_status_a861d84a ON public.purchases_supplierpayment USING btree (status);
+
+
+--
+-- Name: purchases_supplierpayment_status_a861d84a_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_status_a861d84a_like ON public.purchases_supplierpayment USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: purchases_supplierpayment_submitted_by_id_b810c088; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_submitted_by_id_b810c088 ON public.purchases_supplierpayment USING btree (submitted_by_id);
+
+
+--
+-- Name: purchases_supplierpayment_supplier_id_99d1b7b3; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX purchases_supplierpayment_supplier_id_99d1b7b3 ON public.purchases_supplierpayment USING btree (supplier_id);
+
+
+--
+-- Name: sales_posdaysession_closed_at_ff507866; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_posdaysession_closed_at_ff507866 ON public.sales_posdaysession USING btree (closed_at);
+
+
+--
+-- Name: sales_posdaysession_closed_by_id_84b07669; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_posdaysession_closed_by_id_84b07669 ON public.sales_posdaysession USING btree (closed_by_id);
+
+
+--
+-- Name: sales_posdaysession_date_8555d456; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_posdaysession_date_8555d456 ON public.sales_posdaysession USING btree (date);
+
+
+--
+-- Name: sales_posdaysession_opened_at_cc4e153a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_posdaysession_opened_at_cc4e153a ON public.sales_posdaysession USING btree (opened_at);
+
+
+--
+-- Name: sales_posdaysession_opened_by_id_22d37375; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_posdaysession_opened_by_id_22d37375 ON public.sales_posdaysession USING btree (opened_by_id);
+
+
+--
+-- Name: sales_posdaysession_session_number_3d310ed6_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_posdaysession_session_number_3d310ed6_like ON public.sales_posdaysession USING btree (session_number varchar_pattern_ops);
+
+
+--
+-- Name: sales_posdaysession_status_59670ead; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_posdaysession_status_59670ead ON public.sales_posdaysession USING btree (status);
+
+
+--
+-- Name: sales_posdaysession_status_59670ead_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_posdaysession_status_59670ead_like ON public.sales_posdaysession USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: sales_sale_created_118b60_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_created_118b60_idx ON public.sales_sale USING btree (created_at, status);
+
+
+--
+-- Name: sales_sale_created_at_bf202e70; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_created_at_bf202e70 ON public.sales_sale USING btree (created_at);
+
+
+--
+-- Name: sales_sale_created_by_id_f6773268; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_created_by_id_f6773268 ON public.sales_sale USING btree (created_by_id);
+
+
+--
+-- Name: sales_sale_created_e7d1a7_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_created_e7d1a7_idx ON public.sales_sale USING btree (created_by_id, status);
+
+
+--
+-- Name: sales_sale_customer_id_2d66a408; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_customer_id_2d66a408 ON public.sales_sale USING btree (customer_id);
+
+
+--
+-- Name: sales_sale_date_0a90cc_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_date_0a90cc_idx ON public.sales_sale USING btree (date, status);
+
+
+--
+-- Name: sales_sale_date_4fe7bb6d; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_date_4fe7bb6d ON public.sales_sale USING btree (date);
+
+
+--
+-- Name: sales_sale_invoice_number_a14f1a3f_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_invoice_number_a14f1a3f_like ON public.sales_sale USING btree (invoice_number varchar_pattern_ops);
+
+
+--
+-- Name: sales_sale_payment_account_id_dd8bdab3; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_payment_account_id_dd8bdab3 ON public.sales_sale USING btree (payment_account_id);
+
+
+--
+-- Name: sales_sale_payment_method_c8f23402; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_payment_method_c8f23402 ON public.sales_sale USING btree (payment_method);
+
+
+--
+-- Name: sales_sale_payment_method_c8f23402_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_payment_method_c8f23402_like ON public.sales_sale USING btree (payment_method varchar_pattern_ops);
+
+
+--
+-- Name: sales_sale_status_67159a_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_status_67159a_idx ON public.sales_sale USING btree (status, due_amount);
+
+
+--
+-- Name: sales_sale_status_7ba038f2; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_status_7ba038f2 ON public.sales_sale USING btree (status);
+
+
+--
+-- Name: sales_sale_status_7ba038f2_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sale_status_7ba038f2_like ON public.sales_sale USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: sales_saleitem_product_id_aeb6c9cd; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_saleitem_product_id_aeb6c9cd ON public.sales_saleitem USING btree (product_id);
+
+
+--
+-- Name: sales_saleitem_sale_id_56e67045; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_saleitem_sale_id_56e67045 ON public.sales_saleitem USING btree (sale_id);
+
+
+--
+-- Name: sales_salepayment_payment_account_id_a77337aa; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salepayment_payment_account_id_a77337aa ON public.sales_salepayment USING btree (payment_account_id);
+
+
+--
+-- Name: sales_salepayment_sale_id_894e0b7b; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salepayment_sale_id_894e0b7b ON public.sales_salepayment USING btree (sale_id);
+
+
+--
+-- Name: sales_sales_created_9eb346_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sales_created_9eb346_idx ON public.sales_salesreturn USING btree (created_by_id, created_at);
+
+
+--
+-- Name: sales_sales_created_c494d4_idx; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_sales_created_c494d4_idx ON public.sales_salesreturn USING btree (created_at);
+
+
+--
+-- Name: sales_salesreturn_created_by_id_7486ff06; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salesreturn_created_by_id_7486ff06 ON public.sales_salesreturn USING btree (created_by_id);
+
+
+--
+-- Name: sales_salesreturn_date_256a11a5; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salesreturn_date_256a11a5 ON public.sales_salesreturn USING btree (date);
+
+
+--
+-- Name: sales_salesreturn_original_sale_id_b258ea14; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salesreturn_original_sale_id_b258ea14 ON public.sales_salesreturn USING btree (original_sale_id);
+
+
+--
+-- Name: sales_salesreturn_payment_account_id_86884170; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salesreturn_payment_account_id_86884170 ON public.sales_salesreturn USING btree (payment_account_id);
+
+
+--
+-- Name: sales_salesreturn_return_number_0b38ffbc_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salesreturn_return_number_0b38ffbc_like ON public.sales_salesreturn USING btree (return_number varchar_pattern_ops);
+
+
+--
+-- Name: sales_salesreturnitem_product_id_60d282e5; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salesreturnitem_product_id_60d282e5 ON public.sales_salesreturnitem USING btree (product_id);
+
+
+--
+-- Name: sales_salesreturnitem_return_order_id_3f9958d5; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salesreturnitem_return_order_id_3f9958d5 ON public.sales_salesreturnitem USING btree (return_order_id);
+
+
+--
+-- Name: sales_salesreturnitem_sale_item_id_912a7754; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX sales_salesreturnitem_sale_item_id_912a7754 ON public.sales_salesreturnitem USING btree (sale_item_id);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_claim_date_3b87979e; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_claim_date_3b87979e ON public.warranty_customerwarrantyclaim USING btree (claim_date);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_claim_number_f029b18a_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_claim_number_f029b18a_like ON public.warranty_customerwarrantyclaim USING btree (claim_number varchar_pattern_ops);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_claimed_product_id_59ddec68; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_claimed_product_id_59ddec68 ON public.warranty_customerwarrantyclaim USING btree (claimed_product_id);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_created_by_id_45082844; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_created_by_id_45082844 ON public.warranty_customerwarrantyclaim USING btree (created_by_id);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_customer_id_524e9b83; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_customer_id_524e9b83 ON public.warranty_customerwarrantyclaim USING btree (customer_id);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_journal_entry_id_a0d4558f; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_journal_entry_id_a0d4558f ON public.warranty_customerwarrantyclaim USING btree (journal_entry_id);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_original_sale_id_8231fd6c; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_original_sale_id_8231fd6c ON public.warranty_customerwarrantyclaim USING btree (original_sale_id);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_replacement_product_id_fce6839a; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_replacement_product_id_fce6839a ON public.warranty_customerwarrantyclaim USING btree (replacement_product_id);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_sale_item_id_536213df; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_sale_item_id_536213df ON public.warranty_customerwarrantyclaim USING btree (sale_item_id);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_status_a6bd2e49; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_status_a6bd2e49 ON public.warranty_customerwarrantyclaim USING btree (status);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_status_a6bd2e49_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_status_a6bd2e49_like ON public.warranty_customerwarrantyclaim USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: warranty_customerwarrantyclaim_supplier_id_bf92761f; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_customerwarrantyclaim_supplier_id_bf92761f ON public.warranty_customerwarrantyclaim USING btree (supplier_id);
+
+
+--
+-- Name: warranty_supplierwarrantyc_completion_journal_entry_i_aed763f4; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyc_completion_journal_entry_i_aed763f4 ON public.warranty_supplierwarrantyclaim USING btree (completion_journal_entry_id);
+
+
+--
+-- Name: warranty_supplierwarrantyc_customer_warranty_claim_id_df285c7d; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyc_customer_warranty_claim_id_df285c7d ON public.warranty_supplierwarrantyclaimitem USING btree (customer_warranty_claim_id);
+
+
+--
+-- Name: warranty_supplierwarrantyc_dispatch_journal_entry_id_10336607; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyc_dispatch_journal_entry_id_10336607 ON public.warranty_supplierwarrantyclaim USING btree (dispatch_journal_entry_id);
+
+
+--
+-- Name: warranty_supplierwarrantyc_supplier_warranty_claim_id_761c1b04; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyc_supplier_warranty_claim_id_761c1b04 ON public.warranty_supplierwarrantyclaimitem USING btree (supplier_warranty_claim_id);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim_claim_number_debaf13f_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyclaim_claim_number_debaf13f_like ON public.warranty_supplierwarrantyclaim USING btree (claim_number varchar_pattern_ops);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim_created_by_id_e4fa4da9; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyclaim_created_by_id_e4fa4da9 ON public.warranty_supplierwarrantyclaim USING btree (created_by_id);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim_date_1cd7c6e3; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyclaim_date_1cd7c6e3 ON public.warranty_supplierwarrantyclaim USING btree (date);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim_status_bbcd09e4; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyclaim_status_bbcd09e4 ON public.warranty_supplierwarrantyclaim USING btree (status);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim_status_bbcd09e4_like; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyclaim_status_bbcd09e4_like ON public.warranty_supplierwarrantyclaim USING btree (status varchar_pattern_ops);
+
+
+--
+-- Name: warranty_supplierwarrantyclaim_supplier_id_1042c9b7; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyclaim_supplier_id_1042c9b7 ON public.warranty_supplierwarrantyclaim USING btree (supplier_id);
+
+
+--
+-- Name: warranty_supplierwarrantyclaimitem_product_id_4141c327; Type: INDEX; Schema: public; Owner: pos_user
+--
+
+CREATE INDEX warranty_supplierwarrantyclaimitem_product_id_4141c327 ON public.warranty_supplierwarrantyclaimitem USING btree (product_id);
+
+
+--
+-- Name: accounting_account accounting_account_parent_id_b1e41435_fk_accounting_account_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_account
+    ADD CONSTRAINT accounting_account_parent_id_b1e41435_fk_accounting_account_id FOREIGN KEY (parent_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: accounting_journalentry accounting_journalentry_created_by_id_60f500e8_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_journalentry
+    ADD CONSTRAINT accounting_journalentry_created_by_id_60f500e8_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: accounting_journalitem accounting_journalit_account_id_059cd84b_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_journalitem
+    ADD CONSTRAINT accounting_journalit_account_id_059cd84b_fk_accountin FOREIGN KEY (account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: accounting_journalitem accounting_journalit_journal_entry_id_c2d8859a_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_journalitem
+    ADD CONSTRAINT accounting_journalit_journal_entry_id_c2d8859a_fk_accountin FOREIGN KEY (journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: accounting_paymentmethod accounting_paymentme_linked_account_id_3b558d55_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.accounting_paymentmethod
+    ADD CONSTRAINT accounting_paymentme_linked_account_id_3b558d55_fk_accountin FOREIGN KEY (linked_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: auth_group_permissions auth_group_permissio_permission_id_84c5c92e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_group_permissions
+    ADD CONSTRAINT auth_group_permissio_permission_id_84c5c92e_fk_auth_perm FOREIGN KEY (permission_id) REFERENCES public.auth_permission(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: auth_group_permissions auth_group_permissions_group_id_b120cbf9_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_group_permissions
+    ADD CONSTRAINT auth_group_permissions_group_id_b120cbf9_fk_auth_group_id FOREIGN KEY (group_id) REFERENCES public.auth_group(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: auth_permission auth_permission_content_type_id_2f476e4b_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_permission
+    ADD CONSTRAINT auth_permission_content_type_id_2f476e4b_fk_django_co FOREIGN KEY (content_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: auth_user_groups auth_user_groups_group_id_97559544_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user_groups
+    ADD CONSTRAINT auth_user_groups_group_id_97559544_fk_auth_group_id FOREIGN KEY (group_id) REFERENCES public.auth_group(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: auth_user_groups auth_user_groups_user_id_6a12ed8b_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user_groups
+    ADD CONSTRAINT auth_user_groups_user_id_6a12ed8b_fk_auth_user_id FOREIGN KEY (user_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: auth_user_user_permissions auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user_user_permissions
+    ADD CONSTRAINT auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm FOREIGN KEY (permission_id) REFERENCES public.auth_permission(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: auth_user_user_permissions auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.auth_user_user_permissions
+    ADD CONSTRAINT auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id FOREIGN KEY (user_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: contacts_customerpayment contacts_customerpay_cancelled_by_id_ed349dc9_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customerpayment
+    ADD CONSTRAINT contacts_customerpay_cancelled_by_id_ed349dc9_fk_auth_user FOREIGN KEY (cancelled_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: contacts_customerpayment contacts_customerpay_customer_id_0c1d8598_fk_contacts_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customerpayment
+    ADD CONSTRAINT contacts_customerpay_customer_id_0c1d8598_fk_contacts_ FOREIGN KEY (customer_id) REFERENCES public.contacts_customer(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: contacts_customerpayment contacts_customerpay_journal_entry_id_ec923eca_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customerpayment
+    ADD CONSTRAINT contacts_customerpay_journal_entry_id_ec923eca_fk_accountin FOREIGN KEY (journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: contacts_customerpayment contacts_customerpay_payment_account_id_6bedef76_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customerpayment
+    ADD CONSTRAINT contacts_customerpay_payment_account_id_6bedef76_fk_accountin FOREIGN KEY (payment_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: contacts_customerpayment contacts_customerpay_reversal_journal_ent_08458c02_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customerpayment
+    ADD CONSTRAINT contacts_customerpay_reversal_journal_ent_08458c02_fk_accountin FOREIGN KEY (reversal_journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: contacts_customerpayment contacts_customerpay_submitted_by_id_906dddb4_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customerpayment
+    ADD CONSTRAINT contacts_customerpay_submitted_by_id_906dddb4_fk_auth_user FOREIGN KEY (submitted_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: contacts_customerpayment contacts_customerpayment_created_by_id_773f1081_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.contacts_customerpayment
+    ADD CONSTRAINT contacts_customerpayment_created_by_id_773f1081_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: core_auditlog core_auditlog_user_id_3797aaab_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.core_auditlog
+    ADD CONSTRAINT core_auditlog_user_id_3797aaab_fk_auth_user_id FOREIGN KEY (user_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: core_backuplog core_backuplog_created_by_id_8679fb3e_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.core_backuplog
+    ADD CONSTRAINT core_backuplog_created_by_id_8679fb3e_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: django_admin_log django_admin_log_content_type_id_c4bce8eb_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.django_admin_log
+    ADD CONSTRAINT django_admin_log_content_type_id_c4bce8eb_fk_django_co FOREIGN KEY (content_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: django_admin_log django_admin_log_user_id_c564eba6_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.django_admin_log
+    ADD CONSTRAINT django_admin_log_user_id_c564eba6_fk_auth_user_id FOREIGN KEY (user_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_attendance employees_attendance_created_by_id_bdeecf5e_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_attendance
+    ADD CONSTRAINT employees_attendance_created_by_id_bdeecf5e_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_attendance employees_attendance_employee_id_450daa06_fk_employees; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_attendance
+    ADD CONSTRAINT employees_attendance_employee_id_450daa06_fk_employees FOREIGN KEY (employee_id) REFERENCES public.employees_employee(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_employee employees_employee_created_by_id_bfa47e39_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_employee
+    ADD CONSTRAINT employees_employee_created_by_id_bfa47e39_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_employee employees_employee_user_id_27bed289_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_employee
+    ADD CONSTRAINT employees_employee_user_id_27bed289_fk_auth_user_id FOREIGN KEY (user_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salarypayment employees_salarypaym_cancelled_by_id_ecd2b0a7_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salarypayment
+    ADD CONSTRAINT employees_salarypaym_cancelled_by_id_ecd2b0a7_fk_auth_user FOREIGN KEY (cancelled_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salarypayment employees_salarypaym_employee_id_93322f6f_fk_employees; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salarypayment
+    ADD CONSTRAINT employees_salarypaym_employee_id_93322f6f_fk_employees FOREIGN KEY (employee_id) REFERENCES public.employees_employee(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salarypayment employees_salarypaym_journal_entry_id_d6e1d980_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salarypayment
+    ADD CONSTRAINT employees_salarypaym_journal_entry_id_d6e1d980_fk_accountin FOREIGN KEY (journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salarypayment employees_salarypaym_payment_account_id_4fe7d5c1_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salarypayment
+    ADD CONSTRAINT employees_salarypaym_payment_account_id_4fe7d5c1_fk_accountin FOREIGN KEY (payment_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salarypayment employees_salarypaym_reversal_journal_ent_008163c5_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salarypayment
+    ADD CONSTRAINT employees_salarypaym_reversal_journal_ent_008163c5_fk_accountin FOREIGN KEY (reversal_journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salarypayment employees_salarypaym_salary_slip_id_ed4cf1cc_fk_employees; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salarypayment
+    ADD CONSTRAINT employees_salarypaym_salary_slip_id_ed4cf1cc_fk_employees FOREIGN KEY (salary_slip_id) REFERENCES public.employees_salaryslip(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salarypayment employees_salarypayment_created_by_id_77eb79e7_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salarypayment
+    ADD CONSTRAINT employees_salarypayment_created_by_id_77eb79e7_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salaryslip employees_salaryslip_cancelled_by_id_06c885f5_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salaryslip
+    ADD CONSTRAINT employees_salaryslip_cancelled_by_id_06c885f5_fk_auth_user_id FOREIGN KEY (cancelled_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salaryslip employees_salaryslip_created_by_id_1029706c_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salaryslip
+    ADD CONSTRAINT employees_salaryslip_created_by_id_1029706c_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salaryslip employees_salaryslip_employee_id_203bb26b_fk_employees; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salaryslip
+    ADD CONSTRAINT employees_salaryslip_employee_id_203bb26b_fk_employees FOREIGN KEY (employee_id) REFERENCES public.employees_employee(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salaryslip employees_salaryslip_journal_entry_id_d29d73b5_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salaryslip
+    ADD CONSTRAINT employees_salaryslip_journal_entry_id_d29d73b5_fk_accountin FOREIGN KEY (journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salaryslip employees_salaryslip_reversal_journal_ent_36e0df8d_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salaryslip
+    ADD CONSTRAINT employees_salaryslip_reversal_journal_ent_36e0df8d_fk_accountin FOREIGN KEY (reversal_journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: employees_salaryslip employees_salaryslip_submitted_by_id_8e964513_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.employees_salaryslip
+    ADD CONSTRAINT employees_salaryslip_submitted_by_id_8e964513_fk_auth_user_id FOREIGN KEY (submitted_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_accounttransfer expenses_accounttran_cancelled_by_id_b490e552_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_accounttransfer
+    ADD CONSTRAINT expenses_accounttran_cancelled_by_id_b490e552_fk_auth_user FOREIGN KEY (cancelled_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_accounttransfer expenses_accounttran_from_account_id_c2c12741_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_accounttransfer
+    ADD CONSTRAINT expenses_accounttran_from_account_id_c2c12741_fk_accountin FOREIGN KEY (from_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_accounttransfer expenses_accounttran_journal_entry_id_21423ec2_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_accounttransfer
+    ADD CONSTRAINT expenses_accounttran_journal_entry_id_21423ec2_fk_accountin FOREIGN KEY (journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_accounttransfer expenses_accounttran_reversal_journal_ent_da0b9416_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_accounttransfer
+    ADD CONSTRAINT expenses_accounttran_reversal_journal_ent_da0b9416_fk_accountin FOREIGN KEY (reversal_journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_accounttransfer expenses_accounttran_to_account_id_4da25e3e_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_accounttransfer
+    ADD CONSTRAINT expenses_accounttran_to_account_id_4da25e3e_fk_accountin FOREIGN KEY (to_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_accounttransfer expenses_accounttransfer_created_by_id_adde15f7_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_accounttransfer
+    ADD CONSTRAINT expenses_accounttransfer_created_by_id_adde15f7_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_expense expenses_expense_cancelled_by_id_11adec92_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_expense
+    ADD CONSTRAINT expenses_expense_cancelled_by_id_11adec92_fk_auth_user_id FOREIGN KEY (cancelled_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_expense expenses_expense_created_by_id_a2610358_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_expense
+    ADD CONSTRAINT expenses_expense_created_by_id_a2610358_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_expense expenses_expense_expense_account_id_2edd00c7_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_expense
+    ADD CONSTRAINT expenses_expense_expense_account_id_2edd00c7_fk_accountin FOREIGN KEY (expense_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_expense expenses_expense_journal_entry_id_3e2f6a91_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_expense
+    ADD CONSTRAINT expenses_expense_journal_entry_id_3e2f6a91_fk_accountin FOREIGN KEY (journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_expense expenses_expense_payment_account_id_9abbe10b_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_expense
+    ADD CONSTRAINT expenses_expense_payment_account_id_9abbe10b_fk_accountin FOREIGN KEY (payment_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_expense expenses_expense_reversal_journal_ent_9323ba1d_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_expense
+    ADD CONSTRAINT expenses_expense_reversal_journal_ent_9323ba1d_fk_accountin FOREIGN KEY (reversal_journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: expenses_expense expenses_expense_submitted_by_id_f7efca12_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.expenses_expense
+    ADD CONSTRAINT expenses_expense_submitted_by_id_f7efca12_fk_auth_user_id FOREIGN KEY (submitted_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: inventory_stockadjustmentitem inventory_stockadjus_adjustment_id_af989cc3_fk_inventory; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.inventory_stockadjustmentitem
+    ADD CONSTRAINT inventory_stockadjus_adjustment_id_af989cc3_fk_inventory FOREIGN KEY (adjustment_id) REFERENCES public.inventory_stockadjustment(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: inventory_stockadjustment inventory_stockadjus_created_by_id_d3ef1412_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.inventory_stockadjustment
+    ADD CONSTRAINT inventory_stockadjus_created_by_id_d3ef1412_fk_auth_user FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: inventory_stockadjustmentitem inventory_stockadjus_product_id_a8b8e13c_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.inventory_stockadjustmentitem
+    ADD CONSTRAINT inventory_stockadjus_product_id_a8b8e13c_fk_products_ FOREIGN KEY (product_id) REFERENCES public.products_product(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: inventory_stockmovement inventory_stockmovem_product_id_4eccfd0a_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.inventory_stockmovement
+    ADD CONSTRAINT inventory_stockmovem_product_id_4eccfd0a_fk_products_ FOREIGN KEY (product_id) REFERENCES public.products_product(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: inventory_stockmovement inventory_stockmovement_created_by_id_9a39cb99_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.inventory_stockmovement
+    ADD CONSTRAINT inventory_stockmovement_created_by_id_9a39cb99_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: products_category products_category_parent_id_3388f6c9_fk_products_category_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_category
+    ADD CONSTRAINT products_category_parent_id_3388f6c9_fk_products_category_id FOREIGN KEY (parent_id) REFERENCES public.products_category(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: products_product products_product_category_id_9b594869_fk_products_category_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_product
+    ADD CONSTRAINT products_product_category_id_9b594869_fk_products_category_id FOREIGN KEY (category_id) REFERENCES public.products_category(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: products_product products_product_unit_id_07baa821_fk_products_unit_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.products_product
+    ADD CONSTRAINT products_product_unit_id_07baa821_fk_products_unit_id FOREIGN KEY (unit_id) REFERENCES public.products_unit(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchase purchases_purchase_created_by_id_699c5882_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchase
+    ADD CONSTRAINT purchases_purchase_created_by_id_699c5882_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchase purchases_purchase_payment_account_id_0e5d40a1_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchase
+    ADD CONSTRAINT purchases_purchase_payment_account_id_0e5d40a1_fk_accountin FOREIGN KEY (payment_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchase purchases_purchase_payment_method_id_5987dfb3_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchase
+    ADD CONSTRAINT purchases_purchase_payment_method_id_5987dfb3_fk_accountin FOREIGN KEY (payment_method_id) REFERENCES public.accounting_paymentmethod(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchase purchases_purchase_supplier_id_2d052a2a_fk_contacts_supplier_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchase
+    ADD CONSTRAINT purchases_purchase_supplier_id_2d052a2a_fk_contacts_supplier_id FOREIGN KEY (supplier_id) REFERENCES public.contacts_supplier(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchaseitem purchases_purchaseit_product_id_61959486_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchaseitem
+    ADD CONSTRAINT purchases_purchaseit_product_id_61959486_fk_products_ FOREIGN KEY (product_id) REFERENCES public.products_product(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchaseitem purchases_purchaseit_purchase_id_a7f96c61_fk_purchases; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchaseitem
+    ADD CONSTRAINT purchases_purchaseit_purchase_id_a7f96c61_fk_purchases FOREIGN KEY (purchase_id) REFERENCES public.purchases_purchase(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchasereturn purchases_purchasere_original_purchase_id_2f356e7b_fk_purchases; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturn
+    ADD CONSTRAINT purchases_purchasere_original_purchase_id_2f356e7b_fk_purchases FOREIGN KEY (original_purchase_id) REFERENCES public.purchases_purchase(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchasereturn purchases_purchasere_payment_account_id_d12c9a1d_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturn
+    ADD CONSTRAINT purchases_purchasere_payment_account_id_d12c9a1d_fk_accountin FOREIGN KEY (payment_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchasereturnitem purchases_purchasere_product_id_6ea230ae_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturnitem
+    ADD CONSTRAINT purchases_purchasere_product_id_6ea230ae_fk_products_ FOREIGN KEY (product_id) REFERENCES public.products_product(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchasereturnitem purchases_purchasere_purchase_item_id_087566e6_fk_purchases; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturnitem
+    ADD CONSTRAINT purchases_purchasere_purchase_item_id_087566e6_fk_purchases FOREIGN KEY (purchase_item_id) REFERENCES public.purchases_purchaseitem(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchasereturnitem purchases_purchasere_purchase_return_id_ef30a8e4_fk_purchases; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturnitem
+    ADD CONSTRAINT purchases_purchasere_purchase_return_id_ef30a8e4_fk_purchases FOREIGN KEY (purchase_return_id) REFERENCES public.purchases_purchasereturn(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchasereturn purchases_purchasere_supplier_id_bbf28984_fk_contacts_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturn
+    ADD CONSTRAINT purchases_purchasere_supplier_id_bbf28984_fk_contacts_ FOREIGN KEY (supplier_id) REFERENCES public.contacts_supplier(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_purchasereturn purchases_purchasereturn_created_by_id_817d1134_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_purchasereturn
+    ADD CONSTRAINT purchases_purchasereturn_created_by_id_817d1134_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_supplierpayment purchases_supplierpa_cancelled_by_id_47c2db5a_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_supplierpayment
+    ADD CONSTRAINT purchases_supplierpa_cancelled_by_id_47c2db5a_fk_auth_user FOREIGN KEY (cancelled_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_supplierpayment purchases_supplierpa_created_by_id_332d2ff2_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_supplierpayment
+    ADD CONSTRAINT purchases_supplierpa_created_by_id_332d2ff2_fk_auth_user FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_supplierpayment purchases_supplierpa_journal_entry_id_aa177e38_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_supplierpayment
+    ADD CONSTRAINT purchases_supplierpa_journal_entry_id_aa177e38_fk_accountin FOREIGN KEY (journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_supplierpayment purchases_supplierpa_payment_account_id_93927a6d_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_supplierpayment
+    ADD CONSTRAINT purchases_supplierpa_payment_account_id_93927a6d_fk_accountin FOREIGN KEY (payment_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_supplierpayment purchases_supplierpa_reversal_journal_ent_718f4ab5_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_supplierpayment
+    ADD CONSTRAINT purchases_supplierpa_reversal_journal_ent_718f4ab5_fk_accountin FOREIGN KEY (reversal_journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_supplierpayment purchases_supplierpa_submitted_by_id_b810c088_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_supplierpayment
+    ADD CONSTRAINT purchases_supplierpa_submitted_by_id_b810c088_fk_auth_user FOREIGN KEY (submitted_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: purchases_supplierpayment purchases_supplierpa_supplier_id_99d1b7b3_fk_contacts_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.purchases_supplierpayment
+    ADD CONSTRAINT purchases_supplierpa_supplier_id_99d1b7b3_fk_contacts_ FOREIGN KEY (supplier_id) REFERENCES public.contacts_supplier(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_posdaysession sales_posdaysession_closed_by_id_84b07669_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_posdaysession
+    ADD CONSTRAINT sales_posdaysession_closed_by_id_84b07669_fk_auth_user_id FOREIGN KEY (closed_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_posdaysession sales_posdaysession_opened_by_id_22d37375_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_posdaysession
+    ADD CONSTRAINT sales_posdaysession_opened_by_id_22d37375_fk_auth_user_id FOREIGN KEY (opened_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_sale sales_sale_created_by_id_f6773268_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_sale
+    ADD CONSTRAINT sales_sale_created_by_id_f6773268_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_sale sales_sale_customer_id_2d66a408_fk_contacts_customer_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_sale
+    ADD CONSTRAINT sales_sale_customer_id_2d66a408_fk_contacts_customer_id FOREIGN KEY (customer_id) REFERENCES public.contacts_customer(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_sale sales_sale_payment_account_id_dd8bdab3_fk_accounting_account_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_sale
+    ADD CONSTRAINT sales_sale_payment_account_id_dd8bdab3_fk_accounting_account_id FOREIGN KEY (payment_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_saleitem sales_saleitem_product_id_aeb6c9cd_fk_products_product_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_saleitem
+    ADD CONSTRAINT sales_saleitem_product_id_aeb6c9cd_fk_products_product_id FOREIGN KEY (product_id) REFERENCES public.products_product(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_saleitem sales_saleitem_sale_id_56e67045_fk_sales_sale_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_saleitem
+    ADD CONSTRAINT sales_saleitem_sale_id_56e67045_fk_sales_sale_id FOREIGN KEY (sale_id) REFERENCES public.sales_sale(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_salepayment sales_salepayment_payment_account_id_a77337aa_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salepayment
+    ADD CONSTRAINT sales_salepayment_payment_account_id_a77337aa_fk_accountin FOREIGN KEY (payment_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_salepayment sales_salepayment_sale_id_894e0b7b_fk_sales_sale_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salepayment
+    ADD CONSTRAINT sales_salepayment_sale_id_894e0b7b_fk_sales_sale_id FOREIGN KEY (sale_id) REFERENCES public.sales_sale(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_salesreturn sales_salesreturn_created_by_id_7486ff06_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salesreturn
+    ADD CONSTRAINT sales_salesreturn_created_by_id_7486ff06_fk_auth_user_id FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_salesreturn sales_salesreturn_original_sale_id_b258ea14_fk_sales_sale_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salesreturn
+    ADD CONSTRAINT sales_salesreturn_original_sale_id_b258ea14_fk_sales_sale_id FOREIGN KEY (original_sale_id) REFERENCES public.sales_sale(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_salesreturn sales_salesreturn_payment_account_id_86884170_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salesreturn
+    ADD CONSTRAINT sales_salesreturn_payment_account_id_86884170_fk_accountin FOREIGN KEY (payment_account_id) REFERENCES public.accounting_account(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_salesreturnitem sales_salesreturnite_product_id_60d282e5_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salesreturnitem
+    ADD CONSTRAINT sales_salesreturnite_product_id_60d282e5_fk_products_ FOREIGN KEY (product_id) REFERENCES public.products_product(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_salesreturnitem sales_salesreturnite_return_order_id_3f9958d5_fk_sales_sal; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salesreturnitem
+    ADD CONSTRAINT sales_salesreturnite_return_order_id_3f9958d5_fk_sales_sal FOREIGN KEY (return_order_id) REFERENCES public.sales_salesreturn(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: sales_salesreturnitem sales_salesreturnite_sale_item_id_912a7754_fk_sales_sal; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.sales_salesreturnitem
+    ADD CONSTRAINT sales_salesreturnite_sale_item_id_912a7754_fk_sales_sal FOREIGN KEY (sale_item_id) REFERENCES public.sales_saleitem(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: users_userprofile users_userprofile_user_id_87251ef1_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.users_userprofile
+    ADD CONSTRAINT users_userprofile_user_id_87251ef1_fk_auth_user_id FOREIGN KEY (user_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwar_claimed_product_id_59ddec68_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwar_claimed_product_id_59ddec68_fk_products_ FOREIGN KEY (claimed_product_id) REFERENCES public.products_product(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwar_created_by_id_45082844_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwar_created_by_id_45082844_fk_auth_user FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwar_customer_id_524e9b83_fk_contacts_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwar_customer_id_524e9b83_fk_contacts_ FOREIGN KEY (customer_id) REFERENCES public.contacts_customer(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwar_journal_entry_id_a0d4558f_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwar_journal_entry_id_a0d4558f_fk_accountin FOREIGN KEY (journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwar_original_sale_id_8231fd6c_fk_sales_sal; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwar_original_sale_id_8231fd6c_fk_sales_sal FOREIGN KEY (original_sale_id) REFERENCES public.sales_sale(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwar_replacement_product__fce6839a_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwar_replacement_product__fce6839a_fk_products_ FOREIGN KEY (replacement_product_id) REFERENCES public.products_product(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwar_sale_item_id_536213df_fk_sales_sal; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwar_sale_item_id_536213df_fk_sales_sal FOREIGN KEY (sale_item_id) REFERENCES public.sales_saleitem(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_customerwarrantyclaim warranty_customerwar_supplier_id_bf92761f_fk_contacts_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_customerwarrantyclaim
+    ADD CONSTRAINT warranty_customerwar_supplier_id_bf92761f_fk_contacts_ FOREIGN KEY (supplier_id) REFERENCES public.contacts_supplier(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_supplierwarrantyclaim warranty_supplierwar_completion_journal_e_aed763f4_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaim
+    ADD CONSTRAINT warranty_supplierwar_completion_journal_e_aed763f4_fk_accountin FOREIGN KEY (completion_journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_supplierwarrantyclaim warranty_supplierwar_created_by_id_e4fa4da9_fk_auth_user; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaim
+    ADD CONSTRAINT warranty_supplierwar_created_by_id_e4fa4da9_fk_auth_user FOREIGN KEY (created_by_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_supplierwarrantyclaimitem warranty_supplierwar_customer_warranty_cl_df285c7d_fk_warranty_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaimitem
+    ADD CONSTRAINT warranty_supplierwar_customer_warranty_cl_df285c7d_fk_warranty_ FOREIGN KEY (customer_warranty_claim_id) REFERENCES public.warranty_customerwarrantyclaim(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_supplierwarrantyclaim warranty_supplierwar_dispatch_journal_ent_10336607_fk_accountin; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaim
+    ADD CONSTRAINT warranty_supplierwar_dispatch_journal_ent_10336607_fk_accountin FOREIGN KEY (dispatch_journal_entry_id) REFERENCES public.accounting_journalentry(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_supplierwarrantyclaimitem warranty_supplierwar_product_id_4141c327_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaimitem
+    ADD CONSTRAINT warranty_supplierwar_product_id_4141c327_fk_products_ FOREIGN KEY (product_id) REFERENCES public.products_product(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_supplierwarrantyclaim warranty_supplierwar_supplier_id_1042c9b7_fk_contacts_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaim
+    ADD CONSTRAINT warranty_supplierwar_supplier_id_1042c9b7_fk_contacts_ FOREIGN KEY (supplier_id) REFERENCES public.contacts_supplier(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: warranty_supplierwarrantyclaimitem warranty_supplierwar_supplier_warranty_cl_761c1b04_fk_warranty_; Type: FK CONSTRAINT; Schema: public; Owner: pos_user
+--
+
+ALTER TABLE ONLY public.warranty_supplierwarrantyclaimitem
+    ADD CONSTRAINT warranty_supplierwar_supplier_warranty_cl_761c1b04_fk_warranty_ FOREIGN KEY (supplier_warranty_claim_id) REFERENCES public.warranty_supplierwarrantyclaim(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict SbjqE1CaioG53v1oXym6aqPg2hf0OwFF8am0muiArvh4bRPiNkt3L3wj5udwsbD
+

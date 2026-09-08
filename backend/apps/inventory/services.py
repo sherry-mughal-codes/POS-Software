@@ -156,6 +156,7 @@ class InventoryService:
                 "min_stock_level": float(min_stock),
                 "stock_status": status,
                 "selling_price": float(p.selling_price),
+                "purchase_price": float(p.purchase_price),
                 "weighted_average_cost": float(wac),
                 "inventory_valuation": float(stock * Decimal(str(wac))),
             })

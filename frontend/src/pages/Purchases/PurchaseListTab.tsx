@@ -8,6 +8,7 @@ import {
   Edit2,
   Building,
   FileText,
+  ImageIcon,
   Download,
   Printer,
 } from 'lucide-react';
@@ -20,6 +21,8 @@ import { purchaseService } from '../../services/purchaseService';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Pagination } from '../../components/common/Pagination';
 import { PurchaseOrderSlipModal } from './PurchaseOrderSlipModal';
+import { getProductImageUrl } from '../../utils/imageUrl';
+import { downloadImage } from '../../utils/downloadHelper';
 import { useToast } from '../../context/ToastContext';
 
 interface PurchaseListTabProps {
@@ -95,6 +98,9 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
   const [cancelTarget, setCancelTarget] = useState<Purchase | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
+
+  // Viewing Supplier Invoice Attachment Modal
+  const [viewingAttachment, setViewingAttachment] = useState<{ url: string; title: string; purchaseNumber: string } | null>(null);
 
   const handleSubmittingDraft = async (p: Purchase) => {
     try {
@@ -261,6 +267,22 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                           title="View Order Details"
                           onClick={() => setSelectedPurchase(p)}
                         />
+
+                        {p.supplier_invoice_file && (
+                          <Button
+                            variant="outline"
+                            icon={<ImageIcon size={12} />}
+                            style={{ padding: '0.25rem 0.45rem', color: 'var(--primary-400)', borderColor: 'var(--primary-400)' }}
+                            title="View & Download Supplier Invoice Attachment"
+                            onClick={() =>
+                              setViewingAttachment({
+                                url: getProductImageUrl(p.supplier_invoice_file),
+                                title: `Supplier Invoice Attachment - ${p.purchase_number}`,
+                                purchaseNumber: p.purchase_number,
+                              })
+                            }
+                          />
+                        )}
 
                         <Button
                           variant="outline"
@@ -458,7 +480,7 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                 </div>
                 {selectedPurchase.supplier_invoice_file && (
                   <a
-                    href={selectedPurchase.supplier_invoice_file}
+                    href={getProductImageUrl(selectedPurchase.supplier_invoice_file)}
                     target="_blank"
                     rel="noreferrer"
                     download={`Supplier_Invoice_${selectedPurchase.purchase_number}`}
@@ -587,6 +609,62 @@ export const PurchaseListTab: React.FC<PurchaseListTabProps> = ({
                 style={{ backgroundColor: 'var(--danger)', borderColor: 'var(--danger)', padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
               >
                 Confirm Cancellation
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {/* Viewing Supplier Invoice Attachment Modal */}
+      {viewingAttachment && (
+        <Modal
+          isOpen={!!viewingAttachment}
+          onClose={() => setViewingAttachment(null)}
+          title={viewingAttachment.title}
+          maxWidth="680px"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+            <div
+              style={{
+                width: '100%',
+                maxHeight: '480px',
+                overflow: 'auto',
+                borderRadius: '0.5rem',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '0.75rem',
+              }}
+            >
+              <img
+                src={viewingAttachment.url}
+                alt="Supplier Invoice Document"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '450px',
+                  objectFit: 'contain',
+                  borderRadius: '0.375rem',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.625rem', width: '100%' }}>
+              <Button
+                variant="primary"
+                icon={<Download size={14} />}
+                onClick={() =>
+                  downloadImage(
+                    viewingAttachment.url,
+                    `Supplier_Invoice_${viewingAttachment.purchaseNumber}.png`
+                  )
+                }
+              >
+                Download Attachment
+              </Button>
+              <Button variant="outline" onClick={() => setViewingAttachment(null)}>
+                Close
               </Button>
             </div>
           </div>

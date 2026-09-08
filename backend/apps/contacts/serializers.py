@@ -189,6 +189,7 @@ class CustomerPaymentCreateSerializer(serializers.ModelSerializer):
             "cheque_bank",
             "reference",
             "notes",
+            "screenshot",
             "submit_now",
         ]
 

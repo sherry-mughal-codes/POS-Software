@@ -211,7 +211,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           formData.append('warranty_period_days', '');
         }
 
-        if (!productToEdit && !doNotMaintainStock) {
+        const allowOpeningStock = (!productToEdit || Number(productToEdit.current_stock || 0) === 0) && !doNotMaintainStock;
+        if (allowOpeningStock) {
           formData.append('opening_stock', (parseFloat(openingStock) || 0).toString());
         }
 
@@ -242,7 +243,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           payload.image = null;
         }
 
-        if (!productToEdit && !doNotMaintainStock) {
+        const allowOpeningStock = (!productToEdit || Number(productToEdit.current_stock || 0) === 0) && !doNotMaintainStock;
+        if (allowOpeningStock) {
           payload.opening_stock = parseFloat(openingStock) || 0;
         }
 
@@ -477,10 +479,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 min="0"
                 value={openingStock}
                 onChange={(e) => setOpeningStock(e.target.value)}
-                disabled={!!productToEdit}
+                disabled={Boolean(productToEdit && Number(productToEdit.current_stock || 0) > 0)}
                 helperText={
                   productToEdit
-                    ? `Current on-hand: ${openingStock} units (adjust via Stock Adjustments).`
+                    ? Number(productToEdit.current_stock || 0) === 0
+                      ? 'Stock is currently 0. Enter initial opening stock to initialize inventory.'
+                      : `Current on-hand: ${openingStock} units (adjust via Stock Adjustments).`
                     : 'Auto-initializes inventory balance & valuation report.'
                 }
               />

@@ -78,8 +78,11 @@ export const purchaseService = {
     return { results: [], count: 0 };
   },
 
-  async createSupplierPayment(data: SupplierPaymentCreatePayload): Promise<SupplierPayment> {
-    const response = await apiClient.post<SupplierPayment>('/purchases/payments/', data);
+  async createSupplierPayment(data: SupplierPaymentCreatePayload | FormData): Promise<SupplierPayment> {
+    const isFormData = data instanceof FormData;
+    const response = await apiClient.post<SupplierPayment>('/purchases/payments/', data, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    });
     return response.data;
   },
 

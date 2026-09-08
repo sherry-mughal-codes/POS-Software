@@ -263,6 +263,12 @@ class SupplierPayment(models.Model):
     cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Drawn on bank name")
     reference = models.CharField(max_length=100, blank=True, null=True, help_text="Cheque # / Online Bank Reference")
     notes = models.TextField(blank=True, null=True)
+    screenshot = models.ImageField(
+        upload_to="supplier_payments/",
+        null=True,
+        blank=True,
+        help_text="Payment proof / deposit slip screenshot",
+    )
     status = models.CharField(
         max_length=20,
         choices=SupplierPaymentStatus.choices,

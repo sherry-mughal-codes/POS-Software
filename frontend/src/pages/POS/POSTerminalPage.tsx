@@ -241,6 +241,8 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
           unit_name: prod.unit_name,
           unit_abbr: prod.unit_abbr,
           unit_price: prod.selling_price,
+          purchase_price: prod.purchase_price ?? prod.weighted_average_cost ?? 0,
+          weighted_average_cost: prod.weighted_average_cost ?? prod.purchase_price ?? 0,
           available_stock: isStockFree ? 999999 : prod.current_stock,
           quantity: 1,
           discount: 0,
@@ -283,22 +285,6 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
             ...item,
             unit_price: price,
             subtotal: Math.max(0, (item.quantity * price) - item.discount),
-          };
-        }
-        return item;
-      })
-    );
-  };
-
-  const handleUpdateLineDiscount = (productId: number, discount: number) => {
-    setCart((prevCart) =>
-      prevCart.map((item) => {
-        if (item.product_id === productId) {
-          const d = Math.max(0, discount);
-          return {
-            ...item,
-            discount: d,
-            subtotal: Math.max(0, (item.quantity * item.unit_price) - d),
           };
         }
         return item;
@@ -540,6 +526,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
           {/* Right Side: Cart */}
           <div style={{ overflow: 'hidden', height: '100%' }}>
             <POSCart
+              products={products}
               cart={cart}
               customers={customers}
               selectedCustomerId={selectedCustomerId}
@@ -547,7 +534,6 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
               onOpenNewCustomerModal={() => setIsCustomerModalOpen(true)}
               onUpdateQuantity={handleUpdateQuantity}
               onUpdateUnitPrice={handleUpdateUnitPrice}
-              onUpdateLineDiscount={handleUpdateLineDiscount}
               onRemoveItem={handleRemoveItem}
               onClearCart={handleClearCart}
               overallDiscountType={overallDiscountType}

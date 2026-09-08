@@ -237,6 +237,7 @@ class SupplierPaymentSerializer(serializers.ModelSerializer):
             "cheque_bank",
             "reference",
             "notes",
+            "screenshot",
             "status",
             "status_display",
             "journal_entry",
@@ -291,6 +292,7 @@ class SupplierPaymentCreateSerializer(serializers.Serializer):
     date = serializers.DateField(required=False)
     reference = serializers.CharField(required=False, allow_blank=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")
+    screenshot = serializers.FileField(required=False, allow_null=True)
     submit_now = serializers.BooleanField(required=False, default=True)
 
     def validate_amount(self, value):

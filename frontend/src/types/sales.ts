@@ -10,6 +10,8 @@ export interface CartItem {
   unit_name?: string;
   unit_abbr?: string;
   unit_price: number;
+  purchase_price?: number;
+  weighted_average_cost?: number;
   available_stock: number;
   quantity: number;
   discount: number;

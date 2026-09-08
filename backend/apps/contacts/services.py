@@ -180,6 +180,7 @@ class CustomerReceivableService:
             cheque_bank=data.get("cheque_bank", ""),
             reference=reference,
             notes=notes,
+            screenshot=data.get("screenshot"),
             status=CustomerPaymentStatus.DRAFT,
             created_by=user,
         )

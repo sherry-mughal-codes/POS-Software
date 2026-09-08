@@ -242,6 +242,7 @@ class SupplierPaymentViewSet(viewsets.ModelViewSet):
                 payment_date=data.get("date"),
                 reference=data.get("reference", ""),
                 notes=data.get("notes", ""),
+                screenshot=data.get("screenshot"),
                 submit_now=data.get("submit_now", True),
                 created_by=request.user,
             )

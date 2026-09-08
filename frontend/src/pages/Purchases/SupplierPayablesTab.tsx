@@ -16,7 +16,13 @@ import {
   RotateCcw,
   User,
   Phone,
+  ImageIcon,
+  Download,
+  Upload,
+  X,
 } from 'lucide-react';
+import { getProductImageUrl } from '../../utils/imageUrl';
+import { downloadImage } from '../../utils/downloadHelper';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -98,6 +104,13 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toLocaleDateString('en-CA'));
+  const [paymentScreenshotFile, setPaymentScreenshotFile] = useState<File | null>(null);
+  const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState<string | null>(null);
+  const [viewingScreenshot, setViewingScreenshot] = useState<{
+    url: string;
+    title: string;
+    paymentNumber: string;
+  } | null>(null);
   const [submitNow, setSubmitNow] = useState(true);
   const [savingPayment, setSavingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -233,6 +246,18 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
     }
   }, [viewMode, fetchVouchers, fetchReport]);
 
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPaymentScreenshotFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPaymentScreenshotPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Open Disburse Payment Modal
   const handleOpenPaymentModal = (supp: Supplier) => {
     setSelectedSupplierForPay(supp);
@@ -245,6 +270,8 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
     setChequeBank('');
     setReference('');
     setNotes('');
+    setPaymentScreenshotFile(null);
+    setPaymentScreenshotPreview(null);
     setPaymentDate(new Date().toLocaleDateString('en-CA'));
     setSubmitNow(true);
     setPaymentError(null);
@@ -298,21 +325,39 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
     setPaymentError(null);
 
     try {
-      const payload: SupplierPaymentCreatePayload = {
-        supplier: selectedSupplierForPay.id,
-        amount: payAmount,
-        payment_method: payMethod,
-        payment_account: parseInt(selectedAccountId),
-        cheque_number: payMethod === 'CHEQUE' ? chequeNumber.trim() : undefined,
-        cheque_date: payMethod === 'CHEQUE' ? chequeDate : undefined,
-        cheque_bank: payMethod === 'CHEQUE' ? chequeBank.trim() : undefined,
-        date: paymentDate,
-        reference: reference.trim(),
-        notes: notes.trim(),
-        submit_now: submitNow,
-      };
-
-      await purchaseService.createSupplierPayment(payload);
+      if (paymentScreenshotFile) {
+        const formData = new FormData();
+        formData.append('supplier', selectedSupplierForPay.id.toString());
+        formData.append('amount', payAmount.toString());
+        formData.append('payment_method', payMethod);
+        formData.append('payment_account', selectedAccountId);
+        if (payMethod === 'CHEQUE') {
+          if (chequeNumber.trim()) formData.append('cheque_number', chequeNumber.trim());
+          if (chequeDate) formData.append('cheque_date', chequeDate);
+          if (chequeBank.trim()) formData.append('cheque_bank', chequeBank.trim());
+        }
+        if (paymentDate) formData.append('date', paymentDate);
+        if (reference.trim()) formData.append('reference', reference.trim());
+        if (notes.trim()) formData.append('notes', notes.trim());
+        formData.append('screenshot', paymentScreenshotFile);
+        formData.append('submit_now', submitNow ? 'true' : 'false');
+        await purchaseService.createSupplierPayment(formData);
+      } else {
+        const payload: SupplierPaymentCreatePayload = {
+          supplier: selectedSupplierForPay.id,
+          amount: payAmount,
+          payment_method: payMethod,
+          payment_account: parseInt(selectedAccountId),
+          cheque_number: payMethod === 'CHEQUE' ? chequeNumber.trim() : undefined,
+          cheque_date: payMethod === 'CHEQUE' ? chequeDate : undefined,
+          cheque_bank: payMethod === 'CHEQUE' ? chequeBank.trim() : undefined,
+          date: paymentDate,
+          reference: reference.trim(),
+          notes: notes.trim(),
+          submit_now: submitNow,
+        };
+        await purchaseService.createSupplierPayment(payload);
+      }
       setIsPaymentModalOpen(false);
       await fetchPayablesData();
       if (viewMode === 'vouchers') fetchVouchers();
@@ -648,13 +693,11 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
                               {netPayable > 0 && (
                                 <Button
                                   variant="primary"
-                                  icon={<Send size={11} />}
-                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.71875rem' }}
+                                  icon={<Send size={12} />}
+                                  style={{ padding: '0.25rem 0.45rem' }}
                                   onClick={() => handleOpenPaymentModal(s)}
                                   title="Disburse Payment to Supplier"
-                                >
-                                  Pay
-                                </Button>
+                                />
                               )}
                               <Button
                                 variant="outline"
@@ -794,6 +837,22 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
 
                           <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right' }}>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
+                              {v.screenshot && (
+                                <Button
+                                  variant="outline"
+                                  icon={<ImageIcon size={12} />}
+                                  style={{ padding: '0.25rem 0.45rem', color: 'var(--primary-400)', borderColor: 'var(--primary-400)' }}
+                                  title="View & Download Uploaded Payment Slip / Screenshot"
+                                  onClick={() =>
+                                    setViewingScreenshot({
+                                      url: getProductImageUrl(v.screenshot),
+                                      title: `Supplier Payment Voucher Proof - ${v.payment_number}`,
+                                      paymentNumber: v.payment_number,
+                                    })
+                                  }
+                                />
+                              )}
+
                               {v.status === 'DRAFT' && (
                                 <Button
                                   variant="primary"
@@ -1196,6 +1255,73 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
               </div>
             </div>
 
+            {/* Payment Proof / Deposit Slip Upload */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
+                Payment Slip / Receipt Proof (Optional)
+              </label>
+              {paymentScreenshotPreview ? (
+                <div style={{ position: 'relative', display: 'inline-block', borderRadius: '0.375rem', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+                  <img
+                    src={paymentScreenshotPreview}
+                    alt="Payment Slip preview"
+                    style={{ width: '120px', height: '120px', objectFit: 'cover', display: 'block' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentScreenshotFile(null);
+                      setPaymentScreenshotPreview(null);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '22px',
+                      height: '22px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    border: '1px dashed var(--border-medium)',
+                    borderRadius: '0.375rem',
+                    padding: '0.75rem',
+                    textAlign: 'center',
+                    backgroundColor: 'var(--bg-input)',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => document.getElementById('supplier-payment-screenshot-input')?.click()}
+                >
+                  <input
+                    id="supplier-payment-screenshot-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleScreenshotChange}
+                    style={{ display: 'none' }}
+                  />
+                  <Upload size={18} style={{ color: 'var(--primary-400)', margin: '0 auto 0.25rem auto' }} />
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                    Upload Screenshot / Deposit Slip
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                    Click to browse from computer / gallery (PNG, JPG, WebP)
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Notes */}
             <div>
               <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.375rem' }}>
@@ -1501,6 +1627,60 @@ export const SupplierPayablesTab: React.FC<SupplierPayablesTabProps> = ({ onRefr
           </form>
         )}
       </Modal>
+
+      {/* VIEW PAYMENT SLIP SCREENSHOT MODAL */}
+      {viewingScreenshot && (
+        <Modal
+          isOpen={!!viewingScreenshot}
+          onClose={() => setViewingScreenshot(null)}
+          title={viewingScreenshot.title}
+          maxWidth="680px"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+            <div
+              style={{
+                width: '100%',
+                maxHeight: '480px',
+                overflow: 'auto',
+                borderRadius: '0.5rem',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '0.75rem',
+              }}
+            >
+              <img
+                src={viewingScreenshot.url}
+                alt="Payment Slip Proof"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '450px',
+                  objectFit: 'contain',
+                  borderRadius: '0.375rem',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.625rem', width: '100%' }}>
+              <Button
+                variant="primary"
+                icon={<Download size={14} />}
+                onClick={() =>
+                  downloadImage(viewingScreenshot.url, `Supplier_Payment_${viewingScreenshot.paymentNumber}.png`)
+                }
+              >
+                Download Attachment
+              </Button>
+              <Button variant="outline" onClick={() => setViewingScreenshot(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

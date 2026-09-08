@@ -21,6 +21,7 @@ import {
   TrendingDown,
   FileSpreadsheet,
   Upload,
+  Download,
   Image as ImageIcon,
   X,
   Filter,
@@ -35,6 +36,7 @@ import { CustomerModal } from './CustomerModal';
 import { CustomerBulkImportModal } from './CustomerBulkImportModal';
 import { CustomerStatementSlipModal } from './CustomerStatementSlipModal';
 import { getProductImageUrl } from '../../utils/imageUrl';
+import { downloadImage } from '../../utils/downloadHelper';
 import {
   Customer,
   CustomerPayment,
@@ -132,6 +134,9 @@ export const CustomersPage: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  // Viewing Payment Screenshot Modal
+  const [viewingScreenshot, setViewingScreenshot] = useState<{ url: string; title: string; paymentNumber: string } | null>(null);
 
   // Filter accounts based on payment method
   const getFilteredPaymentAccounts = (method: PaymentMethodKind) => {
@@ -993,7 +998,6 @@ export const CustomersPage: React.FC = () => {
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Method / Account</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Amount Paid (Rs.)</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Reference</th>
-                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Proof / Slip</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Status</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Created By</th>
                       <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Actions</th>
@@ -1002,7 +1006,7 @@ export const CustomersPage: React.FC = () => {
                   <tbody>
                     {payments.length === 0 ? (
                       <tr>
-                        <td colSpan={10} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <td colSpan={9} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                           No customer payment vouchers recorded yet. Click "Record Payment" to create one.
                         </td>
                       </tr>
@@ -1047,28 +1051,6 @@ export const CustomersPage: React.FC = () => {
                             {pay.reference || '-'}
                           </td>
 
-                          <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
-                            {pay.screenshot ? (
-                              <a
-                                href={getProductImageUrl(pay.screenshot)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.25rem',
-                                  color: 'var(--primary-400)',
-                                  fontSize: '0.75rem',
-                                  textDecoration: 'underline',
-                                }}
-                              >
-                                <ImageIcon size={13} /> View Slip
-                              </a>
-                            ) : (
-                              <span style={{ color: 'var(--text-subtle)', fontSize: '0.75rem' }}>-</span>
-                            )}
-                          </td>
-
                           <td style={{ padding: '0.625rem 0.75rem' }}>
                             {pay.status === 'SUBMITTED' && <Badge variant="success">Submitted</Badge>}
                             {pay.status === 'DRAFT' && <Badge variant="warning">Draft</Badge>}
@@ -1080,15 +1062,32 @@ export const CustomersPage: React.FC = () => {
                           </td>
 
                           <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
-                            {pay.status === 'SUBMITTED' && (
-                              <Button
-                                variant="outline"
-                                icon={<RotateCcw size={13} />}
-                                onClick={() => handleOpenCancelPayment(pay)}
-                                title="Cancel Payment & Reverse Accounts Receivable"
-                                style={{ padding: '0.3rem 0.45rem' }}
-                              />
-                            )}
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.25rem' }}>
+                              {pay.screenshot && (
+                                <Button
+                                  variant="outline"
+                                  icon={<ImageIcon size={13} />}
+                                  onClick={() =>
+                                    setViewingScreenshot({
+                                      url: getProductImageUrl(pay.screenshot),
+                                      title: `Payment Voucher Proof - ${pay.payment_number}`,
+                                      paymentNumber: pay.payment_number,
+                                    })
+                                  }
+                                  title="View & Download Uploaded Payment Slip Screenshot"
+                                  style={{ padding: '0.3rem 0.45rem', color: 'var(--primary-400)', borderColor: 'var(--primary-400)' }}
+                                />
+                              )}
+                              {pay.status === 'SUBMITTED' && (
+                                <Button
+                                  variant="outline"
+                                  icon={<RotateCcw size={13} />}
+                                  onClick={() => handleOpenCancelPayment(pay)}
+                                  title="Cancel Payment & Reverse Accounts Receivable"
+                                  style={{ padding: '0.3rem 0.45rem' }}
+                                />
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -1988,6 +1987,63 @@ export const CustomersPage: React.FC = () => {
           fetchCustomers();
         }}
       />
+
+      {/* Payment Proof / Screenshot Preview & Download Modal */}
+      {viewingScreenshot && (
+        <Modal
+          isOpen={!!viewingScreenshot}
+          onClose={() => setViewingScreenshot(null)}
+          title={viewingScreenshot.title}
+          maxWidth="680px"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+            <div
+              style={{
+                width: '100%',
+                maxHeight: '480px',
+                overflow: 'auto',
+                borderRadius: '0.5rem',
+                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '0.75rem',
+              }}
+            >
+              <img
+                src={viewingScreenshot.url}
+                alt="Payment Deposit Slip"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '450px',
+                  objectFit: 'contain',
+                  borderRadius: '0.375rem',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.625rem', width: '100%' }}>
+              <Button
+                variant="primary"
+                icon={<Download size={14} />}
+                onClick={() =>
+                  downloadImage(
+                    viewingScreenshot.url,
+                    `Payment_Proof_${viewingScreenshot.paymentNumber}.png`
+                  )
+                }
+              >
+                Download Attachment
+              </Button>
+              <Button variant="outline" onClick={() => setViewingScreenshot(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

@@ -94,18 +94,30 @@ class ProductSerializer(serializers.ModelSerializer):
         from apps.inventory.services import InventoryService
         return float(InventoryService.get_product_stock(obj.id))
 
-    def create(self, validated_data):
-        opening_stock = validated_data.pop("opening_stock", Decimal("0.00"))
-        product = super().create(validated_data)
-        if product.maintain_stock and opening_stock and Decimal(str(opening_stock)) > Decimal("0.00"):
-            request = self.context.get("request")
-            user = request.user if request and request.user.is_authenticated else None
-            from apps.inventory.models import StockMovement, MovementType
-            from apps.accounting.models import Account, ReferenceType
-            from apps.accounting.services import AccountingService
-            from django.utils import timezone
+    def _record_opening_stock(self, product, opening_stock, user):
+        if not product.maintain_stock or not opening_stock:
+            return
+        opn_qty = Decimal(str(opening_stock))
+        if opn_qty <= Decimal("0.00"):
+            return
 
-            opn_qty = Decimal(str(opening_stock))
+        from apps.inventory.models import StockMovement, MovementType
+        from apps.accounting.models import Account, ReferenceType
+        from apps.accounting.services import AccountingService
+        from django.utils import timezone
+
+        existing_opn = StockMovement.objects.filter(
+            product=product,
+            movement_type=MovementType.OPENING_STOCK
+        ).first()
+
+        if existing_opn and existing_opn.quantity == Decimal("0.00"):
+            existing_opn.quantity = opn_qty
+            existing_opn.unit_cost = product.purchase_price
+            existing_opn.balance_after = opn_qty
+            existing_opn.notes = f"Initial Opening Stock for {product.name}"
+            existing_opn.save()
+        elif not existing_opn:
             StockMovement.objects.create(
                 product=product,
                 movement_type=MovementType.OPENING_STOCK,
@@ -118,39 +130,57 @@ class ProductSerializer(serializers.ModelSerializer):
                 created_by=user,
             )
 
-            valuation = opn_qty * product.purchase_price
-            if valuation > Decimal("0.00"):
-                try:
-                    inv_acc = Account.objects.filter(code="1040").first() or Account.objects.filter(name__icontains="inventory").first()
-                    equity_acc = Account.objects.filter(code="3010").first() or Account.objects.filter(account_type="EQUITY").first()
-                    if inv_acc and equity_acc:
-                        from apps.accounting.models import JournalEntry
-                        if not JournalEntry.objects.filter(reference_type=ReferenceType.OPENING_BALANCE, reference_id=f"OPN-{product.sku}").exists():
-                            AccountingService.create_journal_entry(
-                                entry_date=timezone.now().date(),
-                                reference_type=ReferenceType.OPENING_BALANCE,
-                                reference_id=f"OPN-{product.sku}",
-                                lines=[
-                                    {
-                                        "account": inv_acc,
-                                        "debit": valuation,
-                                        "credit": Decimal("0.00"),
-                                        "description": f"Opening inventory asset for {product.name} ({opn_qty} @ Rs. {product.purchase_price:.2f})",
-                                    },
-                                    {
-                                        "account": equity_acc,
-                                        "debit": Decimal("0.00"),
-                                        "credit": valuation,
-                                        "description": f"Opening capital equity from product inventory ({product.name})",
-                                    },
-                                ],
-                                narration=f"Opening Stock Setup: {product.name} ({opn_qty} units @ Rs. {product.purchase_price:.2f})",
-                                created_by=user,
-                            )
-                except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).warning(f"Could not auto-post opening stock GL entry for {product.sku}: {e}")
+        valuation = opn_qty * product.purchase_price
+        if valuation > Decimal("0.00"):
+            try:
+                inv_acc = Account.objects.filter(code="1040").first() or Account.objects.filter(name__icontains="inventory").first()
+                equity_acc = Account.objects.filter(code="3010").first() or Account.objects.filter(account_type="EQUITY").first()
+                if inv_acc and equity_acc:
+                    from apps.accounting.models import JournalEntry
+                    if not JournalEntry.objects.filter(reference_type=ReferenceType.OPENING_BALANCE, reference_id=f"OPN-{product.sku}").exists():
+                        AccountingService.create_journal_entry(
+                            entry_date=timezone.now().date(),
+                            reference_type=ReferenceType.OPENING_BALANCE,
+                            reference_id=f"OPN-{product.sku}",
+                            lines=[
+                                {
+                                    "account": inv_acc,
+                                    "debit": valuation,
+                                    "credit": Decimal("0.00"),
+                                    "description": f"Opening inventory asset for {product.name} ({opn_qty} @ Rs. {product.purchase_price:.2f})",
+                                },
+                                {
+                                    "account": equity_acc,
+                                    "debit": Decimal("0.00"),
+                                    "credit": valuation,
+                                    "description": f"Opening capital equity from product inventory ({product.name})",
+                                },
+                            ],
+                            narration=f"Opening Stock Setup: {product.name} ({opn_qty} units @ Rs. {product.purchase_price:.2f})",
+                            created_by=user,
+                        )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Could not auto-post opening stock GL entry for {product.sku}: {e}")
 
+    def create(self, validated_data):
+        opening_stock = validated_data.pop("opening_stock", Decimal("0.00"))
+        product = super().create(validated_data)
+        request = self.context.get("request")
+        user = request.user if request and request.user.is_authenticated else None
+        self._record_opening_stock(product, opening_stock, user)
+        return product
+
+    def update(self, instance, validated_data):
+        opening_stock = validated_data.pop("opening_stock", None)
+        product = super().update(instance, validated_data)
+        if product.maintain_stock and opening_stock is not None:
+            from apps.inventory.services import InventoryService
+            current_stock = InventoryService.get_product_stock(product.id)
+            if current_stock == Decimal("0.00") and Decimal(str(opening_stock)) > Decimal("0.00"):
+                request = self.context.get("request")
+                user = request.user if request and request.user.is_authenticated else None
+                self._record_opening_stock(product, opening_stock, user)
         return product
 
     def validate_barcode(self, value):

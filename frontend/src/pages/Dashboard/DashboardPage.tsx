@@ -22,6 +22,7 @@ import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { dashboardService } from '../../services/dashboardService';
+import { useAuth } from '../../hooks/useAuth';
 import {
   ExecutiveDashboardData,
   DashboardPeriod,
@@ -33,6 +34,11 @@ interface DashboardPageProps {
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
+  const { hasPermission } = useAuth();
+  const canViewWarranty =
+    hasPermission('view_customer_warranty_claim') ||
+    hasPermission('view_supplier_warranty_claim');
+
   const [period, setPeriod] = useState<DashboardPeriod>('this_month');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -408,45 +414,50 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </div>
         </Card>
 
-        {/* Warranty Claim Units (Asset 1060) */}
-        <Card
-          onClick={() => onNavigate('customer-warranty-claims')}
-          className="cursor-pointer hover:border-indigo-400 transition-colors"
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                Warranty Claim Units
+        {/* Warranty Cards (Only visible when user has warranty permissions) */}
+        {canViewWarranty && (
+          <>
+            {/* Warranty Claim Units (Asset 1060) */}
+            <Card
+              onClick={() => onNavigate('customer-warranty-claims')}
+              className="cursor-pointer hover:border-indigo-400 transition-colors"
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    Warranty Claim Units
+                  </div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#6366f1', marginTop: '0.15rem' }}>
+                    {data?.warranty_summary?.warranty_claim_units || 0} Units
+                  </div>
+                </div>
+                <div style={{ padding: '0.35rem', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.375rem', color: '#6366f1', flexShrink: 0 }}>
+                  <ShieldCheck size={16} />
+                </div>
               </div>
-              <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#6366f1', marginTop: '0.15rem' }}>
-                {data?.warranty_summary?.warranty_claim_units || 0} Units
-              </div>
-            </div>
-            <div style={{ padding: '0.35rem', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.375rem', color: '#6366f1', flexShrink: 0 }}>
-              <ShieldCheck size={16} />
-            </div>
-          </div>
-        </Card>
+            </Card>
 
-        {/* In Progress Supplier Claim Units */}
-        <Card
-          onClick={() => onNavigate('supplier-warranty-claims')}
-          className="cursor-pointer hover:border-indigo-400 transition-colors"
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                In Progress Supplier Claims
+            {/* In Progress Supplier Claim Units */}
+            <Card
+              onClick={() => onNavigate('supplier-warranty-claims')}
+              className="cursor-pointer hover:border-indigo-400 transition-colors"
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    In Progress Supplier Claims
+                  </div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#818cf8', marginTop: '0.15rem' }}>
+                    {data?.warranty_summary?.in_progress_supplier_claim_units || 0} Units
+                  </div>
+                </div>
+                <div style={{ padding: '0.35rem', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.375rem', color: '#818cf8', flexShrink: 0 }}>
+                  <Truck size={16} />
+                </div>
               </div>
-              <div style={{ fontSize: '1.125rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#818cf8', marginTop: '0.15rem' }}>
-                {data?.warranty_summary?.in_progress_supplier_claim_units || 0} Units
-              </div>
-            </div>
-            <div style={{ padding: '0.35rem', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.375rem', color: '#818cf8', flexShrink: 0 }}>
-              <Truck size={16} />
-            </div>
-          </div>
-        </Card>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* 3. Analytical Visuals: Sales Trend & Payment Distribution */}

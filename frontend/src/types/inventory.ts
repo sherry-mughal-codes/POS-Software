@@ -27,6 +27,7 @@ export interface InventorySummaryItem {
   min_stock_level: number;
   stock_status: StockStatus;
   selling_price: number;
+  purchase_price?: number;
   weighted_average_cost: number;
   inventory_valuation: number;
 }

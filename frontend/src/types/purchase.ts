@@ -139,6 +139,7 @@ export interface SupplierPayment {
   cheque_bank?: string | null;
   reference?: string | null;
   notes?: string | null;
+  screenshot?: string | null;
   status: SupplierPaymentStatus;
   status_display?: string;
   journal_entry?: number | null;
@@ -168,6 +169,7 @@ export interface SupplierPaymentCreatePayload {
   date?: string;
   reference?: string;
   notes?: string;
+  screenshot?: File | string | null;
   submit_now?: boolean;
 }
 

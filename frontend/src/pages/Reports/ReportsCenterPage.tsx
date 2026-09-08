@@ -115,25 +115,27 @@ export const ReportsCenterPage: React.FC<{ onNavigate: (tabId: string) => void }
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          flexWrap: 'wrap',
           gap: '0.625rem',
           padding: '0.45rem 0.65rem',
           borderRadius: '0.5rem',
           backgroundColor: 'rgba(255, 255, 255, 0.02)',
           border: '1px solid var(--border-subtle)',
+          overflowX: 'auto',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)', margin: 0 }}>
             Reports Center
           </h2>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Period: <strong style={{ color: 'var(--primary-400)' }}>{dashboardData?.period_label || 'Loading...'}</strong>
-          </span>
+          {period !== 'custom' && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Period: <strong style={{ color: 'var(--primary-400)' }}>{dashboardData?.period_label || 'Loading...'}</strong>
+            </span>
+          )}
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'nowrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as DashboardPeriod)}
