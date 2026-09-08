@@ -57,6 +57,7 @@ class SalesService:
         cls,
         customer_id: int,
         items_data: List[Dict[str, Any]],
+        sales_agent_id: Optional[int] = None,
         payment_method: str = PaymentMethodType.CASH,
         payment_account_id: Optional[int] = None,
         discount_amount: Decimal = Decimal("0.00"),
@@ -78,6 +79,7 @@ class SalesService:
         4. Writes Sale and SaleItems.
         5. Writes StockMovements (-Qty).
         6. Generates balanced General Ledger Journal Entries (Revenue & COGS).
+        7. Creates CommissionRecord if sales agent is assigned.
         """
         # Validate that an active business day session is open
         from apps.sales.services import DaySessionService
@@ -93,6 +95,11 @@ class SalesService:
         customer = Customer.objects.filter(pk=customer_id, is_active=True).first()
         if not customer:
             raise ValidationError(f"Customer with ID {customer_id} does not exist or is inactive.")
+
+        sales_agent = None
+        if sales_agent_id:
+            from apps.commission.models import SalesAgent
+            sales_agent = SalesAgent.objects.filter(pk=sales_agent_id, is_active=True).first()
 
         if not sale_date:
             sale_date = timezone.localdate()
@@ -193,6 +200,7 @@ class SalesService:
         sale = Sale.objects.create(
             invoice_number=invoice_number,
             customer=customer,
+            sales_agent=sales_agent,
             date=sale_date,
             status=SaleStatus.COMPLETED,
             subtotal=subtotal,
@@ -286,6 +294,15 @@ class SalesService:
 
         # 7. Post General Ledger Accounting Entries
         cls._post_sale_accounting(sale, total_cogs, created_by)
+
+        # 8. Commission Record Generation (if Sales Agent assigned)
+        if sales_agent:
+            try:
+                from apps.commission.services import CommissionService
+                CommissionService.create_commission_for_sale(sale, agent=sales_agent, created_by=created_by)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to generate commission record for sale {sale.invoice_number}: {e}", exc_info=True)
 
         return sale
 
@@ -558,6 +575,14 @@ class SalesService:
         if not sale.customer.is_walkin:
             from apps.contacts.services import CustomerReceivableService
             CustomerReceivableService.reallocate_customer_payments(sale.customer)
+
+        # Commission Adjustment / Reversal for Sales Return
+        try:
+            from apps.commission.services import CommissionService
+            CommissionService.adjust_commission_for_return(sales_return, created_by=created_by)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Failed to adjust commission for return {sales_return.return_number}: {e}", exc_info=True)
 
         return sales_return
 

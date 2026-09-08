@@ -82,6 +82,7 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
                 cheque_bank=data.get("cheque_bank"),
                 notes=data.get("notes", ""),
                 sale_date=data.get("date"),
+                sales_agent_id=data.get("sales_agent"),
                 created_by=request.user,
             )
             return Response(

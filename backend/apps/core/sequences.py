@@ -167,6 +167,36 @@ class DocumentSequenceService:
             "model_path": "apps.warranty.models.SupplierWarrantyClaim",
             "field_name": "claim_number",
         },
+        "sales_agent": {
+            "title": "Sales Agent Code",
+            "prefix_key": "sales_agent_prefix",
+            "start_key": "sales_agent_start_number",
+            "default_prefix": "AGT-",
+            "default_start": 1,
+            "padding": 4,
+            "model_path": "apps.commission.models.SalesAgent",
+            "field_name": "code",
+        },
+        "commission_record": {
+            "title": "Commission Record Number",
+            "prefix_key": "commission_record_prefix",
+            "start_key": "commission_record_start_number",
+            "default_prefix": "COM-",
+            "default_start": 1,
+            "padding": 5,
+            "model_path": "apps.commission.models.CommissionRecord",
+            "field_name": "commission_number",
+        },
+        "commission_payment": {
+            "title": "Commission Payment Voucher",
+            "prefix_key": "commission_payment_prefix",
+            "start_key": "commission_payment_start_number",
+            "default_prefix": "CPMT-",
+            "default_start": 1,
+            "padding": 5,
+            "model_path": "apps.commission.models.CommissionPayment",
+            "field_name": "payment_number",
+        },
     }
 
     @classmethod

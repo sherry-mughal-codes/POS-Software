@@ -23,6 +23,9 @@ import {
   FileCode,
   Search,
   Check,
+  Sliders,
+  Lock,
+  Power,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -31,13 +34,15 @@ import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useSettings } from '../../context/SettingsContext';
+import { useAuth } from '../../hooks/useAuth';
+import { useModules } from '../../context/ModuleContext';
 import { useToast } from '../../context/ToastContext';
 import { settingsService, DocumentSequenceInfo } from '../../services/settingsService';
 import { Account } from '../../types/accounting';
 import { accountingService } from '../../services/accountingService';
 import { backupService, BackupItem, DropboxTestResult } from '../../services/backupService';
 
-type SettingsTab = 'store' | 'pos' | 'inventory' | 'accounting' | 'system';
+type SettingsTab = 'store' | 'pos' | 'inventory' | 'accounting' | 'system' | 'modules';
 
 interface CurrencyOption {
   code: string;
@@ -67,12 +72,15 @@ const CURRENCY_OPTIONS: CurrencyOption[] = [
 ];
 
 export const SettingsPage: React.FC = () => {
+  const { user } = useAuth();
+  const { modules, toggleModule, refreshModules } = useModules();
   const { updateSettings: ctxUpdateSettings } = useSettings();
   const { showSuccess, showError } = useToast();
   const logoInputRef = React.useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<SettingsTab>('store');
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [togglingModuleKey, setTogglingModuleKey] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [docSequences, setDocSequences] = useState<Record<string, DocumentSequenceInfo>>({});
 
@@ -84,6 +92,7 @@ export const SettingsPage: React.FC = () => {
       const [res, accs] = await Promise.all([
         settingsService.getSettings(),
         accountingService.getAccounts({ is_active: true }),
+        refreshModules(),
       ]);
       setFormData(res.settings || {});
       if (res.document_sequences) {
@@ -101,6 +110,22 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  const handleToggleModuleStatus = async (key: string, is_core: boolean, currentEnabled: boolean) => {
+    if (is_core) {
+      showError('Core system modules cannot be disabled.', 'Action Prohibited');
+      return;
+    }
+    try {
+      setTogglingModuleKey(key);
+      const res = await toggleModule(key, !currentEnabled);
+      showSuccess(res.detail || `Module ${key} updated.`, 'Module Updated');
+    } catch (err: any) {
+      showError(err?.response?.data?.detail || err?.message || 'Failed to toggle module.', 'Module Error');
+    } finally {
+      setTogglingModuleKey(null);
+    }
+  };
 
   const leafAccounts = accounts.filter((a) => !a.is_header && a.is_active);
 
@@ -307,6 +332,9 @@ export const SettingsPage: React.FC = () => {
     { id: 'inventory', label: 'Inventory & Stock Thresholds', icon: <Package size={16} /> },
     { id: 'accounting', label: 'General Ledger Accounts Mapping', icon: <BookOpen size={16} /> },
     { id: 'system', label: 'System & Diagnostics', icon: <Database size={16} /> },
+    ...(user?.is_superuser
+      ? [{ id: 'modules' as SettingsTab, label: 'Extra Modules Management', icon: <Sliders size={16} /> }]
+      : []),
   ];
 
   return (
@@ -1631,6 +1659,110 @@ export const SettingsPage: React.FC = () => {
                     </table>
                   </div>
                 )}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* TAB 6: Extra Modules Management (Super Admin Exclusive) */}
+        {activeTab === 'modules' && user?.is_superuser && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <Card
+              title="Global System Modules & Feature Extensions"
+              icon={<Sliders size={16} />}
+              action={<Badge variant="phase">Super Admin Protected</Badge>}
+            >
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Module</th>
+                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Description</th>
+                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Classification</th>
+                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
+                      <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {modules.map((m) => {
+                      const isToggling = togglingModuleKey === m.key;
+                      return (
+                        <tr
+                          key={m.key}
+                          style={{
+                            borderBottom: '1px solid var(--border-subtle)',
+                            transition: 'background-color 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          {/* Module Name */}
+                          <td style={{ padding: '0.75rem' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.875rem' }}>
+                              {m.name}
+                            </div>
+                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                              key: {m.key}
+                            </div>
+                          </td>
+
+                          {/* Description */}
+                          <td style={{ padding: '0.75rem', color: 'var(--text-muted)', maxWidth: '320px' }}>
+                            {m.description || '—'}
+                          </td>
+
+                          {/* Core vs Optional Badge */}
+                          <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                            {m.is_core ? (
+                              <Badge variant="info">Core System</Badge>
+                            ) : (
+                              <Badge variant="warning">Optional Module</Badge>
+                            )}
+                          </td>
+
+                          {/* Status Badge */}
+                          <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                            <Badge variant={m.is_enabled ? 'success' : 'danger'}>
+                              {m.is_enabled ? 'Enabled' : 'Disabled'}
+                            </Badge>
+                          </td>
+
+                          {/* Action Button */}
+                          <td style={{ padding: '0.45rem 0.75rem', textAlign: 'right' }}>
+                            {m.is_core ? (
+                              <Button
+                                variant="outline"
+                                icon={<Lock size={13} />}
+                                disabled
+                                style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem', opacity: 0.6 }}
+                                title="Core System Module (Protected from disabling)"
+                              />
+                            ) : (
+                              <Button
+                                variant="outline"
+                                icon={<Power size={13} />}
+                                loading={isToggling}
+                                onClick={() => handleToggleModuleStatus(m.key, m.is_core, m.is_enabled)}
+                                style={{
+                                  padding: '0.25rem 0.55rem',
+                                  fontSize: '0.75rem',
+                                  color: m.is_enabled ? 'var(--warning)' : 'var(--success)',
+                                  borderColor: m.is_enabled ? 'var(--warning-border)' : 'var(--success-border)',
+                                  backgroundColor: m.is_enabled ? 'transparent' : 'rgba(34, 197, 94, 0.1)',
+                                }}
+                                title={m.is_enabled ? 'Disable Module' : 'Enable Module'}
+                              />
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </Card>
           </div>

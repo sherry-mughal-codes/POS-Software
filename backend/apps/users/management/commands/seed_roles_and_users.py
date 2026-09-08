@@ -56,6 +56,8 @@ class Command(BaseCommand):
                     "create_supplier_warranty_claim",
                     "process_supplier_warranty_claim",
                     "complete_supplier_warranty_claim",
+                    "view_sales_agents",
+                    "manage_sales_agents",
                     "add_user",
                     "change_user",
                     "view_user",

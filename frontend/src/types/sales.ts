@@ -120,10 +120,14 @@ export interface Sale {
   items: SaleItem[];
   payments: SalePayment[];
   returns: SalesReturn[];
+  sales_agent?: number | null;
+  sales_agent_name?: string | null;
+  sales_agent_code?: string | null;
 }
 
 export interface SaleCheckoutPayload {
   customer: number;
+  sales_agent?: number | null;
   items: {
     product: number;
     quantity: number;

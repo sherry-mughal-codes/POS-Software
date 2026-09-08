@@ -83,6 +83,13 @@ class PosPermissionRegistry(models.Model):
             ("create_supplier_warranty_claim", "Can create supplier warranty claim batch"),
             ("process_supplier_warranty_claim", "Can dispatch warranty claim batch to supplier (In Progress)"),
             ("complete_supplier_warranty_claim", "Can receive supplier replacement stock (Warranty Completed)"),
+
+            # Commission & Sales Agents Management
+            ("view_sales_agents", "Can view sales agent profiles and master directory"),
+            ("manage_sales_agents", "Can create, update, and manage sales agents"),
+            ("view_commission_payables", "Can view commission payables and settlement records"),
+            ("pay_commission", "Can pay sales agent commissions and post settlements"),
+            ("print_commission_slip", "Can print commission payment and settlement slips"),
         ]
 
 

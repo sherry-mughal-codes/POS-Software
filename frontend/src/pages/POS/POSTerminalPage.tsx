@@ -24,10 +24,12 @@ import { InventorySummaryItem } from '../../types/inventory';
 import { Category } from '../../types/product';
 import { Customer } from '../../types/contact';
 import { POSDaySession } from '../../types/daySession';
+import { SalesAgent } from '../../types/commission';
 import { inventoryService } from '../../services/inventoryService';
 import { productService } from '../../services/productService';
 import { contactService } from '../../services/contactService';
 import { salesService } from '../../services/salesService';
+import { commissionService } from '../../services/commissionService';
 import { daySessionService } from '../../services/daySessionService';
 import { useSettings } from '../../context/SettingsContext';
 
@@ -58,6 +60,8 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number>(0);
+  const [salesAgents, setSalesAgents] = useState<SalesAgent[]>([]);
+  const [selectedSalesAgentId, setSelectedSalesAgentId] = useState<number | null>(null);
   const [overallDiscountType, setOverallDiscountType] = useState<'PERCENT' | 'FIXED'>('PERCENT');
   const [overallDiscountValue, setOverallDiscountValue] = useState<number>(0);
 
@@ -93,17 +97,20 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
   const fetchCatalogData = useCallback(async () => {
     setLoading(true);
     try {
-      const [invList, catList, custList, sessionRes] = await Promise.all([
+      const [invList, catList, custList, agentList, sessionRes] = await Promise.all([
         inventoryService.getSummary(),
         productService.getCategories(),
         contactService.getCustomers({ is_active: true, all: true }),
+        commissionService.getAgents({ is_active: true }).catch(() => []),
         daySessionService.getCurrentSession().catch(() => ({ active: false })),
       ]);
       const rawCustomers = Array.isArray(custList) ? custList : (custList?.results || []);
       const activeCustomers = rawCustomers.filter((c: Customer) => c.is_active || c.is_walkin);
+      const rawAgents = Array.isArray(agentList) ? agentList : (agentList?.results || []);
       setProducts(invList || []);
       setCategories(catList || []);
       setCustomers(activeCustomers);
+      setSalesAgents(rawAgents || []);
       setActiveSession((sessionRes as any)?.active ? (sessionRes as any).session : null);
 
       // Default to walk-in customer
@@ -344,6 +351,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
     try {
       const sale = await salesService.checkout({
         customer: selectedCustomerId,
+        sales_agent: selectedSalesAgentId || undefined,
         items: cart.map((c) => ({
           product: c.product_id,
           quantity: c.quantity,
@@ -364,6 +372,7 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
       setCompletedSale(sale);
       setIsCheckoutOpen(false);
       handleClearCart();
+      setSelectedSalesAgentId(null);
       if (autoPrint) {
         setIsReceiptOpen(true);
       }
@@ -532,6 +541,9 @@ export const POSTerminalPage: React.FC<POSTerminalPageProps> = ({
               selectedCustomerId={selectedCustomerId}
               onSelectCustomer={setSelectedCustomerId}
               onOpenNewCustomerModal={() => setIsCustomerModalOpen(true)}
+              salesAgents={salesAgents}
+              selectedSalesAgentId={selectedSalesAgentId}
+              onSelectSalesAgent={setSelectedSalesAgentId}
               onUpdateQuantity={handleUpdateQuantity}
               onUpdateUnitPrice={handleUpdateUnitPrice}
               onRemoveItem={handleRemoveItem}

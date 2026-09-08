@@ -15,6 +15,7 @@ import { Modal } from '../../../components/common/Modal';
 import { CartItem } from '../../../types/sales';
 import { Customer } from '../../../types/contact';
 import { InventorySummaryItem } from '../../../types/inventory';
+import { SalesAgent } from '../../../types/commission';
 
 interface POSCartProps {
   products?: InventorySummaryItem[];
@@ -23,6 +24,9 @@ interface POSCartProps {
   selectedCustomerId: number;
   onSelectCustomer: (customerId: number) => void;
   onOpenNewCustomerModal?: () => void;
+  salesAgents?: SalesAgent[];
+  selectedSalesAgentId?: number | null;
+  onSelectSalesAgent?: (agentId: number | null) => void;
   onUpdateQuantity: (productId: number, newQty: number) => void;
   onUpdateUnitPrice: (productId: number, newUnitPrice: number) => void;
   onRemoveItem: (productId: number) => void;
@@ -155,6 +159,9 @@ export const POSCart: React.FC<POSCartProps> = ({
   selectedCustomerId,
   onSelectCustomer,
   onOpenNewCustomerModal,
+  salesAgents,
+  selectedSalesAgentId,
+  onSelectSalesAgent,
   onUpdateQuantity,
   onUpdateUnitPrice,
   onRemoveItem,
@@ -304,6 +311,45 @@ export const POSCart: React.FC<POSCartProps> = ({
             </button>
           )}
         </div>
+
+        {/* Sales Agent (Commission) Selector */}
+        {salesAgents && salesAgents.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.15rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Percent size={10} />
+                Sales Agent (Commission)
+              </label>
+              {selectedSalesAgentId && (
+                <span style={{ fontSize: '0.6rem', color: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem', fontWeight: 600 }}>
+                  {salesAgents.find((a) => a.id === selectedSalesAgentId)?.commission_percentage}% Comm.
+                </span>
+              )}
+            </div>
+            <select
+              value={selectedSalesAgentId || ''}
+              onChange={(e) => onSelectSalesAgent?.(e.target.value ? parseInt(e.target.value) : null)}
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--bg-input)',
+                border: selectedSalesAgentId ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid var(--border-medium)',
+                borderRadius: '0.3rem',
+                padding: '0.22rem 0.45rem',
+                color: 'var(--text-main)',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                outline: 'none',
+              }}
+            >
+              <option value="">-- No Sales Agent (None) --</option>
+              {salesAgents.map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name} {agent.code ? `(${agent.code})` : ''} - {agent.commission_percentage}%
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Cart Items List */}

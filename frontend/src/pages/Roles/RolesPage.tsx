@@ -215,6 +215,7 @@ export const RolesPage: React.FC = () => {
     'Dashboard & Analytics',
     'Reports & Data Analytics',
     'Point of Sale (POS) & Sales',
+    'Commission & Sales Agents',
     'Warranty Claims Management',
     'Purchases & Payables',
     'Customers & Receivables',
@@ -232,7 +233,9 @@ export const RolesPage: React.FC = () => {
     const app = perm.app_label?.toLowerCase() || '';
     const code = perm.codename.toLowerCase();
 
-    if (code.includes('warranty') || app === 'warranty') {
+    if (code.includes('agent') || code.includes('commission') || app === 'commission') {
+      category = 'Commission & Sales Agents';
+    } else if (code.includes('warranty') || app === 'warranty') {
       category = 'Warranty Claims Management';
     } else if (code.includes('dashboard') || (code.includes('analytics') && !code.includes('report'))) {
       category = 'Dashboard & Analytics';

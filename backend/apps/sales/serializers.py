@@ -138,6 +138,8 @@ class SaleSerializer(serializers.ModelSerializer):
     customer_code = serializers.CharField(source="customer.customer_id", read_only=True)
     customer_phone = serializers.CharField(source="customer.phone", read_only=True, default="")
     customer_is_walkin = serializers.BooleanField(source="customer.is_walkin", read_only=True)
+    sales_agent_name = serializers.CharField(source="sales_agent.name", read_only=True, default="")
+    sales_agent_code = serializers.CharField(source="sales_agent.code", read_only=True, default="")
     cashier_name = serializers.SerializerMethodField()
     payment_method_display = serializers.CharField(source="get_payment_method_display", read_only=True)
     payment_account_name = serializers.SerializerMethodField()
@@ -165,6 +167,9 @@ class SaleSerializer(serializers.ModelSerializer):
             "customer_code",
             "customer_phone",
             "customer_is_walkin",
+            "sales_agent",
+            "sales_agent_name",
+            "sales_agent_code",
             "date",
             "status",
             "status_display",
@@ -275,6 +280,7 @@ class SalePaymentItemSerializer(serializers.Serializer):
 class SaleCheckoutSerializer(serializers.Serializer):
     customer = serializers.IntegerField(required=True)
     items = SaleCheckoutItemSerializer(many=True, required=True)
+    sales_agent = serializers.IntegerField(required=False, allow_null=True)
     payment_method = serializers.ChoiceField(choices=PaymentMethodType.choices, default=PaymentMethodType.CASH)
     payment_account = serializers.IntegerField(required=False, allow_null=True)
     cheque_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, default="")

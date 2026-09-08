@@ -142,6 +142,11 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserSerializer
 
     def create(self, request, *args, **kwargs):
+        if request.data.get("is_superuser") and not request.user.is_superuser:
+            return Response(
+                {"detail": "Only system Super Admin can create another Super Admin."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -159,6 +164,25 @@ class UserViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
+
+        # Protected Super Admin enforcement
+        if instance.is_superuser:
+            if request.data.get("is_active") is False:
+                return Response(
+                    {"detail": "Protected system Super Admin cannot be deactivated."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if "is_superuser" in request.data and not bool(request.data.get("is_superuser")):
+                return Response(
+                    {"detail": "Super Admin privileges cannot be revoked from protected Super Admin."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif request.data.get("is_superuser") and not request.user.is_superuser:
+            return Response(
+                {"detail": "Only system Super Admin can grant Super Admin privileges."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -173,10 +197,34 @@ class UserViewSet(viewsets.ModelViewSet):
         )
         return Response(UserSerializer(user).data)
 
+    def destroy(self, request, *args, **kwargs):
+        """Safeguard: Super Admin cannot be deleted."""
+        instance = self.get_object()
+        if instance.is_superuser:
+            return Response(
+                {"detail": "Protected system Super Admin cannot be deleted."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        AuditLog.objects.create(
+            user=self.request.user,
+            username=self.request.user.username,
+            action="USER_DEACTIVATED",
+            resource="User",
+            resource_id=str(instance.id),
+            ip_address=get_client_ip(self.request),
+            details={"deleted_username": instance.username, "operation": "delete"},
+        )
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=["post"], url_path="toggle-status")
     def toggle_status(self, request, pk=None):
         """Toggle user active/inactive status (Soft delete / deactivate strategy)."""
         user = self.get_object()
+        if user.is_superuser:
+            return Response(
+                {"detail": "Protected system Super Admin cannot be deactivated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if user == request.user:
             return Response(
                 {"detail": "You cannot deactivate your own account."},

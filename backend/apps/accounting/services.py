@@ -473,6 +473,183 @@ class AccountingService:
         )
 
     @classmethod
+    def ensure_commission_accounts(cls):
+        """
+        Ensures system accounts for Sales Commission Expense (5090) and
+        Sales Agent Commission Payable (2040) exist in the Chart of Accounts.
+        """
+        liab_parent = Account.objects.filter(code="2000").first()
+        exp_parent = Account.objects.filter(code="5000").first()
+
+        payable_acc, _ = Account.objects.get_or_create(
+            code="2040",
+            defaults={
+                "name": "Sales Agent Commission Payable",
+                "account_type": AccountType.LIABILITY,
+                "parent": liab_parent,
+                "is_active": True,
+                "is_system": True,
+                "description": "Accrued commission payable to independent sales agents",
+            }
+        )
+
+        expense_acc, _ = Account.objects.get_or_create(
+            code="5090",
+            defaults={
+                "name": "Sales Commission Expense",
+                "account_type": AccountType.EXPENSE,
+                "parent": exp_parent,
+                "is_active": True,
+                "is_system": True,
+                "description": "Sales agent commission expenses recognized from sales",
+            }
+        )
+        return payable_acc, expense_acc
+
+    @classmethod
+    def record_commission_accrual(
+        cls,
+        commission_ref: str,
+        agent_name: str,
+        amount: Decimal,
+        invoice_ref: str = "",
+        created_by=None,
+        entry_date: Optional[date] = None,
+    ) -> JournalEntry:
+        """
+        Records commission accrual for a qualifying sale:
+        - Debit Sales Commission Expense (5090)
+        - Credit Sales Agent Commission Payable (2040)
+        """
+        payable_acc, expense_acc = cls.ensure_commission_accounts()
+        amt = Decimal(str(amount))
+        if amt <= Decimal("0.00"):
+            raise ValidationError("Commission accrual amount must be greater than zero.")
+
+        if entry_date is None:
+            entry_date = timezone.localdate()
+
+        lines = [
+            {
+                "account": expense_acc,
+                "debit": amt,
+                "credit": Decimal("0.00"),
+                "description": f"Commission Expense on {invoice_ref} (Agent: {agent_name})",
+            },
+            {
+                "account": payable_acc,
+                "debit": Decimal("0.00"),
+                "credit": amt,
+                "description": f"Commission Payable to {agent_name} ({commission_ref})",
+            },
+        ]
+
+        return cls.create_journal_entry(
+            entry_date=entry_date,
+            reference_type=ReferenceType.COMMISSION_ACCRUAL,
+            reference_id=commission_ref,
+            lines=lines,
+            narration=f"Sales Commission Accrual: {commission_ref} for {agent_name} (Invoice: {invoice_ref})",
+            created_by=created_by,
+        )
+
+    @classmethod
+    def record_commission_payment(
+        cls,
+        payment_ref: str,
+        commission_ref: str,
+        agent_name: str,
+        amount: Decimal,
+        payment_account: Account,
+        created_by=None,
+        entry_date: Optional[date] = None,
+    ) -> JournalEntry:
+        """
+        Records commission payment to sales agent:
+        - Debit Sales Agent Commission Payable (2040)
+        - Credit Cash / Bank Account (1010/1020)
+        """
+        payable_acc, _ = cls.ensure_commission_accounts()
+        amt = Decimal(str(amount))
+        if amt <= Decimal("0.00"):
+            raise ValidationError("Commission payment amount must be greater than zero.")
+
+        if entry_date is None:
+            entry_date = timezone.localdate()
+
+        lines = [
+            {
+                "account": payable_acc,
+                "debit": amt,
+                "credit": Decimal("0.00"),
+                "description": f"Commission Settlement ({commission_ref}) to {agent_name}",
+            },
+            {
+                "account": payment_account,
+                "debit": Decimal("0.00"),
+                "credit": amt,
+                "description": f"Paid via {payment_account.name}",
+            },
+        ]
+
+        return cls.create_journal_entry(
+            entry_date=entry_date,
+            reference_type=ReferenceType.COMMISSION_PAYMENT,
+            reference_id=payment_ref,
+            lines=lines,
+            narration=f"Sales Agent Commission Payment: {payment_ref} for {commission_ref} ({agent_name})",
+            created_by=created_by,
+        )
+
+    @classmethod
+    def record_commission_reversal(
+        cls,
+        adjustment_ref: str,
+        commission_ref: str,
+        agent_name: str,
+        reversal_amount: Decimal,
+        return_ref: str = "",
+        created_by=None,
+        entry_date: Optional[date] = None,
+    ) -> JournalEntry:
+        """
+        Records commission reduction / reversal due to customer sales return:
+        - Debit Sales Agent Commission Payable (2040)
+        - Credit Sales Commission Expense (5090)
+        """
+        payable_acc, expense_acc = cls.ensure_commission_accounts()
+        amt = Decimal(str(reversal_amount))
+        if amt <= Decimal("0.00"):
+            raise ValidationError("Commission reversal amount must be greater than zero.")
+
+        if entry_date is None:
+            entry_date = timezone.localdate()
+
+        lines = [
+            {
+                "account": payable_acc,
+                "debit": amt,
+                "credit": Decimal("0.00"),
+                "description": f"Commission Adjustment on {return_ref} ({commission_ref})",
+            },
+            {
+                "account": expense_acc,
+                "debit": Decimal("0.00"),
+                "credit": amt,
+                "description": f"Commission Expense Reversal on {return_ref} (Agent: {agent_name})",
+            },
+        ]
+
+        return cls.create_journal_entry(
+            entry_date=entry_date,
+            reference_type=ReferenceType.COMMISSION_REVERSAL,
+            reference_id=adjustment_ref,
+            lines=lines,
+            narration=f"Commission Return Adjustment: {adjustment_ref} (Ref: {commission_ref}, Return: {return_ref})",
+            created_by=created_by,
+        )
+
+    @classmethod
     def record_opening_balance(
         cls,
         entry_date: date,
@@ -908,3 +1085,183 @@ class AccountingService:
             "total_liabilities_and_equity": float(total_liabilities_and_equity),
             "is_balanced": abs(total_assets - total_liabilities_and_equity) < Decimal("0.0001"),
         }
+
+    @classmethod
+    def ensure_commission_accounts(cls):
+        """
+        Ensures system default accounts for Sales Agent Commission exist in Chart of Accounts:
+        - 2040: Sales Agent Commission Payable (Liability)
+        - 5090: Sales Commission Expense (Expense)
+        """
+        liability_root = Account.objects.filter(code="2000").first()
+        expense_root = Account.objects.filter(code="5000").first()
+
+        payable_acc, _ = Account.objects.get_or_create(
+            code="2040",
+            defaults={
+                "name": "Sales Agent Commission Payable",
+                "account_type": AccountType.LIABILITY,
+                "parent": liability_root,
+                "is_system": True,
+                "is_active": True,
+                "description": "Accrued commission payable to sales agents.",
+            },
+        )
+
+        expense_acc, _ = Account.objects.get_or_create(
+            code="5090",
+            defaults={
+                "name": "Sales Commission Expense",
+                "account_type": AccountType.EXPENSE,
+                "parent": expense_root,
+                "is_system": True,
+                "is_active": True,
+                "description": "Commission expenses incurred on sales.",
+            },
+        )
+
+        return payable_acc, expense_acc
+
+    @classmethod
+    def record_commission_accrual(
+        cls,
+        sale,
+        commission_record,
+        created_by=None,
+    ) -> Optional[JournalEntry]:
+        """
+        Records commission accrual journal entry when sale is completed with an active sales agent:
+        DR 5090 Sales Commission Expense
+        CR 2040 Sales Agent Commission Payable
+        """
+        payable_acc, expense_acc = cls.ensure_commission_accounts()
+
+        amount = commission_record.commission_amount
+        if amount <= Decimal("0.00"):
+            return None
+
+        agent_name = commission_record.sales_agent.name if commission_record.sales_agent else "Agent"
+        narration = f"Commission accrual for {agent_name} on sale {sale.invoice_number} ({commission_record.record_number})"
+
+        lines = [
+            {
+                "account": expense_acc,
+                "debit": amount,
+                "credit": Decimal("0.00"),
+                "description": f"Commission expense on {sale.invoice_number} ({agent_name})",
+            },
+            {
+                "account": payable_acc,
+                "debit": Decimal("0.00"),
+                "credit": amount,
+                "description": f"Commission payable to {agent_name} for {sale.invoice_number}",
+            },
+        ]
+
+        return cls.create_journal_entry(
+            entry_date=sale.date if hasattr(sale, "date") and sale.date else timezone.localdate(),
+            reference_type=ReferenceType.COMMISSION_ACCRUAL,
+            reference_id=commission_record.record_number,
+            lines=lines,
+            narration=narration,
+            created_by=created_by,
+        )
+
+    @classmethod
+    def record_commission_payment(
+        cls,
+        commission_payment,
+        created_by=None,
+    ) -> Optional[JournalEntry]:
+        """
+        Records commission payout journal entry:
+        DR 2040 Sales Agent Commission Payable
+        CR 1010/1020 Cash / Bank Account
+        """
+        payable_acc, _ = cls.ensure_commission_accounts()
+        payment_acc = commission_payment.payment_account
+        if not payment_acc:
+            payment_acc = Account.objects.filter(code="1011").first() or Account.objects.filter(parent__code="1010").first() or Account.objects.filter(code="1010").first()
+
+        amount = commission_payment.amount
+        if amount <= Decimal("0.00"):
+            return None
+
+        rec = commission_payment.commission_record
+        agent_name = rec.sales_agent.name if rec and rec.sales_agent else "Agent"
+        record_ref = rec.record_number if rec else ""
+        narration = f"Commission payout to {agent_name} ({commission_payment.payment_number}) for {record_ref}"
+
+        lines = [
+            {
+                "account": payable_acc,
+                "debit": amount,
+                "credit": Decimal("0.00"),
+                "description": f"Commission payable settlement to {agent_name} ({commission_payment.payment_number})",
+            },
+            {
+                "account": payment_acc,
+                "debit": Decimal("0.00"),
+                "credit": amount,
+                "description": f"Commission paid from {payment_acc.name} to {agent_name}",
+            },
+        ]
+
+        return cls.create_journal_entry(
+            entry_date=commission_payment.date if commission_payment.date else timezone.localdate(),
+            reference_type=ReferenceType.COMMISSION_PAYMENT,
+            reference_id=commission_payment.payment_number,
+            lines=lines,
+            narration=narration,
+            created_by=created_by,
+        )
+
+    @classmethod
+    def record_commission_reversal(
+        cls,
+        commission_adjustment,
+        created_by=None,
+    ) -> Optional[JournalEntry]:
+        """
+        Records commission reversal journal entry on Sales Return:
+        DR 2040 Sales Agent Commission Payable
+        CR 5090 Sales Commission Expense
+        """
+        payable_acc, expense_acc = cls.ensure_commission_accounts()
+
+        amount = commission_adjustment.adjusted_amount
+        if amount <= Decimal("0.00"):
+            return None
+
+        rec = commission_adjustment.commission_record
+        agent_name = rec.sales_agent.name if rec and rec.sales_agent else "Agent"
+        ret_number = commission_adjustment.sales_return.return_number if commission_adjustment.sales_return else "Return"
+        narration = f"Commission reversal for {agent_name} due to sales return {ret_number} on {rec.record_number if rec else ''}"
+
+        lines = [
+            {
+                "account": payable_acc,
+                "debit": amount,
+                "credit": Decimal("0.00"),
+                "description": f"Commission payable reversed on return {ret_number} ({agent_name})",
+            },
+            {
+                "account": expense_acc,
+                "debit": Decimal("0.00"),
+                "credit": amount,
+                "description": f"Commission expense reversal on return {ret_number} ({agent_name})",
+            },
+        ]
+
+        return cls.create_journal_entry(
+            entry_date=commission_adjustment.date if commission_adjustment.date else timezone.localdate(),
+            reference_type=ReferenceType.COMMISSION_REVERSAL,
+            reference_id=f"ADJ-{commission_adjustment.id}",
+            lines=lines,
+            narration=narration,
+            created_by=created_by,
+        )
+
+
+ensure_commission_accounts = AccountingService.ensure_commission_accounts
+

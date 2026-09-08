@@ -45,6 +45,7 @@ export const ProductCatalogPage: React.FC = () => {
   const { showError, showSuccess } = useToast();
   const { currencySymbol } = useSettings();
   const [products, setProducts] = useState<Product[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -52,6 +53,7 @@ export const ProductCatalogPage: React.FC = () => {
 
   // Filters & Views
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [viewMode, setViewMode] = useState<'GRID' | 'TABLE'>('GRID');
@@ -68,35 +70,71 @@ export const ProductCatalogPage: React.FC = () => {
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
 
-  const fetchCatalogData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Debounce search query input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearchQuery, selectedCategory, statusFilter]);
+
+  const fetchCategoriesAndUnits = useCallback(async () => {
     try {
-      const [prods, cats, uList] = await Promise.all([
-        productService.getProducts(),
+      const [cats, uList] = await Promise.all([
         productService.getCategories(),
         productService.getUnits(),
       ]);
-      setProducts(prods || []);
       setCategories(cats || []);
       setUnits(uList || []);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await productService.getProductsPaginated({
+        page,
+        page_size: pageSize,
+        search: debouncedSearchQuery.trim() || undefined,
+        category: selectedCategory !== 'ALL' ? selectedCategory : undefined,
+        is_active: statusFilter === 'ACTIVE' ? true : statusFilter === 'INACTIVE' ? false : undefined,
+      });
+      setProducts(data.results || []);
+      setTotalCount(data.count ?? (data.results ? data.results.length : 0));
     } catch (err: any) {
       setError(err?.message || 'Failed to load product catalog.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, pageSize, debouncedSearchQuery, selectedCategory, statusFilter]);
 
   useEffect(() => {
-    fetchCatalogData();
-  }, [fetchCatalogData]);
+    fetchCategoriesAndUnits();
+  }, [fetchCategoriesAndUnits]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const refreshAll = () => {
+    fetchCategoriesAndUnits();
+    fetchProducts();
+  };
 
   // Toggle active status
   const handleToggleStatus = async (product: Product) => {
     try {
       await productService.toggleProductStatus(product.id);
       showSuccess(`Product ${product.name} status updated.`, 'Product Status');
-      fetchCatalogData();
+      fetchProducts();
     } catch (err: any) {
       showError(err?.message || 'Failed to update product status.', 'Product Error');
     }
@@ -111,7 +149,7 @@ export const ProductCatalogPage: React.FC = () => {
       await productService.deleteProduct(productToDelete.id);
       showSuccess(`Product "${productToDelete.name}" (${productToDelete.sku}) has been permanently deleted.`, 'Product Deleted');
       setProductToDelete(null);
-      fetchCatalogData();
+      refreshAll();
     } catch (err: any) {
       const msg = err?.response?.data?.detail || err?.message || 'Failed to delete product.';
       setDeleteError(msg);
@@ -130,29 +168,6 @@ export const ProductCatalogPage: React.FC = () => {
     setEditingProduct(product);
     setIsProductModalOpen(true);
   };
-
-  // Filtered list
-  const filteredProducts = (products || []).filter((p) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      (p.name && p.name.toLowerCase().includes(q)) ||
-      (p.sku && p.sku.toLowerCase().includes(q)) ||
-      (p.barcode && p.barcode.toLowerCase().includes(q)) ||
-      (p.category_name && p.category_name.toLowerCase().includes(q));
-
-    const matchesCat = selectedCategory === 'ALL' || (p.category && p.category.toString() === selectedCategory);
-
-    let matchesStatus = true;
-    if (statusFilter === 'ACTIVE') matchesStatus = !!p.is_active;
-    if (statusFilter === 'INACTIVE') matchesStatus = !p.is_active;
-
-    return matchesSearch && matchesCat && matchesStatus;
-  });
-
-  const paginatedProducts = React.useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredProducts.slice(start, start + pageSize);
-  }, [filteredProducts, page, pageSize]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -199,7 +214,7 @@ export const ProductCatalogPage: React.FC = () => {
               whiteSpace: 'nowrap',
             }}
           >
-            All Categories ({products.length})
+            All Categories {selectedCategory === 'ALL' ? `(${totalCount})` : ''}
           </button>
           {categories.map((c) => (
             <button
@@ -281,7 +296,7 @@ export const ProductCatalogPage: React.FC = () => {
             </button>
           </div>
 
-          <Button variant="secondary" icon={<RefreshCw size={14} />} onClick={fetchCatalogData} />
+          <Button variant="secondary" icon={<RefreshCw size={14} />} onClick={refreshAll} />
         </div>
       </div>
 
@@ -292,7 +307,7 @@ export const ProductCatalogPage: React.FC = () => {
         <div style={{ padding: '1.5rem', backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', borderRadius: '0.5rem' }}>
           {error}
         </div>
-      ) : filteredProducts.length === 0 ? (
+      ) : products.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
           <Package size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.4 }} />
           <h3>No Products Found</h3>
@@ -306,7 +321,7 @@ export const ProductCatalogPage: React.FC = () => {
             gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
             gap: '0.625rem',
           }}>
-            {paginatedProducts.map((p) => (
+            {products.map((p) => (
               <div
                 key={p.id}
                 className="glass-card"
@@ -342,11 +357,11 @@ export const ProductCatalogPage: React.FC = () => {
                         width: '36px',
                         height: '36px',
                         borderRadius: '0.375rem',
-                        backgroundColor: 'var(--bg-app)',
+                        backgroundColor: 'var(--bg-elevated)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'var(--text-subtle)',
+                        color: 'var(--text-muted)',
                         border: '1px solid var(--border-subtle)',
                         flexShrink: 0,
                       }}>
@@ -468,11 +483,11 @@ export const ProductCatalogPage: React.FC = () => {
             ))}
           </div>
 
-          {filteredProducts.length > 0 && (
+          {totalCount > 0 && (
             <div style={{ marginTop: '0.875rem' }}>
               <Pagination
                 currentPage={page}
-                totalItems={filteredProducts.length}
+                totalItems={totalCount}
                 pageSize={pageSize}
                 onPageChange={setPage}
                 onPageSizeChange={(newSize) => {
@@ -507,7 +522,7 @@ export const ProductCatalogPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {paginatedProducts.map((p) => (
+                {products.map((p) => (
                   <tr
                     key={p.id}
                     style={{ borderBottom: '1px solid var(--border-subtle)', opacity: p.is_active ? 1 : 0.55 }}
@@ -592,11 +607,11 @@ export const ProductCatalogPage: React.FC = () => {
             </table>
           </div>
 
-          {filteredProducts.length > 0 && (
+          {totalCount > 0 && (
             <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
               <Pagination
                 currentPage={page}
-                totalItems={filteredProducts.length}
+                totalItems={totalCount}
                 pageSize={pageSize}
                 onPageChange={setPage}
                 onPageSizeChange={(newSize) => {
@@ -617,7 +632,7 @@ export const ProductCatalogPage: React.FC = () => {
         productToEdit={editingProduct}
         categories={categories}
         units={units}
-        onSaved={fetchCatalogData}
+        onSaved={refreshAll}
       />
 
       {/* Category Manager Modal */}
@@ -625,7 +640,7 @@ export const ProductCatalogPage: React.FC = () => {
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
         categories={categories}
-        onRefresh={fetchCatalogData}
+        onRefresh={refreshAll}
       />
 
       {/* Unit Manager Modal */}
@@ -633,14 +648,14 @@ export const ProductCatalogPage: React.FC = () => {
         isOpen={isUnitModalOpen}
         onClose={() => setIsUnitModalOpen(false)}
         units={units}
-        onRefresh={fetchCatalogData}
+        onRefresh={refreshAll}
       />
 
       {/* Bulk Product Import Modal */}
       <BulkImportModal
         isOpen={isBulkImportModalOpen}
         onClose={() => setIsBulkImportModalOpen(false)}
-        onSuccess={fetchCatalogData}
+        onSuccess={refreshAll}
       />
 
       {/* Delete Confirmation Modal */}

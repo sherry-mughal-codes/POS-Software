@@ -121,3 +121,39 @@ class BackupLog(models.Model):
         return f"{self.filename} ({self.status}) - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
 
+class SystemModule(models.Model):
+    """
+    Global Module Configuration Registry.
+    Super Admin can globally enable or disable optional system modules.
+    Core modules are protected from being disabled.
+    """
+    key = models.CharField(max_length=100, unique=True, db_index=True)
+    name = models.CharField(max_length=150)
+    description = models.TextField(blank=True, default="")
+    is_enabled = models.BooleanField(default=True, db_index=True)
+    is_core = models.BooleanField(default=False, help_text="Core modules cannot be disabled")
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "name"]
+        verbose_name = "System Module"
+        verbose_name_plural = "System Modules"
+
+    def __str__(self):
+        return f"{self.name} ({'Core' if self.is_core else 'Optional'} - {'Enabled' if self.is_enabled else 'Disabled'})"
+
+    @classmethod
+    def is_module_enabled(cls, key: str) -> bool:
+        """
+        Check if a module is enabled in the database.
+        If the record does not exist yet (e.g. before seeding), returns True to avoid blocking.
+        """
+        mod = cls.objects.filter(key=key).first()
+        if mod is None:
+            return True
+        return mod.is_enabled
+
+
+

@@ -182,3 +182,30 @@ class HasPosPermission(BasePermission):
             return True
 
         return request.user.has_perm(required)
+
+
+class IsModuleEnabled(BasePermission):
+    """
+    Checks whether a specific system module is globally enabled.
+    Returns 403 Forbidden if the module is disabled by Super Admin.
+    Usage:
+        permission_classes = [IsAuthenticated, IsModuleEnabled]
+        module_key = 'commission_management'
+    or
+        permission_classes = [IsModuleEnabled('commission_management')]
+    """
+    message = "This module has been globally disabled by the Super Admin."
+
+    def __init__(self, module_key=None):
+        self.module_key = module_key
+
+    def __call__(self):
+        return self
+
+    def has_permission(self, request, view):
+        key = getattr(view, "module_key", self.module_key)
+        if not key:
+            return True
+        from apps.core.models import SystemModule
+        return SystemModule.is_module_enabled(key)
+

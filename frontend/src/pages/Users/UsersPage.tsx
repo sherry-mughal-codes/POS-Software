@@ -13,6 +13,7 @@ import {
   Building,
   AlertCircle,
   RefreshCw,
+  ShieldCheck,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
@@ -20,6 +21,7 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { userService } from '../../services/userService';
 import { User, Role, CreateUserData, UpdateUserData } from '../../types/auth';
 import { useAuth } from '../../hooks/useAuth';
@@ -35,6 +37,8 @@ export const UsersPage: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -169,6 +173,10 @@ export const UsersPage: React.FC = () => {
   };
 
   const handleToggleStatus = async (targetUser: User) => {
+    if (targetUser.is_superuser) {
+      showWarning('Protected system Super Admin cannot be deactivated.', 'Action Restricted');
+      return;
+    }
     if (targetUser.id === currentUser?.id) {
       showWarning('You cannot deactivate your own logged-in account.', 'Action Restricted');
       return;
@@ -183,16 +191,25 @@ export const UsersPage: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter((u) => {
+  const filteredUsers = React.useMemo(() => {
     const q = searchQuery.toLowerCase();
-    return (
+    return users.filter((u) => (
       u.username.toLowerCase().includes(q) ||
       u.first_name?.toLowerCase().includes(q) ||
       u.last_name?.toLowerCase().includes(q) ||
       u.email?.toLowerCase().includes(q) ||
       u.roles.some((r) => r.toLowerCase().includes(q))
-    );
-  });
+    ));
+  }, [users, searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  const paginatedUsers = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredUsers.slice(start, start + pageSize);
+  }, [filteredUsers, page, pageSize]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -256,7 +273,7 @@ export const UsersPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((u) => (
+                {paginatedUsers.map((u) => (
                   <tr
                     key={u.id}
                     style={{
@@ -305,6 +322,14 @@ export const UsersPage: React.FC = () => {
                     {/* Roles */}
                     <td style={{ padding: '1rem' }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                        {u.is_superuser && (
+                          <Badge
+                            variant="danger"
+                            icon={<ShieldCheck size={11} />}
+                          >
+                            Super Admin (Protected)
+                          </Badge>
+                        )}
                         {u.roles.length > 0 ? (
                           u.roles.map((r) => (
                             <Badge
@@ -314,9 +339,9 @@ export const UsersPage: React.FC = () => {
                               {r}
                             </Badge>
                           ))
-                        ) : (
+                        ) : !u.is_superuser ? (
                           <Badge variant="phase">No Role</Badge>
-                        )}
+                        ) : null}
                       </div>
                     </td>
 
@@ -342,15 +367,22 @@ export const UsersPage: React.FC = () => {
                           variant="outline"
                           icon={u.is_active ? <Power size={13} /> : <UserCheck size={13} />}
                           onClick={() => handleToggleStatus(u)}
-                          disabled={u.id === currentUser?.id}
+                          disabled={u.id === currentUser?.id || u.is_superuser}
                           style={{
                             padding: '0.3rem 0.45rem',
                             fontSize: '0.75rem',
-                            color: u.is_active ? 'var(--warning)' : 'var(--success)',
-                            borderColor: u.is_active ? 'var(--warning-border)' : 'var(--success-border)',
-                            backgroundColor: u.is_active ? 'transparent' : 'rgba(34, 197, 94, 0.1)',
+                            color: u.is_superuser ? 'var(--text-subtle)' : u.is_active ? 'var(--warning)' : 'var(--success)',
+                            borderColor: u.is_superuser ? 'var(--border-subtle)' : u.is_active ? 'var(--warning-border)' : 'var(--success-border)',
+                            backgroundColor: u.is_superuser ? 'transparent' : u.is_active ? 'transparent' : 'rgba(34, 197, 94, 0.1)',
+                            opacity: u.is_superuser ? 0.4 : 1,
                           }}
-                          title={u.is_active ? 'Deactivate User' : 'Reactivate User (Enable Access)'}
+                          title={
+                            u.is_superuser
+                              ? 'Protected Super Admin cannot be deactivated'
+                              : u.is_active
+                              ? 'Deactivate User'
+                              : 'Reactivate User (Enable Access)'
+                          }
                         />
                       </div>
                     </td>
@@ -358,6 +390,22 @@ export const UsersPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {filteredUsers.length > 0 && (
+          <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+            <Pagination
+              currentPage={page}
+              totalItems={filteredUsers.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              pageSizeOptions={[25, 50, 100, 200]}
+            />
           </div>
         )}
       </Card>

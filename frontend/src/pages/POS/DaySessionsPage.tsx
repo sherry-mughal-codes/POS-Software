@@ -21,6 +21,7 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Pagination } from '../../components/common/Pagination';
 import { POSDaySession, XReportData, ZReportData, DaySessionsReport } from '../../types/daySession';
 import { daySessionService } from '../../services/daySessionService';
 import { useToast } from '../../context/ToastContext';
@@ -45,6 +46,17 @@ export const DaySessionsPage: React.FC = () => {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  const paginatedSessions = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sessionsList.slice(start, start + pageSize);
+  }, [sessionsList, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, dateFilter]);
 
   // Report
   const [sessionsReport, setSessionsReport] = useState<DaySessionsReport | null>(null);
@@ -613,7 +625,7 @@ export const DaySessionsPage: React.FC = () => {
                         </td>
                       </tr>
                     ) : (
-                      sessionsList.map((s) => (
+                      paginatedSessions.map((s) => (
                         <tr
                           key={s.id}
                           style={{ borderBottom: '1px solid var(--border-subtle)' }}
@@ -685,6 +697,22 @@ export const DaySessionsPage: React.FC = () => {
                     )}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {sessionsList.length > 0 && (
+              <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+                <Pagination
+                  currentPage={page}
+                  totalItems={sessionsList.length}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPage(1);
+                  }}
+                  pageSizeOptions={[25, 50, 100, 200]}
+                />
               </div>
             )}
           </Card>

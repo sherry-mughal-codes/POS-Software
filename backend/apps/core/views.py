@@ -12,6 +12,13 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
+def get_client_ip(request):
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR")
+
+
 class HealthCheckView(APIView):
     """
     Health check endpoint verifying:
@@ -361,6 +368,121 @@ class DropboxTestConnectionView(APIView):
         if res.get("success"):
             return Response(res, status=status.HTTP_200_OK)
         return Response(res, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SystemModuleListView(APIView):
+    """
+    Returns list of all core and optional system modules with their enabled/disabled states.
+    Authenticated users can view module availability.
+    """
+    def get(self, request, *args, **kwargs):
+        from apps.core.models import SystemModule
+
+        # Default system modules registry definition
+        DEFAULT_MODULES = [
+            {"key": "pos_register", "name": "POS Terminal & Registers", "description": "POS sales checkout, active register, and day session management", "is_core": True, "display_order": 10},
+            {"key": "sales", "name": "Sales & Invoicing", "description": "Customer invoicing, sales receipts, and sales returns", "is_core": True, "display_order": 20},
+            {"key": "purchases", "name": "Purchasing & Payables", "description": "Purchase orders, supplier bills, and supplier payments", "is_core": True, "display_order": 30},
+            {"key": "inventory", "name": "Inventory & Stock Control", "description": "Real-time stock ledger, product catalog, and stock adjustments", "is_core": True, "display_order": 40},
+            {"key": "customers", "name": "Customers & Receivables", "description": "Customer directory, credit limits, and receivable balances", "is_core": True, "display_order": 50},
+            {"key": "suppliers", "name": "Suppliers & Payables", "description": "Supplier directory, payment terms, and payable balances", "is_core": True, "display_order": 60},
+            {"key": "accounting", "name": "Double Entry Accounting", "description": "Chart of accounts, general ledger, and journal entries", "is_core": True, "display_order": 70},
+            {"key": "expenses", "name": "Expense Management", "description": "Expense categories and daily operational expense vouchers", "is_core": True, "display_order": 80},
+            {"key": "employees", "name": "Employees & Payroll", "description": "Employee directory, attendance, salary slips, and payroll payments", "is_core": True, "display_order": 90},
+            {"key": "warranty", "name": "Warranty Claims", "description": "Customer warranty replacements and supplier RMA claims", "is_core": True, "display_order": 100},
+            {"key": "reports", "name": "Analytics & Reports Center", "description": "Executive sales analytics, financial statements, and stock reports", "is_core": True, "display_order": 110},
+            {"key": "admin_security", "name": "Admin & Security", "description": "User management, role matrix, and security audit logs", "is_core": True, "display_order": 120},
+            {"key": "commission_management", "name": "Commission Management", "description": "Sales agent master directory, commission percentages, and commission lifecycle foundation", "is_core": False, "display_order": 200},
+        ]
+
+        # Seed missing modules safely
+        for item in DEFAULT_MODULES:
+            SystemModule.objects.get_or_create(
+                key=item["key"],
+                defaults={
+                    "name": item["name"],
+                    "description": item["description"],
+                    "is_core": item["is_core"],
+                    "is_enabled": True,
+                    "display_order": item["display_order"],
+                },
+            )
+
+        modules = SystemModule.objects.all().order_by("display_order", "name")
+        data = [
+            {
+                "id": m.id,
+                "key": m.key,
+                "name": m.name,
+                "description": m.description,
+                "is_enabled": m.is_enabled,
+                "is_core": m.is_core,
+                "display_order": m.display_order,
+                "updated_at": m.updated_at.isoformat() if m.updated_at else None,
+            }
+            for m in modules
+        ]
+        return Response({"modules": data}, status=status.HTTP_200_OK)
+
+
+class SystemModuleToggleView(APIView):
+    """
+    Allows Super Admin to enable/disable optional system modules.
+    Core modules are strictly protected from being disabled.
+    """
+    def post(self, request, key, *args, **kwargs):
+        from apps.core.models import SystemModule, AuditLog
+
+        if not (request.user and request.user.is_authenticated and request.user.is_superuser):
+            return Response(
+                {"detail": "Only system Super Admin is authorized to configure global system modules."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        module = SystemModule.objects.filter(key=key).first()
+        if not module:
+            return Response(
+                {"detail": f"System module with key '{key}' was not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if module.is_core:
+            return Response(
+                {"detail": f"'{module.name}' is a core system module and cannot be disabled."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        is_enabled = request.data.get("is_enabled")
+        if is_enabled is None:
+            module.is_enabled = not module.is_enabled
+        else:
+            module.is_enabled = bool(is_enabled)
+
+        module.save(update_fields=["is_enabled", "updated_at"])
+
+        AuditLog.objects.create(
+            user=request.user,
+            username=request.user.username,
+            action="SETTINGS_UPDATED",
+            resource="SystemModule",
+            resource_id=module.key,
+            ip_address=get_client_ip(request),
+            details={
+                "module_key": module.key,
+                "module_name": module.name,
+                "new_enabled_state": module.is_enabled,
+            },
+        )
+
+        return Response({
+            "id": module.id,
+            "key": module.key,
+            "name": module.name,
+            "is_enabled": module.is_enabled,
+            "is_core": module.is_core,
+            "detail": f"Module '{module.name}' is now {'enabled' if module.is_enabled else 'disabled'}.",
+        }, status=status.HTTP_200_OK)
+
 
 
 

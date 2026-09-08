@@ -55,6 +55,9 @@ export interface ProductFilterParams {
   category?: number | string;
   unit?: number | string;
   is_active?: boolean;
+  page?: number;
+  page_size?: number;
+  all?: boolean;
 }
 
 export interface BulkImportResult {

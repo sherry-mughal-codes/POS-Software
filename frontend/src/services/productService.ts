@@ -4,7 +4,7 @@ import { Product, Category, Unit, ProductFilterParams } from '../types/product';
 export const productService = {
   // Products
   async getProducts(params?: ProductFilterParams): Promise<Product[]> {
-    const response = await apiClient.get<any>('/products/', { params });
+    const response = await apiClient.get<any>('/products/', { params: { all: true, ...params } });
     if (response.data && Array.isArray(response.data.results)) {
       return response.data.results;
     }

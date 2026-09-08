@@ -108,6 +108,14 @@ class Sale(models.Model):
     cheque_number = models.CharField(max_length=50, blank=True, null=True, help_text="Cheque number if paid by cheque")
     cheque_date = models.DateField(blank=True, null=True, help_text="Cheque issue or clearing date")
     cheque_bank = models.CharField(max_length=100, blank=True, null=True, help_text="Drawer / issuing bank name")
+    sales_agent = models.ForeignKey(
+        "commission.SalesAgent",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sales",
+        help_text="Sales agent assigned to this transaction",
+    )
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(
         User,

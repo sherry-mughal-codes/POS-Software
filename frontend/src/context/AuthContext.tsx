@@ -90,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasPermission = useCallback((permission: string): boolean => {
     if (!user) return false;
+    if (user.is_superuser) return true;
 
     // Check direct matching or app_label.codename matching
     const perms = user.effective_permissions || [];

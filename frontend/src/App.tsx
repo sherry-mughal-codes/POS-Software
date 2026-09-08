@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { ModuleProvider, useModules } from './context/ModuleContext';
 import { ToastProvider } from './context/ToastContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { LoginPage } from './pages/Auth/LoginPage';
@@ -23,12 +24,14 @@ import { EmployeesDashboardPage } from './pages/Employees/EmployeesDashboardPage
 import { DaySessionsPage } from './pages/POS/DaySessionsPage';
 import { SettingsPage } from './pages/Settings/SettingsPage';
 import { WarrantyDashboardPage } from './pages/Warranty/WarrantyDashboardPage';
+import { SalesAgentsPage } from './pages/Commission/SalesAgentsPage';
 import { NotFoundPage } from './pages/NotFound/NotFoundPage';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { Can } from './components/auth/Can';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, hasPermission } = useAuth();
+  const { isModuleEnabled } = useModules();
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [isPOSSidebarOpen, setIsPOSSidebarOpen] = useState<boolean>(false);
   const hasInitialRouted = React.useRef(false);
@@ -410,9 +413,32 @@ const AppContent: React.FC = () => {
         </Can>
       )}
 
+      {currentTab === 'sales-agents' && (
+        !isModuleEnabled('commission_management') ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+            <h3>Module Disabled (403 Forbidden)</h3>
+            <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+              The Commission Management module has been globally disabled by the Super Admin.
+            </p>
+          </div>
+        ) : (
+          <Can
+            anyOfPermissions={['view_sales_agents', 'manage_sales_agents', 'view_commission_payables', 'pay_commission']}
+            fallback={
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+                <h3>Access Denied (403 Forbidden)</h3>
+                <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                  Your assigned role does not have permission to access Commission Management.
+                </p>
+              </div>
+            }
+          >
+            <SalesAgentsPage />
+          </Can>
+        )
+      )}
 
-
-      {!['dashboard', 'reports', 'products', 'purchases', 'inventory', 'register', 'sales', 'sales-reports', 'expenses', 'employees', 'day-sessions', 'customers', 'suppliers', 'accounting', 'users', 'roles', 'audit-logs', 'settings', 'warranty'].includes(currentTab) && (
+      {!['dashboard', 'reports', 'products', 'purchases', 'inventory', 'register', 'sales', 'sales-reports', 'expenses', 'employees', 'day-sessions', 'customers', 'suppliers', 'accounting', 'users', 'roles', 'audit-logs', 'settings', 'warranty', 'sales-agents'].includes(currentTab) && (
         <NotFoundPage onGoHome={() => setCurrentTab('dashboard')} />
       )}
     </MainLayout>
@@ -422,13 +448,16 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <SettingsProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
-      </SettingsProvider>
+      <ModuleProvider>
+        <SettingsProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </SettingsProvider>
+      </ModuleProvider>
     </AuthProvider>
   );
 };
 
 export default App;
+

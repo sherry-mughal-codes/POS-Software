@@ -22,9 +22,11 @@ import {
   Store,
   Clock,
   LogOut,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../context/SettingsContext';
+import { useModules } from '../../context/ModuleContext';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 
@@ -59,6 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
 }) => {
   const { user, logout, hasPermission, hasRole } = useAuth();
+  const { isModuleEnabled } = useModules();
   const { companyName, companyLogo, companyAddress } = useSettings();
 
   const [timeStr, setTimeStr] = useState<string>('');
@@ -277,6 +280,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
       ],
     },
+    ...(isModuleEnabled('commission_management')
+      ? [
+          {
+            id: 'extra-modules',
+            title: 'Extra Modules',
+            icon: <Layers size={18} />,
+            items: [
+              {
+                id: 'sales-agents',
+                name: 'Commission Management',
+                icon: <UserCheck size={16} />,
+                requiredPermissions: ['view_sales_agents', 'manage_sales_agents', 'view_commission_payables', 'pay_commission'],
+              },
+            ],
+          },
+        ]
+      : []),
     {
       id: 'admin-security',
       title: 'Admin & System',

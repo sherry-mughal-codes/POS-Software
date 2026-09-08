@@ -10,6 +10,8 @@ from apps.core.views import (
     BackupRestoreView,
     BackupDropboxSyncView,
     DropboxTestConnectionView,
+    SystemModuleListView,
+    SystemModuleToggleView,
 )
 
 urlpatterns = [
@@ -19,6 +21,11 @@ urlpatterns = [
     path("core/dashboard/", DashboardView.as_view(), name="core_dashboard"),
     path("settings/", SystemSettingsView.as_view(), name="system_settings"),
     path("core/settings/", SystemSettingsView.as_view(), name="core_system_settings"),
+    # Global System Module endpoints
+    path("modules/", SystemModuleListView.as_view(), name="system_modules"),
+    path("core/modules/", SystemModuleListView.as_view(), name="core_system_modules"),
+    path("modules/<str:key>/toggle/", SystemModuleToggleView.as_view(), name="system_module_toggle"),
+    path("core/modules/<str:key>/toggle/", SystemModuleToggleView.as_view(), name="core_system_module_toggle"),
     # Backup & Disaster Recovery endpoints
     path("backups/", BackupListView.as_view(), name="backup_list"),
     path("core/backups/", BackupListView.as_view(), name="core_backup_list"),
