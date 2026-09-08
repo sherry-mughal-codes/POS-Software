@@ -132,9 +132,16 @@ class LogoutView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     """
     User management API with RBAC protection (Admins & Managers only).
+    Only Super Admins can see or manage Super Admin accounts.
     """
     queryset = User.objects.all().select_related("profile").prefetch_related("groups", "user_permissions")
     permission_classes = [IsAdminOrManager]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if not self.request.user.is_superuser:
+            qs = qs.filter(is_superuser=False)
+        return qs
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:

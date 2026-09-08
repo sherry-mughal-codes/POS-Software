@@ -193,14 +193,15 @@ export const UsersPage: React.FC = () => {
 
   const filteredUsers = React.useMemo(() => {
     const q = searchQuery.toLowerCase();
-    return users.filter((u) => (
+    const baseList = currentUser?.is_superuser ? users : users.filter((u) => !u.is_superuser);
+    return baseList.filter((u) => (
       u.username.toLowerCase().includes(q) ||
       u.first_name?.toLowerCase().includes(q) ||
       u.last_name?.toLowerCase().includes(q) ||
       u.email?.toLowerCase().includes(q) ||
       u.roles.some((r) => r.toLowerCase().includes(q))
     ));
-  }, [users, searchQuery]);
+  }, [users, searchQuery, currentUser?.is_superuser]);
 
   useEffect(() => {
     setPage(1);
