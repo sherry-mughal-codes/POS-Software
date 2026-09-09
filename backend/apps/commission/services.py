@@ -179,9 +179,15 @@ class CommissionService:
         )
 
         # Post GL Payment Entry (DR 2040 Payable / CR Cash/Bank)
+        agent_name = record.agent_name_snapshot or (record.sales_agent.name if record.sales_agent else "Sales Agent")
         journal_entry = AccountingService.record_commission_payment(
-            commission_payment=payment,
+            payment_ref=payment.payment_number,
+            commission_ref=record.commission_number,
+            agent_name=agent_name,
+            amount=payment.amount,
+            payment_account=payment.payment_account,
             created_by=created_by,
+            entry_date=payment.payment_date,
         )
         if journal_entry:
             payment.journal_entry = journal_entry
@@ -217,10 +223,13 @@ class CommissionService:
         if not record:
             return None
 
-        # Calculate returned base from returned items
+        # Calculate returned base from returned items or refund amount
         returned_base = Decimal("0.00")
         for ret_item in sales_return.items.all():
-            returned_base += ret_item.subtotal
+            returned_base += getattr(ret_item, "subtotal", Decimal("0.00"))
+
+        if returned_base <= Decimal("0.00") and getattr(sales_return, "refund_amount", None):
+            returned_base = Decimal(str(sales_return.refund_amount))
 
         if returned_base <= Decimal("0.00"):
             return None
@@ -248,9 +257,15 @@ class CommissionService:
         )
 
         # Post GL Reversal Entry (DR 2040 Payable / CR 5090 Expense)
+        agent_name = record.agent_name_snapshot or (record.sales_agent.name if record.sales_agent else "Sales Agent")
         journal_entry = AccountingService.record_commission_reversal(
-            commission_adjustment=adjustment,
+            adjustment_ref=f"ADJ-{adjustment.id}",
+            commission_ref=record.commission_number,
+            agent_name=agent_name,
+            reversal_amount=reversal_amount,
+            return_ref=sales_return.return_number if hasattr(sales_return, 'return_number') else str(sales_return.id),
             created_by=created_by,
+            entry_date=adjustment.date,
         )
         if journal_entry:
             adjustment.journal_entry = journal_entry
@@ -262,3 +277,113 @@ class CommissionService:
         record.save(update_fields=["adjusted_amount", "status", "updated_at"])
 
         return adjustment
+
+    @classmethod
+    @transaction.atomic
+    def settle_agent_commissions(
+        cls,
+        sales_agent_id: int,
+        amount: Decimal,
+        payment_account_id: int,
+        payment_date: Optional[date] = None,
+        notes: str = "",
+        created_by: Optional[User] = None,
+    ) -> Dict[str, Any]:
+        """
+        Settles total outstanding commission payables for a sales agent across open records (FIFO),
+        automatically offsetting any past excess credits/reversals from sales returns.
+        """
+        if not cls.is_commission_module_enabled():
+            raise ValidationError("Commission Management module is currently disabled by Super Admin.")
+
+        agent = SalesAgent.objects.filter(pk=sales_agent_id).first()
+        if not agent:
+            raise ValidationError("Sales agent not found.")
+
+        pay_amount = Decimal(str(amount)).quantize(Decimal("0.01"))
+        if pay_amount <= Decimal("0.00"):
+            raise ValidationError("Payment amount must be greater than zero.")
+
+        # Calculate live global net balance across ALL records for this agent
+        all_records = list(
+            CommissionRecord.objects.select_for_update()
+            .filter(sales_agent=agent)
+            .exclude(status=CommissionStatus.CANCELLED)
+            .order_by("date", "created_at")
+        )
+
+        total_net_comm = sum((r.net_payable_amount for r in all_records), Decimal("0.00"))
+        total_paid_comm = sum((r.paid_amount for r in all_records), Decimal("0.00"))
+        net_outstanding = max(Decimal("0.00"), total_net_comm - total_paid_comm)
+
+        if net_outstanding <= Decimal("0.00"):
+            raise ValidationError(f"Sales Agent '{agent.name}' has no outstanding commission payables due.")
+
+        if pay_amount > net_outstanding:
+            raise ValidationError(
+                f"Payment amount (Rs. {pay_amount}) exceeds total net outstanding payable (Rs. {net_outstanding}) for {agent.name}."
+            )
+
+        payment_account = Account.objects.filter(pk=payment_account_id, is_active=True).first()
+        if not payment_account:
+            raise ValidationError("Please select a valid, active payment account.")
+
+        if payment_date is None:
+            payment_date = timezone.localdate()
+
+        # 1. First, automatically absorb any existing advance credits from overpaid records into open records
+        excess_records = [r for r in all_records if r.advance_credit_amount > Decimal("0.00")]
+        open_records = [r for r in all_records if r.remaining_payable_amount > Decimal("0.00")]
+
+        for exc in excess_records:
+            excess_avail = exc.advance_credit_amount
+            for op in open_records:
+                if excess_avail <= Decimal("0.00"):
+                    break
+                needed = op.remaining_payable_amount
+                if needed <= Decimal("0.00"):
+                    continue
+                absorb = min(excess_avail, needed)
+                exc.paid_amount -= absorb
+                exc.update_status()
+                exc.save(update_fields=["paid_amount", "status", "updated_at"])
+
+                op.paid_amount += absorb
+                op.update_status()
+                op.save(update_fields=["paid_amount", "status", "updated_at"])
+
+                excess_avail -= absorb
+
+        # 2. Re-fetch open records that still have remaining balance to pay with the new cash/bank disbursement
+        open_records_to_pay = [r for r in all_records if r.remaining_payable_amount > Decimal("0.00")]
+
+        remaining_to_distribute = pay_amount
+        created_payments = []
+
+        for record in open_records_to_pay:
+            if remaining_to_distribute <= Decimal("0.00"):
+                break
+
+            record_due = record.remaining_payable_amount
+            if record_due <= Decimal("0.00"):
+                continue
+
+            pay_this_record = min(remaining_to_distribute, record_due)
+            pmt = cls.pay_commission(
+                commission_record_id=record.id,
+                amount=pay_this_record,
+                payment_account_id=payment_account_id,
+                payment_date=payment_date,
+                notes=notes or f"Agent bulk commission settlement ({agent.name})",
+                created_by=created_by,
+            )
+            created_payments.append(pmt)
+            remaining_to_distribute -= pay_this_record
+
+        return {
+            "sales_agent": agent.name,
+            "agent_code": agent.code,
+            "total_settled": str(pay_amount),
+            "payments_count": len(created_payments),
+            "payments": created_payments,
+        }

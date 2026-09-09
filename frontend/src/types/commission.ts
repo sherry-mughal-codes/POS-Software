@@ -9,6 +9,11 @@ export interface SalesAgent {
   joining_date: string;
   is_active: boolean;
   notes: string;
+  outstanding_balance?: number;
+  advance_credit_balance?: number;
+  total_commission?: number;
+  total_paid?: number;
+  total_adjusted?: number;
   created_by?: number | null;
   created_by_name?: string | null;
   created_at?: string;
@@ -39,7 +44,7 @@ export interface UpdateSalesAgentData {
   notes?: string;
 }
 
-export type CommissionStatus = 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'ADJUSTED';
+export type CommissionStatus = 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'ADJUSTED' | 'CANCELLED';
 
 export interface CommissionPayment {
   id: number;
@@ -80,24 +85,36 @@ export interface CommissionAdjustment {
 export interface CommissionRecord {
   id: number;
   record_number: string;
+  commission_number?: string;
   sale: number;
   sale_invoice_number: string;
+  invoice_number?: string;
   sale_date: string;
   customer_name?: string;
+  customer_id?: string;
+  sale_grand_total?: number | string;
   sales_agent: number;
   sales_agent_name: string;
   sales_agent_code: string;
   sales_agent_phone?: string;
+  sales_agent_is_active?: boolean;
+  agent_name_snapshot?: string;
+  agent_code_snapshot?: string;
   date: string;
   status: CommissionStatus;
   status_display: string;
   commission_rate_percentage: number | string;
+  commission_percentage?: number | string;
   commission_base_amount: number | string;
+  commission_base?: number | string;
   commission_amount: number | string;
   paid_amount: number | string;
   balance_due: number | string;
+  net_payable_amount?: number | string;
+  remaining_payable_amount?: number | string;
   adjusted_amount: number | string;
   advance_credit: number | string;
+  advance_credit_amount?: number | string;
   notes?: string;
   created_by?: number;
   created_by_name?: string;
@@ -142,4 +159,3 @@ export interface SystemModule {
   display_order: number;
   updated_at?: string | null;
 }
-

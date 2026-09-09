@@ -21,6 +21,7 @@ from apps.commission.serializers import (
     CommissionPaymentSerializer,
     CommissionAdjustmentSerializer,
     PayCommissionSerializer,
+    SettleAgentCommissionSerializer,
 )
 from apps.commission.services import CommissionService
 from apps.core.permissions import IsAdminOrManager, IsModuleEnabled
@@ -229,6 +230,61 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
                 "detail": f"Commission payment {payment.payment_number} of Rs. {payment.amount} recorded successfully.",
                 "payment": CommissionPaymentSerializer(payment).data,
                 "record": CommissionRecordSerializer(record).data,
+            }, status=status.HTTP_201_CREATED)
+
+        except ValidationError as e:
+            return Response(
+                {"detail": e.message if hasattr(e, "message") else str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @action(detail=False, methods=["post"], url_path="settle-agent")
+    def settle_agent(self, request):
+        """
+        Settles total outstanding commission for a sales agent across open vouchers (FIFO).
+        """
+        serializer = SettleAgentCommissionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            result = CommissionService.settle_agent_commissions(
+                sales_agent_id=data["sales_agent"],
+                amount=data["amount"],
+                payment_account_id=data["payment_account"],
+                payment_date=data.get("payment_date"),
+                notes=data.get("notes", ""),
+                created_by=request.user,
+            )
+
+            AuditLog.objects.create(
+                user=request.user,
+                username=request.user.username,
+                action="SETTINGS_UPDATED",
+                resource="CommissionPayment",
+                resource_id=f"AGENT-{data['sales_agent']}",
+                ip_address=get_client_ip(request),
+                details={
+                    "sales_agent": result["sales_agent"],
+                    "agent_code": result["agent_code"],
+                    "total_settled": result["total_settled"],
+                    "payments_count": result["payments_count"],
+                },
+            )
+
+            return Response({
+                "detail": f"Successfully settled Rs. {result['total_settled']} commission for {result['sales_agent']}.",
+                "result": {
+                    "sales_agent": result["sales_agent"],
+                    "agent_code": result["agent_code"],
+                    "total_settled": result["total_settled"],
+                    "payments_count": result["payments_count"],
+                },
             }, status=status.HTTP_201_CREATED)
 
         except ValidationError as e:

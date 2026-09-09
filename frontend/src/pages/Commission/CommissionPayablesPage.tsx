@@ -4,7 +4,6 @@ import {
   Search,
   Eye,
   Printer,
-  RefreshCw,
   TrendingUp,
   AlertCircle,
   CheckCircle2,
@@ -13,7 +12,6 @@ import {
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Pagination } from '../../components/common/Pagination';
 import { CommissionRecord, CommissionStatus, SalesAgent } from '../../types/commission';
@@ -24,12 +22,19 @@ import { CommissionSlipModal } from './CommissionSlipModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../context/ToastContext';
 
+const formatMoney = (val: number | string | undefined | null): string => {
+  const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
+  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 interface CommissionPayablesPageProps {
-  onSwitchToAgents?: () => void;
+  refreshTrigger?: number;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 export const CommissionPayablesPage: React.FC<CommissionPayablesPageProps> = ({
-  onSwitchToAgents,
+  refreshTrigger,
+  onLoadingChange,
 }) => {
   const { hasPermission } = useAuth();
   const { showError } = useToast();
@@ -77,6 +82,7 @@ export const CommissionPayablesPage: React.FC<CommissionPayablesPageProps> = ({
   const fetchPayables = useCallback(async () => {
     try {
       setLoading(true);
+      onLoadingChange?.(true);
       const params: any = {
         search: searchQuery.trim() || undefined,
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
@@ -93,7 +99,7 @@ export const CommissionPayablesPage: React.FC<CommissionPayablesPageProps> = ({
         setTotalCount(data.length);
       } else if (data && Array.isArray(data.results)) {
         setPayables(data.results);
-        setTotalCount(data.count || data.results.length);
+        setTotalCount(data.count ?? data.results.length);
       } else {
         setPayables([]);
         setTotalCount(0);
@@ -103,20 +109,28 @@ export const CommissionPayablesPage: React.FC<CommissionPayablesPageProps> = ({
       showError(err?.response?.data?.detail || err?.message || 'Failed to load commission records.', 'Data Error');
     } finally {
       setLoading(false);
+      onLoadingChange?.(false);
     }
-  }, [searchQuery, statusFilter, selectedAgentId, dateFrom, dateTo, currentPage, pageSize, showError]);
+  }, [searchQuery, statusFilter, selectedAgentId, dateFrom, dateTo, currentPage, pageSize, showError, onLoadingChange]);
 
   useEffect(() => {
     fetchPayables();
-  }, [fetchPayables]);
+  }, [fetchPayables, refreshTrigger]);
 
   // Aggregate KPI metrics
   const totalAccrued = payables.reduce((acc, p) => acc + Number(p.commission_amount || 0), 0);
   const totalPaid = payables.reduce((acc, p) => acc + Number(p.paid_amount || 0), 0);
-  const totalOutstanding = payables.reduce((acc, p) => acc + Number(p.balance_due || 0), 0);
+  const totalOutstanding = payables.reduce((acc, p) => {
+    const bal = p.remaining_payable_amount !== undefined
+      ? Number(p.remaining_payable_amount)
+      : p.balance_due !== undefined
+      ? Number(p.balance_due)
+      : Math.max(0, Number(p.commission_amount || 0) - Number(p.adjusted_amount || 0) - Number(p.paid_amount || 0));
+    return acc + bal;
+  }, 0);
   const totalAdjusted = payables.reduce((acc, p) => acc + Number(p.adjusted_amount || 0), 0);
 
-  const getStatusBadge = (status: CommissionStatus) => {
+  const getStatusBadge = (status: CommissionStatus | string) => {
     switch (status) {
       case 'PAID':
         return <Badge variant="success">Paid</Badge>;
@@ -154,269 +168,219 @@ export const CommissionPayablesPage: React.FC<CommissionPayablesPageProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      {/* Header with Title and Tab Switcher */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)' }}>
-            Commission Payables & Settlements
-          </h2>
-          <p style={{ margin: '0.2rem 0 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-            Track sales agent commission accruals, process disbursements, and inspect return reversals.
-          </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      {/* Standardized Metrics Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.625rem' }}>
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>
+              Total Accrued
+            </span>
+            <DollarSign size={14} style={{ color: 'var(--primary-400)' }} />
+          </div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+            Rs. {formatMoney(totalAccrued)}
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          {onSwitchToAgents && (
-            <Button variant="outline" onClick={onSwitchToAgents}>
-              View Agents Directory
-            </Button>
-          )}
-          <Button variant="outline" icon={<RefreshCw size={14} />} onClick={() => fetchPayables()}>
-            Refresh
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>
+              Total Settled
+            </span>
+            <CheckCircle2 size={14} style={{ color: 'var(--success)' }} />
+          </div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+            Rs. {formatMoney(totalPaid)}
+          </div>
+        </div>
+
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>
+              Outstanding Due
+            </span>
+            <Clock size={14} style={{ color: 'var(--danger)' }} />
+          </div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
+            Rs. {formatMoney(totalOutstanding)}
+          </div>
+        </div>
+
+        <div className="glass-card" style={{ padding: '0.625rem 0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>
+              Return Deductions
+            </span>
+            <TrendingUp size={14} style={{ color: 'var(--warning)' }} />
+          </div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+            Rs. {formatMoney(totalAdjusted)}
+          </div>
+        </div>
+      </div>
+
+      {/* Standardized Compact Filter Toolbar */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.45rem',
+          padding: '0.45rem 0.65rem',
+          borderRadius: '0.5rem',
+          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+          border: '1px solid var(--border-subtle)',
+        }}
+      >
+        {/* Search Input */}
+        <div style={{ position: 'relative', flex: '1 1 190px', minWidth: '160px' }}>
+          <Search
+            size={13}
+            style={{
+              position: 'absolute',
+              left: '0.6rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-subtle)',
+              pointerEvents: 'none',
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Search voucher, invoice, agent..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              width: '100%',
+              padding: '0.3rem 0.6rem 0.3rem 1.85rem',
+              backgroundColor: 'var(--bg-input)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: '0.375rem',
+              color: 'var(--text-main)',
+              fontSize: '0.75rem',
+              outline: 'none',
+            }}
+          />
+        </div>
+
+        {/* Status Filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          style={{
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '0.375rem',
+            padding: '0.3rem 0.6rem',
+            color: 'var(--text-main)',
+            fontSize: '0.75rem',
+            outline: 'none',
+            minWidth: '110px',
+          }}
+        >
+          <option value="ALL">All Statuses</option>
+          <option value="UNPAID">Unpaid Only</option>
+          <option value="PARTIALLY_PAID">Partially Paid</option>
+          <option value="PAID">Fully Paid</option>
+          <option value="ADJUSTED">Return Adjusted</option>
+        </select>
+
+        {/* Sales Agent Filter */}
+        <select
+          value={selectedAgentId}
+          onChange={(e) => {
+            setSelectedAgentId(e.target.value);
+            setCurrentPage(1);
+          }}
+          style={{
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '0.375rem',
+            padding: '0.3rem 0.6rem',
+            color: 'var(--text-main)',
+            fontSize: '0.75rem',
+            outline: 'none',
+            minWidth: '140px',
+          }}
+        >
+          <option value="">All Sales Agents</option>
+          {agents.map((agent) => (
+            <option key={agent.id} value={agent.id}>
+              {agent.name} ({agent.code || `${agent.commission_percentage}%`})
+            </option>
+          ))}
+        </select>
+
+        {/* Date From */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>From:</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => {
+              setDateFrom(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              backgroundColor: 'var(--bg-input)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: '0.375rem',
+              padding: '0.3rem 0.45rem',
+              color: 'var(--text-main)',
+              fontSize: '0.75rem',
+              outline: 'none',
+            }}
+          />
+        </div>
+
+        {/* Date To */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)' }}>To:</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => {
+              setDateTo(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              backgroundColor: 'var(--bg-input)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: '0.375rem',
+              padding: '0.3rem 0.45rem',
+              color: 'var(--text-main)',
+              fontSize: '0.75rem',
+              outline: 'none',
+            }}
+          />
+        </div>
+
+        {(searchQuery || statusFilter !== 'ALL' || selectedAgentId || dateFrom || dateTo) && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchQuery('');
+              setStatusFilter('ALL');
+              setSelectedAgentId('');
+              setDateFrom('');
+              setDateTo('');
+              setCurrentPage(1);
+            }}
+            style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+          >
+            Reset
           </Button>
-        </div>
+        )}
       </div>
 
-      {/* KPI Stats Overview Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1rem' }}>
-        <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div
-              style={{
-                width: '2.5rem',
-                height: '2.5rem',
-                borderRadius: '0.5rem',
-                backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--primary-400)',
-              }}
-            >
-              <DollarSign size={20} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                Total Commission Accrued
-              </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.1rem' }}>
-                Rs. {totalAccrued.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div
-              style={{
-                width: '2.5rem',
-                height: '2.5rem',
-                borderRadius: '0.5rem',
-                backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--success)',
-              }}
-            >
-              <CheckCircle2 size={20} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                Total Settled / Paid
-              </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)', marginTop: '0.1rem' }}>
-                Rs. {totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div
-              style={{
-                width: '2.5rem',
-                height: '2.5rem',
-                borderRadius: '0.5rem',
-                backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--danger)',
-              }}
-            >
-              <Clock size={20} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                Outstanding Payables Due
-              </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--danger)', marginTop: '0.1rem' }}>
-                Rs. {totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div
-              style={{
-                width: '2.5rem',
-                height: '2.5rem',
-                borderRadius: '0.5rem',
-                backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--warning)',
-              }}
-            >
-              <TrendingUp size={20} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                Return Deductions
-              </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--warning)', marginTop: '0.1rem' }}>
-                Rs. {totalAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Filter and Search Bar Card */}
-      <Card>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          {/* Status Filter Tabs */}
-          <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.2rem' }}>
-            {[
-              { id: 'ALL', label: 'All Records' },
-              { id: 'UNPAID', label: 'Unpaid' },
-              { id: 'PARTIALLY_PAID', label: 'Partially Paid' },
-              { id: 'PAID', label: 'Fully Paid' },
-              { id: 'ADJUSTED', label: 'Return Adjusted' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setStatusFilter(tab.id);
-                  setCurrentPage(1);
-                }}
-                style={{
-                  padding: '0.4rem 0.85rem',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.78125rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  border: statusFilter === tab.id ? '1px solid var(--primary-500)' : '1px solid var(--border-subtle)',
-                  backgroundColor: statusFilter === tab.id ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-                  color: statusFilter === tab.id ? 'var(--primary-400)' : 'var(--text-muted)',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Search and Secondary Selectors */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center' }}>
-            {/* Search Input */}
-            <div style={{ flex: '1 1 240px', minWidth: '220px' }}>
-              <Input
-                type="text"
-                placeholder="Search voucher #, invoice #, agent name..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                icon={<Search size={15} />}
-              />
-            </div>
-
-            {/* Sales Agent Filter */}
-            <div style={{ width: '200px' }}>
-              <select
-                value={selectedAgentId}
-                onChange={(e) => {
-                  setSelectedAgentId(e.target.value);
-                  setCurrentPage(1);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '0.55rem 0.75rem',
-                  backgroundColor: 'var(--bg-input)',
-                  border: '1px solid var(--border-medium)',
-                  borderRadius: '0.375rem',
-                  color: 'var(--text-main)',
-                  fontSize: '0.8125rem',
-                  outline: 'none',
-                }}
-              >
-                <option value="">All Sales Agents</option>
-                {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.name} ({agent.code || `${agent.commission_percentage}%`})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Date From */}
-            <div style={{ width: '150px' }}>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value);
-                  setCurrentPage(1);
-                }}
-                title="Date From"
-              />
-            </div>
-
-            {/* Date To */}
-            <div style={{ width: '150px' }}>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value);
-                  setCurrentPage(1);
-                }}
-                title="Date To"
-              />
-            </div>
-
-            {(searchQuery || statusFilter !== 'ALL' || selectedAgentId || dateFrom || dateTo) && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('ALL');
-                  setSelectedAgentId('');
-                  setDateFrom('');
-                  setDateTo('');
-                  setCurrentPage(1);
-                }}
-                style={{ fontSize: '0.75rem' }}
-              >
-                Reset Filters
-              </Button>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {/* Payables Data Table */}
+      {/* Payables Data Table Card */}
       <Card>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem 0' }}>
@@ -425,44 +389,52 @@ export const CommissionPayablesPage: React.FC<CommissionPayablesPageProps> = ({
         ) : payables.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
             <AlertCircle size={36} style={{ margin: '0 auto 0.5rem', opacity: 0.5 }} />
-            <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1rem' }}>No Commission Payables Found</h4>
-            <p style={{ margin: '0.3rem 0 0', fontSize: '0.8125rem' }}>
+            <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '0.9375rem' }}>No Commission Payables Found</h4>
+            <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem' }}>
               {searchQuery || statusFilter !== 'ALL' || selectedAgentId || dateFrom
                 ? 'Try adjusting your search criteria or clear active filters.'
-                : 'Commission vouchers will appear automatically when sales are processed with assigned sales agents.'}
+                : 'Commission vouchers appear automatically when sales are completed with assigned sales agents.'}
             </p>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8125rem' }}>
               <thead>
                 <tr
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.02)',
                     borderBottom: '1px solid var(--border-medium)',
                     color: 'var(--text-muted)',
-                    textAlign: 'left',
                   }}
                 >
-                  <th style={{ padding: '0.65rem 0.85rem' }}>Voucher #</th>
-                  <th style={{ padding: '0.65rem 0.85rem' }}>Date</th>
-                  <th style={{ padding: '0.65rem 0.85rem' }}>Linked Invoice</th>
-                  <th style={{ padding: '0.65rem 0.85rem' }}>Sales Agent</th>
-                  <th style={{ padding: '0.65rem 0.85rem', textAlign: 'right' }}>Base Amount</th>
-                  <th style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>Rate</th>
-                  <th style={{ padding: '0.65rem 0.85rem', textAlign: 'right' }}>Commission</th>
-                  <th style={{ padding: '0.65rem 0.85rem', textAlign: 'right' }}>Paid Amount</th>
-                  <th style={{ padding: '0.65rem 0.85rem', textAlign: 'right' }}>Balance Due</th>
-                  <th style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>Status</th>
-                  <th style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>Actions</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Voucher #</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Date</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Sale Invoice #</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600 }}>Sales Agent</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Base Amount</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Rate %</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Commission</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Paid Amount</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Balance Due</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'center' }}>Status</th>
+                  <th style={{ padding: '0.625rem 0.75rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {payables.map((payable) => {
-                  const bal = Number(payable.balance_due || 0);
+                  const voucherNum = payable.commission_number || payable.record_number || `COM-${payable.id}`;
+                  const invoiceNum = payable.invoice_number || payable.sale_invoice_number || `INV-${payable.sale}`;
+                  const agentName = payable.sales_agent_name || (payable as any).agent_name_snapshot || 'Sales Agent';
+                  const agentCode = payable.sales_agent_code || (payable as any).agent_code_snapshot || '';
+                  const baseAmt = payable.commission_base !== undefined ? Number(payable.commission_base) : Number(payable.commission_base_amount || 0);
+                  const ratePct = payable.commission_percentage !== undefined ? Number(payable.commission_percentage) : Number(payable.commission_rate_percentage || 0);
                   const commAmt = Number(payable.commission_amount || 0);
                   const paidAmt = Number(payable.paid_amount || 0);
-                  const baseAmt = Number(payable.commission_base_amount || 0);
+                  const balDue = payable.remaining_payable_amount !== undefined
+                    ? Number(payable.remaining_payable_amount)
+                    : payable.balance_due !== undefined
+                    ? Number(payable.balance_due)
+                    : Math.max(0, commAmt - Number(payable.adjusted_amount || 0) - paidAmt);
 
                   return (
                     <tr
@@ -474,104 +446,117 @@ export const CommissionPayablesPage: React.FC<CommissionPayablesPageProps> = ({
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)')}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
-                      <td style={{ padding: '0.65rem 0.85rem', fontWeight: 700, color: 'var(--primary-400)' }}>
-                        {payable.record_number}
+                      {/* Voucher Number */}
+                      <td style={{ padding: '0.625rem 0.75rem', fontWeight: 700, color: 'var(--primary-400)', fontFamily: 'var(--font-mono)' }}>
+                        {voucherNum}
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+
+                      {/* Date */}
+                      <td style={{ padding: '0.625rem 0.75rem', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
                         {payable.date || payable.sale_date}
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                        {payable.sale_invoice_number}
+
+                      {/* Reference of Sale Invoice */}
+                      <td style={{ padding: '0.625rem 0.75rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                        {invoiceNum}
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{payable.sales_agent_name}</div>
-                        <div style={{ fontSize: '0.7rem', color: '#a855f7' }}>{payable.sales_agent_code}</div>
+
+                      {/* Sales Agent */}
+                      <td style={{ padding: '0.625rem 0.75rem' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{agentName}</div>
+                        {agentCode && (
+                          <div style={{ fontSize: '0.71875rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                            {agentCode}
+                          </div>
+                        )}
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem', textAlign: 'right', color: 'var(--text-muted)' }}>
-                        Rs. {baseAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+
+                      {/* Base Amount */}
+                      <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                        Rs. {formatMoney(baseAmt)}
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem', textAlign: 'center', fontWeight: 600, color: 'var(--text-main)' }}>
-                        {payable.commission_rate_percentage}%
+
+                      {/* Commission Rate % */}
+                      <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                        {ratePct.toFixed(2)}%
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem', textAlign: 'right', fontWeight: 700, color: 'var(--text-main)' }}>
-                        Rs. {commAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+
+                      {/* Commission Amount */}
+                      <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                        <div>Rs. {formatMoney(commAmt)}</div>
+                        {Number(payable.adjusted_amount || 0) > 0 && (
+                          <div style={{ fontSize: '0.6875rem', color: 'var(--warning)', fontWeight: 600 }}>
+                            -Rs. {formatMoney(payable.adjusted_amount)} Return
+                          </div>
+                        )}
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem', textAlign: 'right', color: 'var(--success)', fontWeight: 600 }}>
-                        Rs. {paidAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+
+                      {/* Paid Amount */}
+                      <td style={{ padding: '0.625rem 0.75rem', textAlign: 'right', color: 'var(--success)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
+                        Rs. {formatMoney(paidAmt)}
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem', textAlign: 'right', fontWeight: 800, color: bal > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                        Rs. {bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+
+                      {/* Balance Due */}
+                      <td
+                        style={{
+                          padding: '0.625rem 0.75rem',
+                          textAlign: 'right',
+                          fontWeight: 800,
+                          color: balDue > 0 ? 'var(--danger)' : 'var(--success)',
+                          fontFamily: 'var(--font-mono)',
+                        }}
+                      >
+                        <div>Rs. {formatMoney(balDue)}</div>
+                        {Number(payable.adjusted_amount || 0) > 0 && (
+                          <div style={{ fontSize: '0.625rem', color: 'var(--text-subtle)' }}>
+                            Net: Rs. {formatMoney(Number(payable.net_payable_amount || (commAmt - Number(payable.adjusted_amount || 0))))}
+                          </div>
+                        )}
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>
+
+                      {/* Status */}
+                      <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
                         {getStatusBadge(payable.status)}
                       </td>
-                      <td style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
-                          {/* View Details Action */}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetail(payable)}
-                            title="View Commission Details & Audit Trail"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              width: '1.85rem',
-                              height: '1.85rem',
-                              borderRadius: '0.375rem',
-                              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                              color: 'var(--text-main)',
-                              border: '1px solid var(--border-subtle)',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <Eye size={14} />
-                          </button>
 
-                          {/* Settle / Pay Action (Icon Only) */}
-                          {canPay && bal > 0 && (
-                            <button
-                              type="button"
+                      {/* Actions (ONLY ICONS) */}
+                      <td style={{ padding: '0.45rem 0.75rem', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.35rem' }}>
+                          {/* Pay Icon Button */}
+                          {canPay && balDue > 0 && (
+                            <Button
+                              variant="outline"
+                              icon={<DollarSign size={13} />}
                               onClick={() => handleOpenPayment(payable)}
-                              title={`Settle Payment (Due: Rs. ${bal.toLocaleString()})`}
                               style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '1.85rem',
-                                height: '1.85rem',
-                                borderRadius: '0.375rem',
-                                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                padding: '0.25rem 0.45rem',
+                                fontSize: '0.75rem',
                                 color: 'var(--success)',
-                                border: '1px solid rgba(16, 185, 129, 0.3)',
-                                cursor: 'pointer',
+                                borderColor: 'rgba(16, 185, 129, 0.4)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
                               }}
-                            >
-                              <DollarSign size={14} />
-                            </button>
+                              title={`Settle Commission Payment (Due: Rs. ${formatMoney(balDue)})`}
+                            />
                           )}
 
-                          {/* Print Slip Action */}
+                          {/* View Details Icon Button */}
+                          <Button
+                            variant="outline"
+                            icon={<Eye size={13} />}
+                            onClick={() => handleOpenDetail(payable)}
+                            style={{ padding: '0.25rem 0.45rem', fontSize: '0.75rem' }}
+                            title="View Commission Details & Audit Trail"
+                          />
+
+                          {/* Print Slip Icon Button */}
                           {canPrint && (
-                            <button
-                              type="button"
+                            <Button
+                              variant="outline"
+                              icon={<Printer size={13} />}
                               onClick={() => handleOpenSlip(payable)}
+                              style={{ padding: '0.25rem 0.45rem', fontSize: '0.75rem' }}
                               title="Print Commission Settlement Slip"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '1.85rem',
-                                height: '1.85rem',
-                                borderRadius: '0.375rem',
-                                backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                                color: 'var(--primary-400)',
-                                border: '1px solid rgba(56, 189, 248, 0.25)',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <Printer size={14} />
-                            </button>
+                            />
                           )}
                         </div>
                       </td>
@@ -584,7 +569,7 @@ export const CommissionPayablesPage: React.FC<CommissionPayablesPageProps> = ({
         )}
 
         {totalCount > pageSize && (
-          <div style={{ marginTop: '1rem' }}>
+          <div style={{ marginTop: '0.75rem' }}>
             <Pagination
               currentPage={currentPage}
               totalItems={totalCount}

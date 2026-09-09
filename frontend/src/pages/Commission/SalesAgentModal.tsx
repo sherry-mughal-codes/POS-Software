@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, User, Percent, Phone, Mail, Calendar } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -135,282 +135,196 @@ export const SalesAgentModal: React.FC<SalesAgentModalProps> = ({
     : 'Register New Sales Agent';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {error && (
+    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} maxWidth="650px">
+      {error && (
+        <div
+          style={{
+            padding: '0.65rem 0.85rem',
+            borderRadius: '0.5rem',
+            backgroundColor: 'var(--danger-bg)',
+            border: '1px solid var(--danger-border)',
+            color: 'var(--danger)',
+            fontSize: '0.8125rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.75rem',
+          }}
+        >
+          <AlertCircle size={15} style={{ flexShrink: 0 }} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+        {/* Financial Summary Card for Existing Agent */}
+        {agentToEdit && (
           <div
             style={{
-              padding: '0.75rem 1rem',
+              padding: '0.625rem 0.85rem',
+              backgroundColor: 'rgba(56, 189, 248, 0.05)',
+              border: '1px solid var(--border-medium)',
               borderRadius: '0.5rem',
-              backgroundColor: 'var(--danger-bg)',
-              border: '1px solid var(--danger-border)',
-              color: 'var(--danger)',
-              fontSize: '0.8125rem',
-              display: 'flex',
-              alignItems: 'center',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
               gap: '0.5rem',
             }}
           >
-            <AlertCircle size={16} style={{ flexShrink: 0 }} />
-            <span>{error}</span>
+            <div>
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600 }}>
+                Total Earned
+              </span>
+              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                Rs. {Number(agentToEdit.total_commission || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600 }}>
+                Total Paid
+              </span>
+              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+                Rs. {Number(agentToEdit.total_paid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            {Number(agentToEdit.advance_credit_balance || agentToEdit.total_adjusted || 0) > 0 && (
+              <div>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--warning)', textTransform: 'uppercase', fontWeight: 600 }}>
+                  Return Deductions / Credit
+                </span>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+                  Rs. {Number(agentToEdit.advance_credit_balance || agentToEdit.total_adjusted || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600 }}>
+                Net Balance Due
+              </span>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, color: Number(agentToEdit.outstanding_balance || 0) > 0 ? 'var(--danger)' : 'var(--success)', fontFamily: 'var(--font-mono)' }}>
+                Rs. {Number(agentToEdit.outstanding_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.875rem' }}>
-          {/* Agent Name */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.78125rem',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                marginBottom: '0.35rem',
-              }}
-            >
-              Agent Full Name <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <Input
-              type="text"
-              placeholder="e.g. Tariq Mahmood"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isViewOnly || saving}
-              icon={<User size={14} />}
-              required
-            />
-          </div>
-
-          {/* Agent Code */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.78125rem',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                marginBottom: '0.35rem',
-              }}
-            >
-              Agent Code {isEdit || isViewOnly ? '' : '(Auto-generated if empty)'}
-            </label>
-            <Input
-              type="text"
-              placeholder="e.g. AGT-0001"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              disabled={isViewOnly || saving}
-            />
-          </div>
-
-          {/* Phone Number */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.78125rem',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                marginBottom: '0.35rem',
-              }}
-            >
-              Phone Number
-            </label>
-            <Input
-              type="tel"
-              placeholder="e.g. +92 300 1234567"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              disabled={isViewOnly || saving}
-              icon={<Phone size={14} />}
-            />
-          </div>
-
-          {/* Email Address */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.78125rem',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                marginBottom: '0.35rem',
-              }}
-            >
-              Email Address
-            </label>
-            <Input
-              type="email"
-              placeholder="e.g. agent@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isViewOnly || saving}
-              icon={<Mail size={14} />}
-            />
-          </div>
-
-          {/* Commission Percentage */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.78125rem',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                marginBottom: '0.35rem',
-              }}
-            >
-              Commission Rate (%) <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              placeholder="5.00"
-              value={commissionPercentage}
-              onChange={(e) => setCommissionPercentage(e.target.value)}
-              disabled={isViewOnly || saving}
-              icon={<Percent size={14} />}
-              required
-            />
-          </div>
-
-          {/* Joining Date */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.78125rem',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                marginBottom: '0.35rem',
-              }}
-            >
-              Joining Date
-            </label>
-            <Input
-              type="date"
-              value={joiningDate}
-              onChange={(e) => setJoiningDate(e.target.value)}
-              disabled={isViewOnly || saving}
-              icon={<Calendar size={14} />}
-            />
-          </div>
-        </div>
-
-        {/* Address */}
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '0.78125rem',
-              fontWeight: 600,
-              color: 'var(--text-main)',
-              marginBottom: '0.35rem',
-            }}
-          >
-            Physical Address
-          </label>
-          <textarea
-            placeholder="Agent commercial or residential address..."
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+        {/* Row 1: Code (1fr) and Name (2fr) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem' }}>
+          <Input
+            label="Agent Code"
+            placeholder="Auto-generated"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
             disabled={isViewOnly || saving}
-            rows={2}
-            style={{
-              width: '100%',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.375rem',
-              backgroundColor: 'var(--bg-input)',
-              border: '1px solid var(--border-medium)',
-              color: 'var(--text-main)',
-              fontSize: '0.8125rem',
-              outline: 'none',
-              resize: 'vertical',
-            }}
+          />
+          <Input
+            label="Agent Full Name *"
+            placeholder="e.g. Tariq Mahmood"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={isViewOnly || saving}
+            required
           />
         </div>
 
-        {/* Notes */}
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '0.78125rem',
-              fontWeight: 600,
-              color: 'var(--text-main)',
-              marginBottom: '0.35rem',
-            }}
-          >
-            Notes & Remarks
-          </label>
-          <textarea
-            placeholder="Additional notes, territory, or business remarks..."
+        {/* Row 2: Phone and Email */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <Input
+            label="Phone Number"
+            type="tel"
+            placeholder="e.g. +92 300 1234567"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            disabled={isViewOnly || saving}
+          />
+          <Input
+            label="Email Address"
+            type="email"
+            placeholder="e.g. agent@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isViewOnly || saving}
+          />
+        </div>
+
+        {/* Row 3: Commission Percentage and Joining Date */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <Input
+            label="Commission Rate (%) *"
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            placeholder="5.00"
+            value={commissionPercentage}
+            onChange={(e) => setCommissionPercentage(e.target.value)}
+            disabled={isViewOnly || saving}
+            required
+          />
+          <Input
+            label="Joining Date"
+            type="date"
+            value={joiningDate}
+            onChange={(e) => setJoiningDate(e.target.value)}
+            disabled={isViewOnly || saving}
+          />
+        </div>
+
+        {/* Row 4: Address and Notes */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <Input
+            label="Physical Address"
+            placeholder="Shop #, Street, Commercial Area..."
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            disabled={isViewOnly || saving}
+          />
+          <Input
+            label="Internal Notes"
+            placeholder="Special terms, assigned territory, remarks..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             disabled={isViewOnly || saving}
-            rows={2}
-            style={{
-              width: '100%',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.375rem',
-              backgroundColor: 'var(--bg-input)',
-              border: '1px solid var(--border-medium)',
-              color: 'var(--text-main)',
-              fontSize: '0.8125rem',
-              outline: 'none',
-              resize: 'vertical',
-            }}
           />
         </div>
 
         {/* Active Status Checkbox */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', paddingTop: '0.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingTop: '0.1rem' }}>
+          <input
+            type="checkbox"
+            id="is_active_agent_modal"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            disabled={isViewOnly || saving}
+            style={{ width: '1rem', height: '1rem', accentColor: 'var(--primary-500)', cursor: isViewOnly ? 'default' : 'pointer' }}
+          />
           <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              color: 'var(--text-main)',
-              cursor: isViewOnly ? 'default' : 'pointer',
-              userSelect: 'none',
-            }}
+            htmlFor="is_active_agent_modal"
+            style={{ fontSize: '0.8125rem', color: 'var(--text-main)', cursor: isViewOnly ? 'default' : 'pointer', userSelect: 'none' }}
           >
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              disabled={isViewOnly || saving}
-              style={{ width: '1rem', height: '1rem', cursor: isViewOnly ? 'default' : 'pointer' }}
-            />
-            <span>Active Status (Available for new transactions)</span>
+            Sales Agent is Active (Available for commission sales)
           </label>
         </div>
 
-        {/* Modal Action Buttons */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '0.5rem',
-            marginTop: '0.5rem',
-            paddingTop: '0.75rem',
-            borderTop: '1px solid var(--border-subtle)',
-          }}
-        >
-          <Button variant="secondary" onClick={onClose} disabled={saving} style={{ padding: '0.35rem 0.85rem', fontSize: '0.8125rem' }}>
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.25rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving} style={{ padding: '0.35rem 0.85rem', fontSize: '0.8125rem' }}>
             {isViewOnly ? 'Close' : 'Cancel'}
           </Button>
 
           {!isViewOnly && (
             <Button
-              variant="primary"
               type="submit"
+              variant="primary"
               loading={saving}
-              style={{ padding: '0.35rem 0.85rem', fontSize: '0.8125rem' }}
+              style={{
+                padding: '0.35rem 0.85rem',
+                fontSize: '0.8125rem',
+                background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                fontWeight: 700,
+              }}
             >
               {isEdit ? 'Save Changes' : 'Register Sales Agent'}
             </Button>

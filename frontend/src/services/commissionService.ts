@@ -72,10 +72,16 @@ export const commissionService = {
     return response.data;
   },
 
+  settleAgentCommissions: async (payload: { sales_agent: number; amount: number; payment_account: number; payment_date?: string; notes?: string }): Promise<any> => {
+    const response = await apiClient.post('/commission/payables/settle-agent/', payload);
+    return response.data;
+  },
+
   getCommissionSlip: async (id: number, paymentId?: number): Promise<any> => {
     const params = paymentId ? { payment_id: paymentId } : {};
     const response = await apiClient.get(`/commission/payables/${id}/slip/`, { params });
     return response.data;
   },
 };
+
 

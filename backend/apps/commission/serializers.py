@@ -9,6 +9,7 @@ from apps.commission.models import (
     CommissionRecord,
     CommissionPayment,
     CommissionAdjustment,
+    CommissionStatus,
 )
 
 
@@ -18,6 +19,11 @@ class SalesAgentSerializer(serializers.ModelSerializer):
     """
     created_by_name = serializers.CharField(source="created_by.username", read_only=True)
     code = serializers.CharField(required=False, allow_blank=True)
+    outstanding_balance = serializers.SerializerMethodField()
+    advance_credit_balance = serializers.SerializerMethodField()
+    total_commission = serializers.SerializerMethodField()
+    total_paid = serializers.SerializerMethodField()
+    total_adjusted = serializers.SerializerMethodField()
 
     class Meta:
         model = SalesAgent
@@ -32,12 +38,52 @@ class SalesAgentSerializer(serializers.ModelSerializer):
             "joining_date",
             "is_active",
             "notes",
+            "outstanding_balance",
+            "advance_credit_balance",
+            "total_commission",
+            "total_paid",
+            "total_adjusted",
             "created_by",
             "created_by_name",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_by", "created_by_name", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "outstanding_balance",
+            "advance_credit_balance",
+            "total_commission",
+            "total_paid",
+            "total_adjusted",
+            "created_by",
+            "created_by_name",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_outstanding_balance(self, obj):
+        records = obj.commission_records.exclude(status=CommissionStatus.CANCELLED)
+        total_comm = sum((r.net_payable_amount for r in records), Decimal("0.00"))
+        total_paid = sum((r.paid_amount for r in records), Decimal("0.00"))
+        return float(max(Decimal("0.00"), total_comm - total_paid))
+
+    def get_advance_credit_balance(self, obj):
+        records = obj.commission_records.exclude(status=CommissionStatus.CANCELLED)
+        total_comm = sum((r.net_payable_amount for r in records), Decimal("0.00"))
+        total_paid = sum((r.paid_amount for r in records), Decimal("0.00"))
+        return float(max(Decimal("0.00"), total_paid - total_comm))
+
+    def get_total_commission(self, obj):
+        records = obj.commission_records.exclude(status=CommissionStatus.CANCELLED)
+        return float(sum((r.net_payable_amount for r in records), Decimal("0.00")))
+
+    def get_total_paid(self, obj):
+        records = obj.commission_records.exclude(status=CommissionStatus.CANCELLED)
+        return float(sum((r.paid_amount for r in records), Decimal("0.00")))
+
+    def get_total_adjusted(self, obj):
+        records = obj.commission_records.exclude(status=CommissionStatus.CANCELLED)
+        return float(sum((r.adjusted_amount for r in records), Decimal("0.00")))
 
     def validate_commission_percentage(self, value):
         if value is not None:
@@ -192,5 +238,37 @@ class PayCommissionSerializer(serializers.Serializer):
     """
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"), required=True)
     payment_account = serializers.IntegerField(required=True)
-    payment_date = serializers.DateField(required=False)
+    payment_date = serializers.DateField(required=False, allow_null=True)
+    date = serializers.DateField(required=False, allow_null=True)
+    payment_method = serializers.CharField(required=False, allow_blank=True, default="CASH")
+    cheque_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    cheque_date = serializers.DateField(required=False, allow_null=True)
+    cheque_bank = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate(self, attrs):
+        if not attrs.get("payment_date") and attrs.get("date"):
+            attrs["payment_date"] = attrs.get("date")
+        return attrs
+
+
+class SettleAgentCommissionSerializer(serializers.Serializer):
+    """
+    Payload validation for settling total commission payables for a sales agent across vouchers (FIFO).
+    """
+    sales_agent = serializers.IntegerField(required=True)
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"), required=True)
+    payment_account = serializers.IntegerField(required=True)
+    payment_date = serializers.DateField(required=False, allow_null=True)
+    date = serializers.DateField(required=False, allow_null=True)
+    payment_method = serializers.CharField(required=False, allow_blank=True, default="CASH")
+    cheque_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    cheque_date = serializers.DateField(required=False, allow_null=True)
+    cheque_bank = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate(self, attrs):
+        if not attrs.get("payment_date") and attrs.get("date"):
+            attrs["payment_date"] = attrs.get("date")
+        return attrs
+

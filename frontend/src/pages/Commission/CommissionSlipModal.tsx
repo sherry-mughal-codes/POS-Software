@@ -6,6 +6,11 @@ import { CommissionRecord, CommissionPayment } from '../../types/commission';
 import { commissionService } from '../../services/commissionService';
 import { useSettings } from '../../context/SettingsContext';
 
+const formatMoney = (val: number | string | undefined | null): string => {
+  const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
+  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 interface CommissionSlipModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -57,6 +62,30 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
 
   if (!payable) return null;
 
+  const rec = slipData?.payable || payable;
+  const company = slipData?.company || {
+    name: companyName || 'ApexPOS Enterprise Store',
+    phone: companyPhone || '',
+    address: companyAddress || '',
+  };
+  const activePayment: CommissionPayment | undefined = slipData?.payment || rec.payments?.[0];
+
+  const voucherNum = rec.commission_number || rec.record_number || `COM-${rec.id}`;
+  const invoiceNum = rec.invoice_number || rec.sale_invoice_number || `INV-${rec.sale}`;
+  const agentName = rec.sales_agent_name || rec.agent_name_snapshot || 'Sales Agent';
+  const agentCode = rec.sales_agent_code || rec.agent_code_snapshot || '';
+  const baseAmt = rec.commission_base !== undefined ? Number(rec.commission_base) : Number(rec.commission_base_amount || 0);
+  const ratePct = rec.commission_percentage !== undefined ? Number(rec.commission_percentage) : Number(rec.commission_rate_percentage || 0);
+  const commAmt = Number(rec.commission_amount || 0);
+  const paidAmt = Number(rec.paid_amount || 0);
+  const adjAmt = Number(rec.adjusted_amount || 0);
+  const balDue = rec.remaining_payable_amount !== undefined
+    ? Number(rec.remaining_payable_amount)
+    : rec.balance_due !== undefined
+    ? Number(rec.balance_due)
+    : Math.max(0, commAmt - adjAmt - paidAmt);
+  const advCredit = Number(rec.advance_credit || rec.advance_credit_amount || 0);
+
   const handlePrint = () => {
     const printContent = printAreaRef.current;
     if (!printContent) return;
@@ -71,7 +100,7 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Commission Slip - ${payable.record_number}</title>
+          <title>Commission Slip - ${voucherNum}</title>
           <style>
             @page {
               size: 80mm auto;
@@ -121,17 +150,9 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
     printWindow.document.close();
   };
 
-  const rec = slipData?.payable || payable;
-  const company = slipData?.company || {
-    name: companyName || 'ApexPOS Enterprise Store',
-    phone: companyPhone || '',
-    address: companyAddress || '',
-  };
-  const activePayment: CommissionPayment | undefined = slipData?.payment || rec.payments?.[0];
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Sales Agent Commission Slip" maxWidth="450px">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
         {/* Printable Thermal Receipt Box */}
         <div
           ref={printAreaRef}
@@ -152,8 +173,8 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
             <div style={{ fontSize: '1rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {company.name}
             </div>
-            {company.address && <div style={{ fontSize: '0.72rem', color: '#4b5563' }}>{company.address}</div>}
-            {company.phone && <div style={{ fontSize: '0.72rem', color: '#4b5563' }}>Ph: {company.phone}</div>}
+            {company.address && <div style={{ fontSize: '0.71875rem', color: '#4b5563' }}>{company.address}</div>}
+            {company.phone && <div style={{ fontSize: '0.71875rem', color: '#4b5563' }}>Ph: {company.phone}</div>}
             <div style={{ fontSize: '0.85rem', fontWeight: 700, margin: '0.4rem 0 0.2rem', textTransform: 'uppercase' }}>
               COMMISSION SETTLEMENT SLIP
             </div>
@@ -164,11 +185,11 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
           {/* Record Info */}
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Voucher #:</span>
-            <span style={{ fontWeight: 700 }}>{rec.record_number}</span>
+            <span style={{ fontWeight: 700 }}>{voucherNum}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Linked Invoice:</span>
-            <span style={{ fontWeight: 700 }}>{rec.sale_invoice_number}</span>
+            <span style={{ fontWeight: 700 }}>{invoiceNum}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Date:</span>
@@ -180,12 +201,14 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
           {/* Sales Agent Details */}
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Sales Agent:</span>
-            <span style={{ fontWeight: 700 }}>{rec.sales_agent_name}</span>
+            <span style={{ fontWeight: 700 }}>{agentName}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Agent Code:</span>
-            <span>{rec.sales_agent_code}</span>
-          </div>
+          {agentCode && (
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Agent Code:</span>
+              <span>{agentCode}</span>
+            </div>
+          )}
           {rec.sales_agent_phone && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Contact:</span>
@@ -197,22 +220,22 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
 
           {/* Financial Breakdown */}
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Commission Base (Net):</span>
-            <span>Rs. {Number(rec.commission_base_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <span>Commission Base:</span>
+            <span>Rs. {formatMoney(baseAmt)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Commission Rate:</span>
-            <span>{rec.commission_rate_percentage}%</span>
+            <span>{ratePct.toFixed(2)}%</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
             <span>Total Accrued:</span>
-            <span>Rs. {Number(rec.commission_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <span>Rs. {formatMoney(commAmt)}</span>
           </div>
 
-          {Number(rec.adjusted_amount || 0) > 0 && (
+          {adjAmt > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#b91c1c' }}>
               <span>Return Deductions:</span>
-              <span>- Rs. {Number(rec.adjusted_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <span>- Rs. {formatMoney(adjAmt)}</span>
             </div>
           )}
 
@@ -220,25 +243,25 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
 
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Total Paid To Date:</span>
-            <span style={{ fontWeight: 700 }}>Rs. {Number(rec.paid_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <span style={{ fontWeight: 700 }}>Rs. {formatMoney(paidAmt)}</span>
           </div>
 
           {activePayment && (
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#047857', fontWeight: 700 }}>
               <span>Current Payment ({activePayment.payment_number}):</span>
-              <span>Rs. {Number(activePayment.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <span>Rs. {formatMoney(activePayment.amount)}</span>
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 800, marginTop: '0.2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', fontWeight: 800, marginTop: '0.2rem' }}>
             <span>Remaining Due:</span>
-            <span>Rs. {Number(rec.balance_due || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <span>Rs. {formatMoney(balDue)}</span>
           </div>
 
-          {Number(rec.advance_credit || 0) > 0 && (
+          {advCredit > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#b45309', fontSize: '0.75rem' }}>
               <span>Advance Credit:</span>
-              <span>Rs. {Number(rec.advance_credit || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <span>Rs. {formatMoney(advCredit)}</span>
             </div>
           )}
 
@@ -260,11 +283,17 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
         </div>
 
         {/* Modal Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-          <Button variant="outline" onClick={onClose}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+          <Button variant="secondary" onClick={onClose} style={{ padding: '0.35rem 0.85rem', fontSize: '0.8125rem' }}>
             Close
           </Button>
-          <Button variant="primary" icon={<Printer size={16} />} onClick={handlePrint} loading={loading}>
+          <Button
+            variant="primary"
+            icon={<Printer size={15} />}
+            onClick={handlePrint}
+            loading={loading}
+            style={{ padding: '0.35rem 0.85rem', fontSize: '0.8125rem' }}
+          >
             Print Thermal Slip
           </Button>
         </div>

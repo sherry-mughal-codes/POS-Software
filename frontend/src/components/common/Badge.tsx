@@ -5,6 +5,8 @@ export interface BadgeProps {
   children: React.ReactNode;
   icon?: React.ReactNode;
   pulse?: boolean;
+  style?: React.CSSProperties;
+  className?: string;
 }
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -12,9 +14,11 @@ export const Badge: React.FC<BadgeProps> = ({
   children,
   icon,
   pulse = false,
+  style,
+  className = '',
 }) => {
   return (
-    <span className={`badge badge-${variant}`}>
+    <span className={`badge badge-${variant} ${className}`} style={style}>
       {pulse && <span className="pulse-dot" />}
       {icon && <span>{icon}</span>}
       <span>{children}</span>
