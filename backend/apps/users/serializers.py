@@ -38,6 +38,32 @@ class RoleSerializer(serializers.ModelSerializer):
     def get_user_count(self, obj):
         return obj.user_set.count()
 
+    def update(self, instance, validated_data):
+        permissions = validated_data.pop("permissions", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if permissions is not None:
+            # Preserve permissions belonging to disabled modules so re-enabling restores them
+            from apps.core.models import SystemModule
+            disabled_apps = []
+            if not SystemModule.is_module_enabled("commission_management"):
+                disabled_apps.append("commission")
+            if not SystemModule.is_module_enabled("warranty"):
+                disabled_apps.append("warranty")
+            if not SystemModule.is_module_enabled("employees"):
+                disabled_apps.append("employees")
+
+            if disabled_apps:
+                preserved_perms = instance.permissions.filter(content_type__app_label__in=disabled_apps)
+                final_perms = set(permissions).union(set(preserved_perms))
+                instance.permissions.set(final_perms)
+            else:
+                instance.permissions.set(permissions)
+
+        return instance
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:

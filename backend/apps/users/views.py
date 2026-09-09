@@ -297,13 +297,28 @@ class RoleViewSet(viewsets.ModelViewSet):
 class PermissionListView(APIView):
     """
     Lists all available system permissions categorized for role matrix configuration.
+    Filters out permissions belonging to disabled modules.
     """
     permission_classes = [IsAdminOrManager]
 
     def get(self, request):
+        from apps.core.models import SystemModule
         permissions = Permission.objects.exclude(
             content_type__app_label__in=["admin", "sessions", "contenttypes"]
         ).select_related("content_type")
+
+        # Dynamically exclude permissions for disabled modules
+        disabled_apps = []
+        if not SystemModule.is_module_enabled("commission_management"):
+            disabled_apps.append("commission")
+        if not SystemModule.is_module_enabled("warranty"):
+            disabled_apps.append("warranty")
+        if not SystemModule.is_module_enabled("employees"):
+            disabled_apps.append("employees")
+
+        if disabled_apps:
+            permissions = permissions.exclude(content_type__app_label__in=disabled_apps)
+
         serializer = PermissionSerializer(permissions, many=True)
         return Response(serializer.data)
 

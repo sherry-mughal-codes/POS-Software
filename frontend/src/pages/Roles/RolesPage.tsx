@@ -20,11 +20,13 @@ import { Role, Permission, User } from '../../types/auth';
 import { useSettings } from '../../context/SettingsContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../context/ToastContext';
+import { useModules } from '../../context/ModuleContext';
 
 export const RolesPage: React.FC = () => {
   const { companyName } = useSettings();
   const { refreshUser } = useAuth();
   const { showError, showSuccess } = useToast();
+  const { isModuleEnabled } = useModules();
   const [activeSubTab, setActiveSubTab] = useState<'roles' | 'user_scopes'>('roles');
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -324,14 +326,29 @@ export const RolesPage: React.FC = () => {
     return acc;
   }, {});
 
-  // Maintain clean, fixed module order
+  // Optional system module keys mapped to permission categories
+  const CATEGORY_MODULE_MAP: Record<string, string> = {
+    'Commission & Sales Agents': 'commission_management',
+    'Warranty Claims Management': 'warranty',
+    'Employees & Payroll (HR)': 'employees',
+  };
+
+  // Maintain clean, fixed module order while hiding disabled modules
   const categorizedPermissions: Record<string, Permission[]> = {};
   MODULE_ORDER.forEach((mod) => {
+    const requiredModuleKey = CATEGORY_MODULE_MAP[mod];
+    if (requiredModuleKey && !isModuleEnabled(requiredModuleKey)) {
+      return; // Omit permissions for disabled optional module
+    }
     if (rawCategorizedPermissions[mod] && rawCategorizedPermissions[mod].length > 0) {
       categorizedPermissions[mod] = rawCategorizedPermissions[mod];
     }
   });
   Object.keys(rawCategorizedPermissions).forEach((k) => {
+    const requiredModuleKey = CATEGORY_MODULE_MAP[k];
+    if (requiredModuleKey && !isModuleEnabled(requiredModuleKey)) {
+      return; // Omit permissions for disabled optional module
+    }
     if (!categorizedPermissions[k]) {
       categorizedPermissions[k] = rawCategorizedPermissions[k];
     }
