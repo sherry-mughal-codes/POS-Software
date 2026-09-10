@@ -83,11 +83,10 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('this_month');
+  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('all_time');
   const [businessDate, setBusinessDate] = useState<string>('');
   const [startDate, setStartDate] = useState<string>(() => computePresetDates('this_month').start);
   const [endDate, setEndDate] = useState<string>(() => computePresetDates('this_month').end);
-  const [asOfDate, setAsOfDate] = useState<string>(() => computePresetDates('this_month').end);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [hideZeroBalances, setHideZeroBalances] = useState<boolean>(true);
 
@@ -95,12 +94,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
   useEffect(() => {
     daySessionService.getCurrentSession().then((res) => {
       if (res?.active && res?.session?.date) {
-        const sDate = res.session.date;
-        setBusinessDate(sDate);
-        const { start, end } = computePresetDates(periodPreset, sDate);
-        setStartDate(start);
-        setEndDate(end);
-        setAsOfDate(end);
+        setBusinessDate(res.session.date);
       }
     }).catch(() => {});
   }, []);
@@ -108,11 +102,10 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
   // Handle Preset Change
   const handlePeriodPresetChange = (preset: PeriodPreset) => {
     setPeriodPreset(preset);
-    if (preset !== 'custom') {
+    if (preset !== 'custom' && preset !== 'all_time') {
       const { start, end } = computePresetDates(preset, businessDate || undefined);
       setStartDate(start);
       setEndDate(end);
-      setAsOfDate(end);
     }
   };
 
@@ -121,7 +114,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
     setError(null);
     try {
       if (activeReport === 'TRIAL_BALANCE') {
-        const effectiveAsOf = periodPreset === 'all_time' ? undefined : (asOfDate || undefined);
+        const effectiveAsOf = periodPreset === 'all_time' ? undefined : (endDate || undefined);
         const data = await accountingService.getTrialBalance(effectiveAsOf);
         setTrialBalance(data);
       } else if (activeReport === 'INCOME_STATEMENT') {
@@ -130,7 +123,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
         const data = await accountingService.getIncomeStatement(effectiveStart, effectiveEnd);
         setIncomeStatement(data);
       } else if (activeReport === 'BALANCE_SHEET') {
-        const effectiveAsOf = periodPreset === 'all_time' ? undefined : (asOfDate || undefined);
+        const effectiveAsOf = periodPreset === 'all_time' ? undefined : (endDate || undefined);
         const data = await accountingService.getBalanceSheet(effectiveAsOf);
         setBalanceSheet(data);
       }
@@ -139,7 +132,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
     } finally {
       setLoading(false);
     }
-  }, [activeReport, periodPreset, asOfDate, startDate, endDate]);
+  }, [activeReport, periodPreset, startDate, endDate]);
 
   useEffect(() => {
     fetchReports();
@@ -321,32 +314,28 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
                 outline: 'none',
               }}
             >
+              <option value="all_time">All Time (Cumulative)</option>
               <option value="this_month">This Month</option>
               <option value="today">Today</option>
               <option value="this_week">This Week</option>
               <option value="last_month">Last Month</option>
               <option value="this_quarter">This Quarter</option>
               <option value="this_year">This Financial Year</option>
-              <option value="all_time">All Time (Cumulative)</option>
               <option value="custom">Custom Date Range</option>
             </select>
           </div>
 
-          {/* Date Range Inputs */}
-          {activeReport === 'INCOME_STATEMENT' ? (
+          {/* Custom Date Range Inputs (Shown ONLY when Custom Range is selected) */}
+          {periodPreset === 'custom' && (
             <>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                  Start Date
+                  From Date
                 </label>
                 <input
                   type="date"
                   value={startDate}
-                  disabled={periodPreset === 'all_time'}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setPeriodPreset('custom');
-                  }}
+                  onChange={(e) => setStartDate(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '0.35rem 0.6rem',
@@ -356,23 +345,18 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
                     borderRadius: '0.375rem',
                     color: 'var(--text-main)',
                     outline: 'none',
-                    opacity: periodPreset === 'all_time' ? 0.5 : 1,
                   }}
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                  End Date
+                  To Date
                 </label>
                 <input
                   type="date"
                   value={endDate}
-                  disabled={periodPreset === 'all_time'}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    setPeriodPreset('custom');
-                  }}
+                  onChange={(e) => setEndDate(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '0.35rem 0.6rem',
@@ -382,37 +366,10 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
                     borderRadius: '0.375rem',
                     color: 'var(--text-main)',
                     outline: 'none',
-                    opacity: periodPreset === 'all_time' ? 0.5 : 1,
                   }}
                 />
               </div>
             </>
-          ) : (
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                As of Date
-              </label>
-              <input
-                type="date"
-                value={asOfDate}
-                disabled={periodPreset === 'all_time'}
-                onChange={(e) => {
-                  setAsOfDate(e.target.value);
-                  setPeriodPreset('custom');
-                }}
-                style={{
-                  width: '100%',
-                  padding: '0.35rem 0.6rem',
-                  fontSize: '0.78125rem',
-                  backgroundColor: 'var(--bg-input)',
-                  border: '1px solid var(--border-medium)',
-                  borderRadius: '0.375rem',
-                  color: 'var(--text-main)',
-                  outline: 'none',
-                  opacity: periodPreset === 'all_time' ? 0.5 : 1,
-                }}
-              />
-            </div>
           )}
 
           {/* Account Filter / Search */}
@@ -677,7 +634,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
                   {/* Equity */}
                   <div className="glass-card" style={{ padding: '1.25rem' }}>
                     <h4 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#a5b4fc', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>3. Equity</span>
+                      <span>3. Equity & Retained Earnings</span>
                       <span style={{ fontFamily: 'var(--font-mono)' }}>Rs. {formatMoney(balanceSheet.equity.total)}</span>
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -692,6 +649,22 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({ refres
                         ))
                       )}
                     </div>
+                  </div>
+
+                  {/* Liabilities + Equity Combined Total */}
+                  <div style={{
+                    padding: '0.875rem 1.25rem',
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '0.5rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-main)' }}>Total Liabilities & Equity</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1.125rem', color: 'var(--primary-400)' }}>
+                      Rs. {formatMoney(balanceSheet.total_liabilities_and_equity)}
+                    </span>
                   </div>
                 </div>
               </div>

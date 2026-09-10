@@ -483,20 +483,6 @@ export const CommissionPaymentModal: React.FC<CommissionPaymentModalProps> = ({
           />
         </div>
 
-        {/* Double Entry Accounting Footnote */}
-        <div
-          style={{
-            fontSize: '0.71875rem',
-            color: 'var(--text-muted)',
-            backgroundColor: 'rgba(56, 189, 248, 0.05)',
-            padding: '0.45rem 0.65rem',
-            borderRadius: '0.35rem',
-            border: '1px dashed rgba(56, 189, 248, 0.25)',
-          }}
-        >
-          <strong>Accounting Entry:</strong> DR 2040 Sales Agent Commission Payable | CR Selected Liquid Account.
-        </div>
-
         {/* Action Buttons */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.25rem' }}>
           <Button type="button" variant="secondary" onClick={onClose} disabled={submitting} style={{ padding: '0.35rem 0.85rem', fontSize: '0.8125rem' }}>

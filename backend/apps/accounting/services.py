@@ -991,17 +991,69 @@ class AccountingService:
             "rows": ledger_rows,
         }
 
-    @staticmethod
-    def get_trial_balance(as_of_date=None) -> Dict[str, Any]:
+    @classmethod
+    def sync_commission_journal_entries(cls):
+        """
+        Self-healing integrity check:
+        Reconciles any unposted or missing CommissionPayment and CommissionAdjustment journal entries.
+        """
+        try:
+            from apps.commission.models import CommissionPayment, CommissionAdjustment
+            
+            # 1. Sync Commission Payments missing GL entries
+            for cp in CommissionPayment.objects.filter(journal_entry__isnull=True):
+                rec = getattr(cp, "commission_record", None)
+                comm_ref = rec.commission_number if rec else ""
+                agent_name = (rec.sales_agent.name if rec and rec.sales_agent else getattr(rec, "agent_name_snapshot", "Agent")) if rec else "Agent"
+                je = cls.record_commission_payment(
+                    payment_ref=cp.payment_number,
+                    commission_ref=comm_ref,
+                    agent_name=agent_name,
+                    amount=cp.amount,
+                    payment_account=cp.payment_account,
+                    created_by=cp.created_by,
+                    entry_date=cp.payment_date,
+                )
+                if je:
+                    cp.journal_entry = je
+                    cp.save(update_fields=["journal_entry"])
+
+            # 2. Sync Commission Adjustments missing GL entries
+            for ca in CommissionAdjustment.objects.filter(journal_entry__isnull=True):
+                rec = getattr(ca, "commission_record", None)
+                comm_ref = rec.commission_number if rec else ""
+                agent_name = (rec.sales_agent.name if rec and rec.sales_agent else getattr(rec, "agent_name_snapshot", "Agent")) if rec else "Agent"
+                ret_num = ca.sales_return.return_number if ca.sales_return else str(ca.id)
+                je = cls.record_commission_reversal(
+                    adjustment_ref=f"ADJ-{ca.id}",
+                    commission_ref=comm_ref,
+                    agent_name=agent_name,
+                    reversal_amount=ca.reversal_amount,
+                    return_ref=ret_num,
+                    created_by=ca.created_by,
+                    entry_date=ca.date,
+                )
+                if je:
+                    ca.journal_entry = je
+                    ca.save(update_fields=["journal_entry"])
+        except Exception:
+            pass
+
+    @classmethod
+    def get_trial_balance(cls, as_of_date=None) -> Dict[str, Any]:
         """
         Generates Trial Balance verifying Sum(Debit) == Sum(Credit).
         """
+        cls.sync_commission_journal_entries()
         accounts = Account.objects.filter(is_active=True).order_by("code")
         rows = []
         grand_total_debit = Decimal("0.00")
         grand_total_credit = Decimal("0.00")
 
         for acc in accounts:
+            if acc.children.exists():
+                continue
+
             qs = JournalItem.objects.filter(
                 account=acc,
                 journal_entry__status=JournalEntryStatus.POSTED,
@@ -1040,23 +1092,27 @@ class AccountingService:
             "rows": rows,
         }
 
-    @staticmethod
-    def get_income_statement(start_date=None, end_date=None) -> Dict[str, Any]:
+    @classmethod
+    def get_income_statement(cls, start_date=None, end_date=None) -> Dict[str, Any]:
         """
         Generates Income Statement (Profit & Loss): Revenue - COGS - Operating Expenses = Net Profit.
         """
+        cls.sync_commission_journal_entries()
         if not end_date:
             end_date = timezone.localdate()
         if not start_date:
             start_date = date(end_date.year, 1, 1)
 
-        income_accounts = Account.objects.filter(account_type=AccountType.INCOME, is_active=True)
-        expense_accounts = Account.objects.filter(account_type=AccountType.EXPENSE, is_active=True)
+        income_accounts = Account.objects.filter(account_type=AccountType.INCOME, is_active=True).order_by("code")
+        expense_accounts = Account.objects.filter(account_type=AccountType.EXPENSE, is_active=True).order_by("code")
 
         def get_category_rows(acc_list, is_income=True):
             items = []
             category_total = Decimal("0.00")
             for acc in acc_list:
+                if acc.children.exists():
+                    continue
+
                 qs = JournalItem.objects.filter(
                     account=acc,
                     journal_entry__status=JournalEntryStatus.POSTED,
@@ -1067,8 +1123,17 @@ class AccountingService:
                 total_dr = totals["dr"] or Decimal("0.00")
                 total_cr = totals["cr"] or Decimal("0.00")
 
-                balance = (total_cr - total_dr) if is_income else (total_dr - total_cr)
-                if balance != 0:
+                if acc.normal_balance == "DEBIT" and is_income:
+                    # Contra-income account (e.g. 4020 Sales Returns)
+                    balance = total_dr - total_cr
+                    category_total -= balance
+                    items.append({
+                        "code": acc.code,
+                        "name": acc.name,
+                        "amount": float(-balance),
+                    })
+                else:
+                    balance = (total_cr - total_dr) if is_income else (total_dr - total_cr)
                     category_total += balance
                     items.append({
                         "code": acc.code,
@@ -1095,36 +1160,41 @@ class AccountingService:
             "net_profit": float(net_profit),
         }
 
-    @staticmethod
-    def get_balance_sheet(as_of_date=None) -> Dict[str, Any]:
+    @classmethod
+    def get_balance_sheet(cls, as_of_date=None) -> Dict[str, Any]:
         """
         Generates Balance Sheet: Assets = Liabilities + Equity (including Net Income).
         """
+        cls.sync_commission_journal_entries()
         if not as_of_date:
             as_of_date = timezone.localdate()
 
         def get_type_rows(acc_type, is_asset=True):
-            accounts = Account.objects.filter(account_type=acc_type, is_active=True)
+            accounts = Account.objects.filter(account_type=acc_type, is_active=True).order_by("code")
             rows = []
             total = Decimal("0.00")
             for acc in accounts:
+                if acc.children.exists():
+                    continue
+
                 qs = JournalItem.objects.filter(
                     account=acc,
                     journal_entry__status=JournalEntryStatus.POSTED,
-                    journal_entry__entry_date__lte=as_of_date,
                 )
+                if as_of_date:
+                    qs = qs.filter(journal_entry__entry_date__lte=as_of_date)
+
                 totals = qs.aggregate(dr=models.Sum("debit"), cr=models.Sum("credit"))
                 dr = totals["dr"] or Decimal("0.00")
                 cr = totals["cr"] or Decimal("0.00")
                 bal = (dr - cr) if is_asset else (cr - dr)
-                if bal != 0:
-                    total += bal
-                    rows.append({
-                        "id": acc.id,
-                        "code": acc.code,
-                        "name": acc.name,
-                        "amount": float(bal),
-                    })
+                total += bal
+                rows.append({
+                    "id": acc.id,
+                    "code": acc.code,
+                    "name": acc.name,
+                    "amount": float(bal),
+                })
             return rows, total
 
         asset_rows, total_assets = get_type_rows(AccountType.ASSET, is_asset=True)
@@ -1132,11 +1202,11 @@ class AccountingService:
         equity_rows, total_equity_base = get_type_rows(AccountType.EQUITY, is_asset=False)
 
         # Calculate Net Income to date for retained earnings
-        inc_res = AccountingService.get_income_statement(start_date=date(2000, 1, 1), end_date=as_of_date)
+        inc_res = cls.get_income_statement(start_date=date(2000, 1, 1), end_date=as_of_date)
         net_income = Decimal(str(inc_res["net_profit"]))
         total_equity = total_equity_base + net_income
 
-        if net_income != 0:
+        if net_income != Decimal("0.00"):
             equity_rows.append({
                 "id": 0,
                 "code": "3999",
