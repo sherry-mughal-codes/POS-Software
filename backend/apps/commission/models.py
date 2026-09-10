@@ -11,10 +11,15 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 
 
+class CommissionMethod(models.TextChoices):
+    FIXED_PERCENTAGE = "FIXED_PERCENTAGE", "Fixed Percentage"
+    PROGRESSIVE = "PROGRESSIVE", "Progressive / Per-Money"
+
+
 class SalesAgent(models.Model):
     """
     Independent Sales Agent Master Record.
-    Stores agent identity, contact details, assigned commission rate, and active status.
+    Stores agent identity, contact details, assigned commission rate, method, and active status.
     Historical transactions remain preserved regardless of active/inactive state.
     """
     name = models.CharField(max_length=150, db_index=True, help_text="Full name of sales agent")
@@ -27,6 +32,23 @@ class SalesAgent(models.Model):
     phone = models.CharField(max_length=30, blank=True, default="", db_index=True)
     email = models.EmailField(blank=True, default="")
     address = models.TextField(blank=True, default="")
+    commission_method = models.CharField(
+        max_length=25,
+        choices=CommissionMethod.choices,
+        default=CommissionMethod.FIXED_PERCENTAGE,
+        db_index=True,
+        help_text="Commission calculation method: Fixed Percentage (Level 1) or Progressive / Per-Money (Level 2)",
+    )
+    commission_amount_unit = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(Decimal("0.01"), message="Commission amount unit must be greater than zero."),
+        ],
+        help_text="Money unit denominator for Progressive calculation (e.g. 100000.00 for every Rs. 100,000)",
+    )
     commission_percentage = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -61,6 +83,8 @@ class SalesAgent(models.Model):
         verbose_name_plural = "Sales Agents"
 
     def __str__(self):
+        if self.commission_method == CommissionMethod.PROGRESSIVE and self.commission_amount_unit:
+            return f"{self.code} - {self.name} ({self.commission_percentage}% per Rs. {self.commission_amount_unit:,.2f})"
         return f"{self.code} - {self.name} ({self.commission_percentage}%)"
 
     def save(self, *args, **kwargs):
@@ -105,10 +129,30 @@ class CommissionRecord(models.Model):
     )
     agent_name_snapshot = models.CharField(max_length=150, help_text="Snapshot of agent name at moment of sale")
     agent_code_snapshot = models.CharField(max_length=50, help_text="Snapshot of agent code at moment of sale")
+    commission_method_snapshot = models.CharField(
+        max_length=25,
+        choices=CommissionMethod.choices,
+        default=CommissionMethod.FIXED_PERCENTAGE,
+        db_index=True,
+        help_text="Snapshot of commission method applied at moment of sale",
+    )
+    commission_amount_unit_snapshot = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Snapshot of commission amount unit for Progressive calculation at moment of sale",
+    )
     commission_percentage_snapshot = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        help_text="Snapshot of commission percentage at moment of sale",
+        help_text="Snapshot of configured commission percentage at moment of sale",
+    )
+    effective_commission_percentage = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        default=Decimal("0.0000"),
+        help_text="Calculated effective commission percentage applied to sale (e.g. 3.5000%)",
     )
     commission_base = models.DecimalField(
         max_digits=12,
@@ -176,6 +220,8 @@ class CommissionRecord(models.Model):
 
     @property
     def commission_rate_percentage(self) -> Decimal:
+        if self.effective_commission_percentage and self.effective_commission_percentage > Decimal("0.0000"):
+            return self.effective_commission_percentage
         return self.commission_percentage_snapshot
 
     @property

@@ -34,6 +34,8 @@ class SalesAgentSerializer(serializers.ModelSerializer):
             "phone",
             "email",
             "address",
+            "commission_method",
+            "commission_amount_unit",
             "commission_percentage",
             "joining_date",
             "is_active",
@@ -92,6 +94,27 @@ class SalesAgentSerializer(serializers.ModelSerializer):
             if value > Decimal("100.00"):
                 raise serializers.ValidationError("Commission percentage cannot exceed 100%.")
         return value
+
+    def validate_commission_amount_unit(self, value):
+        if value is not None and value <= Decimal("0.00"):
+            raise serializers.ValidationError("Commission amount unit must be greater than zero.")
+        return value
+
+    def validate(self, attrs):
+        method = attrs.get("commission_method") or (self.instance.commission_method if self.instance else "FIXED_PERCENTAGE")
+        amount_unit = attrs.get("commission_amount_unit") if "commission_amount_unit" in attrs else (self.instance.commission_amount_unit if self.instance else None)
+        pct = attrs.get("commission_percentage") if "commission_percentage" in attrs else (self.instance.commission_percentage if self.instance else Decimal("0.00"))
+
+        if method == "PROGRESSIVE":
+            if not amount_unit or amount_unit <= Decimal("0.00"):
+                raise serializers.ValidationError({
+                    "commission_amount_unit": "Commission amount unit is required and must be greater than zero for Progressive / Per-Money method (Level 2)."
+                })
+            if pct is None or pct < Decimal("0.00"):
+                raise serializers.ValidationError({
+                    "commission_percentage": "Commission percentage must be a valid non-negative number."
+                })
+        return attrs
 
     def validate_code(self, value):
         if value and value.strip():
@@ -182,6 +205,9 @@ class CommissionRecordSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     commission_percentage = serializers.DecimalField(source="commission_percentage_snapshot", max_digits=5, decimal_places=2, coerce_to_string=False, read_only=True)
+    commission_method = serializers.CharField(source="commission_method_snapshot", read_only=True)
+    commission_amount_unit = serializers.DecimalField(source="commission_amount_unit_snapshot", max_digits=14, decimal_places=2, coerce_to_string=False, read_only=True)
+    effective_commission_percentage = serializers.DecimalField(max_digits=8, decimal_places=4, coerce_to_string=False, read_only=True)
     commission_base = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
     commission_amount = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
     adjusted_amount = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
@@ -209,7 +235,12 @@ class CommissionRecordSerializer(serializers.ModelSerializer):
             "sales_agent_is_active",
             "agent_name_snapshot",
             "agent_code_snapshot",
+            "commission_method",
+            "commission_method_snapshot",
+            "commission_amount_unit",
+            "commission_amount_unit_snapshot",
             "commission_percentage",
+            "effective_commission_percentage",
             "commission_base",
             "commission_amount",
             "adjusted_amount",

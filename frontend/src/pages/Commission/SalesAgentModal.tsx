@@ -29,6 +29,8 @@ export const SalesAgentModal: React.FC<SalesAgentModalProps> = ({
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [commissionMethod, setCommissionMethod] = useState<'FIXED_PERCENTAGE' | 'PROGRESSIVE'>('FIXED_PERCENTAGE');
+  const [commissionAmountUnit, setCommissionAmountUnit] = useState<string>('100000');
   const [commissionPercentage, setCommissionPercentage] = useState<string>('5.00');
   const [joiningDate, setJoiningDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [isActive, setIsActive] = useState(true);
@@ -46,6 +48,8 @@ export const SalesAgentModal: React.FC<SalesAgentModalProps> = ({
         setCode(agentToEdit.code || '');
         setPhone(agentToEdit.phone || '');
         setEmail(agentToEdit.email || '');
+        setCommissionMethod(agentToEdit.commission_method || 'FIXED_PERCENTAGE');
+        setCommissionAmountUnit(agentToEdit.commission_amount_unit ? String(agentToEdit.commission_amount_unit) : '100000');
         setCommissionPercentage(String(agentToEdit.commission_percentage ?? '0.00'));
         setJoiningDate(agentToEdit.joining_date || new Date().toISOString().split('T')[0]);
         setIsActive(agentToEdit.is_active);
@@ -56,6 +60,8 @@ export const SalesAgentModal: React.FC<SalesAgentModalProps> = ({
         setCode('');
         setPhone('');
         setEmail('');
+        setCommissionMethod('FIXED_PERCENTAGE');
+        setCommissionAmountUnit('100000');
         setCommissionPercentage('5.00');
         setJoiningDate(new Date().toISOString().split('T')[0]);
         setIsActive(true);
@@ -78,9 +84,19 @@ export const SalesAgentModal: React.FC<SalesAgentModalProps> = ({
     }
 
     const commNum = parseFloat(commissionPercentage);
-    if (isNaN(commNum) || commNum < 0 || commNum > 100) {
-      setError('Commission percentage must be a valid number between 0.00% and 100.00%.');
+    if (isNaN(commNum) || commNum < 0 || (commissionMethod === 'FIXED_PERCENTAGE' && commNum > 100)) {
+      setError('Commission percentage must be a valid non-negative number.');
       return;
+    }
+
+    let unitNum: number | null = null;
+    if (commissionMethod === 'PROGRESSIVE') {
+      const parsedUnit = parseFloat(commissionAmountUnit);
+      if (isNaN(parsedUnit) || parsedUnit <= 0) {
+        setError('Commission Amount Unit must be a positive number greater than zero (e.g. 100,000).');
+        return;
+      }
+      unitNum = parsedUnit;
     }
 
     setSaving(true);
@@ -92,6 +108,8 @@ export const SalesAgentModal: React.FC<SalesAgentModalProps> = ({
           name: name.trim(),
           phone: phone.trim(),
           email: email.trim(),
+          commission_method: commissionMethod,
+          commission_amount_unit: unitNum,
           commission_percentage: commNum.toFixed(2),
           joining_date: joiningDate,
           is_active: isActive,
@@ -108,6 +126,8 @@ export const SalesAgentModal: React.FC<SalesAgentModalProps> = ({
           name: name.trim(),
           phone: phone.trim(),
           email: email.trim(),
+          commission_method: commissionMethod,
+          commission_amount_unit: unitNum,
           commission_percentage: commNum.toFixed(2),
           joining_date: joiningDate,
           is_active: isActive,
@@ -249,27 +269,160 @@ export const SalesAgentModal: React.FC<SalesAgentModalProps> = ({
           />
         </div>
 
-        {/* Row 3: Commission Percentage and Joining Date */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <Input
-            label="Commission Rate (%) *"
-            type="number"
-            step="0.01"
-            min="0"
-            max="100"
-            placeholder="5.00"
-            value={commissionPercentage}
-            onChange={(e) => setCommissionPercentage(e.target.value)}
-            disabled={isViewOnly || saving}
-            required
-          />
-          <Input
-            label="Joining Date"
-            type="date"
-            value={joiningDate}
-            onChange={(e) => setJoiningDate(e.target.value)}
-            disabled={isViewOnly || saving}
-          />
+        {/* Commission Configuration Section (Level 1 Fixed vs Level 2 Progressive) */}
+        <div
+          style={{
+            padding: '0.75rem',
+            borderRadius: '0.5rem',
+            backgroundColor: 'rgba(168, 85, 247, 0.04)',
+            border: '1px solid rgba(168, 85, 247, 0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.625rem',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#c084fc', textTransform: 'uppercase' }}>
+              Commission Method & Rate
+            </span>
+          </div>
+
+          {/* Method Selection (Level 1 Fixed vs Level 2 Progressive) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={() => !isViewOnly && setCommissionMethod('FIXED_PERCENTAGE')}
+              disabled={isViewOnly || saving}
+              style={{
+                padding: '0.45rem 0.6rem',
+                borderRadius: '0.375rem',
+                border: '1px solid',
+                borderColor: commissionMethod === 'FIXED_PERCENTAGE' ? '#a855f7' : 'var(--border-medium)',
+                backgroundColor: commissionMethod === 'FIXED_PERCENTAGE' ? 'rgba(168, 85, 247, 0.18)' : 'var(--bg-input)',
+                color: commissionMethod === 'FIXED_PERCENTAGE' ? '#e9d5ff' : 'var(--text-muted)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                textAlign: 'left',
+                cursor: isViewOnly ? 'default' : 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div>Level 1: Fixed Percentage</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: 400, opacity: 0.8, marginTop: '0.1rem' }}>
+                Uniform rate on every sale
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => !isViewOnly && setCommissionMethod('PROGRESSIVE')}
+              disabled={isViewOnly || saving}
+              style={{
+                padding: '0.45rem 0.6rem',
+                borderRadius: '0.375rem',
+                border: '1px solid',
+                borderColor: commissionMethod === 'PROGRESSIVE' ? '#a855f7' : 'var(--border-medium)',
+                backgroundColor: commissionMethod === 'PROGRESSIVE' ? 'rgba(168, 85, 247, 0.18)' : 'var(--bg-input)',
+                color: commissionMethod === 'PROGRESSIVE' ? '#e9d5ff' : 'var(--text-muted)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                textAlign: 'left',
+                cursor: isViewOnly ? 'default' : 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div>Level 2: Progressive / Per-Money</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: 400, opacity: 0.8, marginTop: '0.1rem' }}>
+                Rate scales with sale volume
+              </div>
+            </button>
+          </div>
+
+          {/* Input Fields based on Selected Method */}
+          {commissionMethod === 'FIXED_PERCENTAGE' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <Input
+                label="Fixed Commission Rate (%) *"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="5.00"
+                value={commissionPercentage}
+                onChange={(e) => setCommissionPercentage(e.target.value)}
+                disabled={isViewOnly || saving}
+                required
+              />
+              <Input
+                label="Joining Date"
+                type="date"
+                value={joiningDate}
+                onChange={(e) => setJoiningDate(e.target.value)}
+                disabled={isViewOnly || saving}
+              />
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.625rem' }}>
+                <Input
+                  label="Amount Unit (Rs.) *"
+                  type="number"
+                  step="any"
+                  min="1"
+                  placeholder="100000"
+                  value={commissionAmountUnit}
+                  onChange={(e) => setCommissionAmountUnit(e.target.value)}
+                  disabled={isViewOnly || saving}
+                  required
+                />
+                <Input
+                  label="Rate Percentage (%) *"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="1.00"
+                  value={commissionPercentage}
+                  onChange={(e) => setCommissionPercentage(e.target.value)}
+                  disabled={isViewOnly || saving}
+                  required
+                />
+                <Input
+                  label="Joining Date"
+                  type="date"
+                  value={joiningDate}
+                  onChange={(e) => setJoiningDate(e.target.value)}
+                  disabled={isViewOnly || saving}
+                />
+              </div>
+
+              {/* Dynamic Live Calculation Preview */}
+              {(() => {
+                const u = parseFloat(commissionAmountUnit) || 100000;
+                const p = parseFloat(commissionPercentage) || 1;
+                const sampleBase = u * 3.5;
+                const effPct = (sampleBase / u) * p;
+                const sampleComm = (sampleBase * effPct) / 100;
+                return (
+                  <div
+                    style={{
+                      fontSize: '0.71875rem',
+                      color: 'var(--text-subtle)',
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      padding: '0.4rem 0.65rem',
+                      borderRadius: '0.35rem',
+                      border: '1px dashed rgba(168, 85, 247, 0.3)',
+                    }}
+                  >
+                    <strong style={{ color: '#c084fc' }}>Live Formula Preview:</strong> For every Rs. {u.toLocaleString()} of sales, rate increases by {p}%.
+                    <br />
+                    <span style={{ color: 'var(--text-main)', marginTop: '0.15rem', display: 'inline-block' }}>
+                      Example: On a <strong>Rs. {sampleBase.toLocaleString()}</strong> sale &rarr; Effective Rate is <strong>{effPct.toFixed(2)}%</strong> &rarr; Commission = <strong style={{ color: 'var(--success)' }}>Rs. {sampleComm.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                    </span>
+                  </div>
+                );
+              })()}
+            </>
+          )}
         </div>
 
         {/* Row 4: Address and Notes */}

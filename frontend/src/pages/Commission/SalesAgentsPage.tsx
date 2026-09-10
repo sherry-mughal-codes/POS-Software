@@ -508,23 +508,53 @@ export const SalesAgentsPage: React.FC = () => {
 
                         {/* Commission Rate */}
                         <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.2rem',
-                              fontWeight: 700,
-                              fontSize: '0.8125rem',
-                              color: 'var(--primary-400)',
-                              backgroundColor: 'rgba(56, 189, 248, 0.08)',
-                              padding: '0.2rem 0.5rem',
-                              borderRadius: '0.375rem',
-                              border: '1px solid rgba(56, 189, 248, 0.2)',
-                              fontFamily: 'var(--font-mono)',
-                            }}
-                          >
-                            {Number(agent.commission_percentage).toFixed(2)}%
-                          </span>
+                          {agent.commission_method === 'PROGRESSIVE' ? (
+                            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.2rem',
+                                  fontWeight: 700,
+                                  fontSize: '0.78125rem',
+                                  color: '#c084fc',
+                                  backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                                  padding: '0.15rem 0.45rem',
+                                  borderRadius: '0.35rem',
+                                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                                  fontFamily: 'var(--font-mono)',
+                                }}
+                              >
+                                {Number(agent.commission_percentage).toFixed(2)}% / Rs. {Number(agent.commission_amount_unit || 100000).toLocaleString()}
+                              </span>
+                              <span style={{ fontSize: '0.625rem', color: '#a855f7', fontWeight: 600 }}>
+                                Level 2: Progressive
+                              </span>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.2rem',
+                                  fontWeight: 700,
+                                  fontSize: '0.8125rem',
+                                  color: 'var(--primary-400)',
+                                  backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                                  padding: '0.15rem 0.45rem',
+                                  borderRadius: '0.35rem',
+                                  border: '1px solid rgba(56, 189, 248, 0.2)',
+                                  fontFamily: 'var(--font-mono)',
+                                }}
+                              >
+                                {Number(agent.commission_percentage).toFixed(2)}%
+                              </span>
+                              <span style={{ fontSize: '0.625rem', color: 'var(--text-subtle)' }}>
+                                Level 1: Fixed
+                              </span>
+                            </div>
+                          )}
                         </td>
 
                         {/* Joining Date */}

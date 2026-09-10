@@ -478,7 +478,12 @@ export const CommissionPayablesPage: React.FC<CommissionPayablesPageProps> = ({
 
                       {/* Commission Rate % */}
                       <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
-                        {ratePct.toFixed(2)}%
+                        <div>{ratePct.toFixed(2)}%</div>
+                        {payable.commission_method === 'PROGRESSIVE' && (
+                          <div style={{ fontSize: '0.65rem', color: '#c084fc', marginTop: '0.1rem' }}>
+                            Progressive ({payable.commission_percentage}% / Rs. {Number(payable.commission_amount_unit || 100000).toLocaleString()})
+                          </div>
+                        )}
                       </td>
 
                       {/* Commission Amount */}

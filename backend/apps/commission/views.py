@@ -89,6 +89,8 @@ class SalesAgentViewSet(viewsets.ModelViewSet):
             details={
                 "agent_name": agent.name,
                 "agent_code": agent.code,
+                "commission_method": agent.commission_method,
+                "commission_amount_unit": str(agent.commission_amount_unit) if agent.commission_amount_unit else None,
                 "commission_percentage": str(agent.commission_percentage),
             },
         )
@@ -105,6 +107,8 @@ class SalesAgentViewSet(viewsets.ModelViewSet):
             details={
                 "agent_name": agent.name,
                 "agent_code": agent.code,
+                "commission_method": agent.commission_method,
+                "commission_amount_unit": str(agent.commission_amount_unit) if agent.commission_amount_unit else None,
                 "commission_percentage": str(agent.commission_percentage),
                 "is_active": agent.is_active,
             },
@@ -328,7 +332,10 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
                 "customer_name": record.sale.customer.name,
                 "sales_agent_name": record.agent_name_snapshot,
                 "sales_agent_code": record.agent_code_snapshot,
+                "commission_method": record.commission_method_snapshot,
+                "commission_amount_unit": float(record.commission_amount_unit_snapshot),
                 "commission_percentage": float(record.commission_percentage_snapshot),
+                "effective_commission_percentage": float(record.effective_commission_percentage),
                 "commission_base": float(record.commission_base),
                 "commission_amount": float(record.commission_amount),
                 "adjusted_amount": float(record.adjusted_amount),

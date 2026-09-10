@@ -86,6 +86,12 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
     : Math.max(0, commAmt - adjAmt - paidAmt);
   const advCredit = Number(rec.advance_credit || rec.advance_credit_amount || 0);
 
+  const method = rec.commission_method || rec.commission_method_snapshot || (rec.commission_amount_unit_snapshot ? 'PROGRESSIVE' : 'FIXED_PERCENTAGE');
+  const isProgressive = method === 'PROGRESSIVE';
+  const amountUnit = Number(rec.commission_amount_unit || rec.commission_amount_unit_snapshot || 0);
+  const configuredPct = Number(rec.commission_percentage !== undefined ? rec.commission_percentage : rec.commission_percentage_snapshot !== undefined ? rec.commission_percentage_snapshot : ratePct);
+  const effectivePct = Number(rec.effective_commission_percentage !== undefined ? rec.effective_commission_percentage : ratePct);
+
   const handlePrint = () => {
     const printContent = printAreaRef.current;
     if (!printContent) return;
@@ -220,13 +226,40 @@ export const CommissionSlipModal: React.FC<CommissionSlipModalProps> = ({
 
           {/* Financial Breakdown */}
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Commission Method:</span>
+            <span style={{ fontWeight: 700 }}>
+              {isProgressive ? 'Level 2 (Progressive)' : 'Level 1 (Fixed %)'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Commission Base:</span>
             <span>Rs. {formatMoney(baseAmt)}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Commission Rate:</span>
-            <span>{ratePct.toFixed(2)}%</span>
-          </div>
+
+          {isProgressive && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Commission Unit (Money Base):</span>
+                <span style={{ fontWeight: 700 }}>Rs. {formatMoney(amountUnit)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Configured Rate:</span>
+                <span>{configuredPct.toFixed(2)}% / Rs. {formatMoney(amountUnit)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Effective Rate:</span>
+                <span style={{ fontWeight: 700 }}>{effectivePct.toFixed(4)}%</span>
+              </div>
+            </>
+          )}
+
+          {!isProgressive && (
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Commission Rate:</span>
+              <span>{ratePct.toFixed(2)}% (Fixed)</span>
+            </div>
+          )}
+
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
             <span>Total Accrued:</span>
             <span>Rs. {formatMoney(commAmt)}</span>

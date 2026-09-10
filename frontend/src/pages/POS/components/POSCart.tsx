@@ -313,43 +313,80 @@ export const POSCart: React.FC<POSCartProps> = ({
         </div>
 
         {/* Sales Agent (Commission) Selector */}
-        {salesAgents && salesAgents.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.15rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Percent size={10} />
-                Sales Agent (Commission)
-              </label>
-              {selectedSalesAgentId && (
-                <span style={{ fontSize: '0.6rem', color: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '0.05rem 0.3rem', borderRadius: '0.2rem', fontWeight: 600 }}>
-                  {salesAgents.find((a) => a.id === selectedSalesAgentId)?.commission_percentage}% Comm.
-                </span>
-              )}
+        {salesAgents && salesAgents.length > 0 && (() => {
+          const selectedAgent = salesAgents.find((a) => a.id === selectedSalesAgentId);
+          const commissionBase = Math.max(0, subtotal - overallDiscountAmount);
+          let estimatedCommission = 0;
+          let estimatedEffectivePct = 0;
+          if (selectedAgent) {
+            const pct = parseFloat(String(selectedAgent.commission_percentage || 0)) || 0;
+            if (selectedAgent.commission_method === 'PROGRESSIVE') {
+              const unit = parseFloat(String(selectedAgent.commission_amount_unit || 100000)) || 100000;
+              estimatedEffectivePct = unit > 0 ? (commissionBase / unit) * pct : pct;
+              estimatedCommission = (commissionBase * estimatedEffectivePct) / 100;
+            } else {
+              estimatedEffectivePct = pct;
+              estimatedCommission = (commissionBase * pct) / 100;
+            }
+          }
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.15rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Percent size={10} />
+                  Sales Agent (Commission)
+                </label>
+                {selectedAgent && (
+                  <span
+                    title={
+                      selectedAgent.commission_method === 'PROGRESSIVE'
+                        ? `Progressive Commission: (${formatMoney(commissionBase)} / ${Number(selectedAgent.commission_amount_unit || 100000).toLocaleString()}) × ${selectedAgent.commission_percentage}% = ${estimatedEffectivePct.toFixed(2)}% (Est. Rs. ${formatMoney(estimatedCommission)})`
+                        : `Fixed Commission: ${selectedAgent.commission_percentage}% (Est. Rs. ${formatMoney(estimatedCommission)})`
+                    }
+                    style={{
+                      fontSize: '0.6rem',
+                      color: '#c084fc',
+                      backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                      padding: '0.05rem 0.35rem',
+                      borderRadius: '0.2rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {selectedAgent.commission_method === 'PROGRESSIVE'
+                      ? `${estimatedEffectivePct.toFixed(2)}% Eff. (Rs. ${formatMoney(estimatedCommission)})`
+                      : `${selectedAgent.commission_percentage}% (Rs. ${formatMoney(estimatedCommission)})`}
+                  </span>
+                )}
+              </div>
+              <select
+                value={selectedSalesAgentId || ''}
+                onChange={(e) => onSelectSalesAgent?.(e.target.value ? parseInt(e.target.value) : null)}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'var(--bg-input)',
+                  border: selectedSalesAgentId ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid var(--border-medium)',
+                  borderRadius: '0.3rem',
+                  padding: '0.22rem 0.45rem',
+                  color: 'var(--text-main)',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  outline: 'none',
+                }}
+              >
+                <option value="">-- No Sales Agent (None) --</option>
+                {salesAgents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name} {agent.code ? `(${agent.code})` : ''} -{' '}
+                    {agent.commission_method === 'PROGRESSIVE'
+                      ? `${agent.commission_percentage}% / Rs. ${Number(agent.commission_amount_unit || 100000).toLocaleString()} (Progressive)`
+                      : `${agent.commission_percentage}% (Fixed)`}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              value={selectedSalesAgentId || ''}
-              onChange={(e) => onSelectSalesAgent?.(e.target.value ? parseInt(e.target.value) : null)}
-              style={{
-                width: '100%',
-                backgroundColor: 'var(--bg-input)',
-                border: selectedSalesAgentId ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid var(--border-medium)',
-                borderRadius: '0.3rem',
-                padding: '0.22rem 0.45rem',
-                color: 'var(--text-main)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                outline: 'none',
-              }}
-            >
-              <option value="">-- No Sales Agent (None) --</option>
-              {salesAgents.map((agent) => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.name} {agent.code ? `(${agent.code})` : ''} - {agent.commission_percentage}%
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Cart Items List */}

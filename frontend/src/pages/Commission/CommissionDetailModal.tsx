@@ -54,6 +54,12 @@ export const CommissionDetailModal: React.FC<CommissionDetailModalProps> = ({
   const agentCode = payable.sales_agent_code || (payable as any).agent_code_snapshot || '';
   const ratePct = payable.commission_percentage !== undefined ? Number(payable.commission_percentage) : Number(payable.commission_rate_percentage || 0);
 
+  const method = payable.commission_method || (payable as any).commission_method_snapshot || (payable.commission_amount_unit_snapshot ? 'PROGRESSIVE' : 'FIXED_PERCENTAGE');
+  const isProgressive = method === 'PROGRESSIVE';
+  const amountUnit = Number(payable.commission_amount_unit || payable.commission_amount_unit_snapshot || 0);
+  const configuredPct = Number(payable.commission_percentage_snapshot !== undefined ? payable.commission_percentage_snapshot : payable.commission_percentage || ratePct);
+  const effectivePct = Number(payable.effective_commission_percentage !== undefined ? payable.effective_commission_percentage : ratePct);
+
   const balanceDue = payable.remaining_payable_amount !== undefined
     ? Number(payable.remaining_payable_amount)
     : payable.balance_due !== undefined
@@ -130,8 +136,10 @@ export const CommissionDetailModal: React.FC<CommissionDetailModalProps> = ({
               <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
                 Rs. {formatMoney(baseAmount)}
               </div>
-              <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                Rate: {ratePct.toFixed(2)}%
+              <div style={{ fontSize: '0.6875rem', color: '#c084fc', fontFamily: 'var(--font-mono)' }}>
+                {isProgressive
+                  ? `Rate: ${effectivePct.toFixed(4)}% (${configuredPct.toFixed(2)}% / Rs. ${amountUnit.toLocaleString()})`
+                  : `Rate: ${ratePct.toFixed(2)}% (Fixed)`}
               </div>
             </div>
 

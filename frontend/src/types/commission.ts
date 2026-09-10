@@ -1,3 +1,5 @@
+export type CommissionMethod = 'FIXED_PERCENTAGE' | 'PROGRESSIVE';
+
 export interface SalesAgent {
   id: number;
   name: string;
@@ -5,6 +7,8 @@ export interface SalesAgent {
   phone: string;
   email: string;
   address: string;
+  commission_method?: CommissionMethod;
+  commission_amount_unit?: string | number | null;
   commission_percentage: string | number;
   joining_date: string;
   is_active: boolean;
@@ -26,6 +30,8 @@ export interface CreateSalesAgentData {
   phone?: string;
   email?: string;
   address?: string;
+  commission_method?: CommissionMethod;
+  commission_amount_unit?: number | string | null;
   commission_percentage?: number | string;
   joining_date?: string;
   is_active?: boolean;
@@ -38,6 +44,8 @@ export interface UpdateSalesAgentData {
   phone?: string;
   email?: string;
   address?: string;
+  commission_method?: CommissionMethod;
+  commission_amount_unit?: number | string | null;
   commission_percentage?: number | string;
   joining_date?: string;
   is_active?: boolean;
@@ -100,6 +108,12 @@ export interface CommissionRecord {
   sales_agent_is_active?: boolean;
   agent_name_snapshot?: string;
   agent_code_snapshot?: string;
+  commission_method?: CommissionMethod;
+  commission_method_snapshot?: CommissionMethod;
+  commission_amount_unit?: number | string | null;
+  commission_amount_unit_snapshot?: number | string | null;
+  commission_percentage_snapshot?: number | string;
+  effective_commission_percentage?: number | string;
   date: string;
   status: CommissionStatus;
   status_display: string;

@@ -18,6 +18,7 @@ from apps.commission.models import (
     CommissionPayment,
     CommissionAdjustment,
     CommissionStatus,
+    CommissionMethod,
 )
 from apps.accounting.models import Account
 from apps.accounting.services import AccountingService
@@ -28,6 +29,7 @@ from apps.core.models import SystemModule
 class CommissionService:
     """
     Central orchestration service for Sales Agent Commissions.
+    Supports Level 1 (Fixed Percentage) and Level 2 (Progressive / Per-Money).
     """
 
     @classmethod
@@ -45,6 +47,37 @@ class CommissionService:
         """Generates consecutive commission settlement voucher number (e.g. CPMT-00001)."""
         return DocumentSequenceService.generate_next_number("commission_payment")
 
+    @staticmethod
+    def calculate_commission(
+        base: Decimal,
+        method: str,
+        percentage: Decimal,
+        amount_unit: Optional[Decimal] = None,
+    ) -> tuple[Decimal, Decimal]:
+        """
+        Calculates (commission_amount, effective_percentage) using the authoritative rules:
+        - Level 1 (FIXED_PERCENTAGE):
+            Effective % = percentage
+            Amount = Base * (percentage / 100)
+        - Level 2 (PROGRESSIVE):
+            Effective % = (Base / amount_unit) * percentage
+            Amount = Base * (Effective % / 100)
+        """
+        base_dec = max(Decimal("0.00"), Decimal(str(base or 0)))
+        pct_dec = max(Decimal("0.00"), Decimal(str(percentage or 0)))
+
+        if method == CommissionMethod.PROGRESSIVE and amount_unit and Decimal(str(amount_unit)) > Decimal("0.00"):
+            amount_unit_dec = Decimal(str(amount_unit))
+            effective_pct = (base_dec / amount_unit_dec) * pct_dec
+            effective_pct = effective_pct.quantize(Decimal("0.0001"))
+            commission_amount = (base_dec * (effective_pct / Decimal("100.00"))).quantize(Decimal("0.01"))
+            return commission_amount, effective_pct
+        else:
+            # Level 1 Fixed Percentage
+            effective_pct = pct_dec.quantize(Decimal("0.0001"))
+            commission_amount = (base_dec * (pct_dec / Decimal("100.00"))).quantize(Decimal("0.01"))
+            return commission_amount, effective_pct
+
     @classmethod
     @transaction.atomic
     def create_commission_for_sale(
@@ -57,9 +90,10 @@ class CommissionService:
         Creates an authoritative Commission Record linked 1-to-1 with a completed Sale.
         1. Validates agent is provided and commission module is active.
         2. Calculates commission on net base: Subtotal - Discount Amount (excluding tax).
-        3. Snapshots agent percentage and rate.
-        4. Prevents duplicate commission records per invoice.
-        5. Posts General Ledger double-entry accrual (DR 5090 Commission Expense / CR 2040 Commission Payable).
+        3. Supports Level 1 (Fixed %) and Level 2 (Progressive / Per-Money).
+        4. Snapshots agent method, amount unit, configured %, and effective %.
+        5. Prevents duplicate commission records per invoice.
+        6. Posts General Ledger double-entry accrual (DR 5090 Commission Expense / CR 2040 Commission Payable).
         """
         if not cls.is_commission_module_enabled():
             return None
@@ -74,29 +108,35 @@ class CommissionService:
         if existing:
             return existing
 
+        method = agent.commission_method or CommissionMethod.FIXED_PERCENTAGE
         commission_pct = agent.commission_percentage or Decimal("0.00")
-        if commission_pct <= Decimal("0.00"):
-            # 0% commission agent -> No financial accrual needed, or record with 0 amount
-            pass
+        amount_unit = agent.commission_amount_unit if method == CommissionMethod.PROGRESSIVE else None
 
         # Commission Base = Subtotal - Discount Amount (strictly before tax)
         subtotal = sale.subtotal or Decimal("0.00")
         discount = sale.discount_amount or Decimal("0.00")
         commission_base = max(Decimal("0.00"), subtotal - discount)
 
-        # Commission Amount = Base * (pct / 100)
-        commission_amount = (commission_base * (commission_pct / Decimal("100.00"))).quantize(Decimal("0.01"))
+        commission_amount, effective_pct = cls.calculate_commission(
+            base=commission_base,
+            method=method,
+            percentage=commission_pct,
+            amount_unit=amount_unit,
+        )
 
         commission_number = cls.generate_commission_number()
 
-        # Create Commission Record
+        # Create Commission Record with full Level 1 / Level 2 immutable snapshots
         commission_record = CommissionRecord.objects.create(
             commission_number=commission_number,
             sale=sale,
             sales_agent=agent,
             agent_name_snapshot=agent.name,
             agent_code_snapshot=agent.code,
+            commission_method_snapshot=method,
+            commission_amount_unit_snapshot=amount_unit,
             commission_percentage_snapshot=commission_pct,
+            effective_commission_percentage=effective_pct,
             commission_base=commission_base,
             commission_amount=commission_amount,
             adjusted_amount=Decimal("0.00"),
@@ -234,8 +274,12 @@ class CommissionService:
         if returned_base <= Decimal("0.00"):
             return None
 
-        # Reversal calculated using original snapshotted percentage
-        pct = record.commission_percentage_snapshot
+        # Reversal calculated using original snapshotted effective percentage
+        pct = (
+            record.effective_commission_percentage
+            if (record.effective_commission_percentage and record.effective_commission_percentage > Decimal("0.0000"))
+            else record.commission_percentage_snapshot
+        )
         reversal_amount = (returned_base * (pct / Decimal("100.00"))).quantize(Decimal("0.01"))
 
         if reversal_amount <= Decimal("0.00"):
